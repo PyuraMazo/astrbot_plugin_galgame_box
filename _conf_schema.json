@@ -1,0 +1,71 @@
+{
+  "basicSetting": {
+    "description": "基础设置",
+    "type": "object",
+    "items": {
+      "requestTimeout": {
+        "description": "网络请求超时次数",
+        "type": "int",
+        "slider": {
+          "min": 1,
+          "max": 10,
+          "step": 1
+        },
+        "default": 3
+      },
+      "cleanInterval": {
+        "description": "缓存清除间隔",
+        "type": "int",
+        "slider": {
+          "min": 1,
+          "max": 30,
+          "step": 1
+        },
+        "default": 1,
+        "invisible": true
+      }
+    }
+  },
+  "searchSetting": {
+    "description": "搜索设置",
+    "type": "object",
+    "items": {
+      "characterOptions": {
+        "description": "角色额外信息",
+        "hint": "当使用VNDB搜索角色信息的时候，勾选后如果这个信息存在，就会展示这个角色的额外信息（某些信息带有剧透成分）。",
+        "type": "list",
+        "options": [
+          "a-血型",
+          "b-身高/体重",
+          "c-性别（不剧透）",
+          "d-真实性别（含剧透）",
+          "e-三围",
+          "f-罩杯"
+        ],
+        "default": [
+          "a-血型",
+          "b-身高/体重",
+          "c-性别（不剧透）"
+        ]
+      },
+      "enableNSFW": {
+        "description": "NSFW内容",
+        "hint": "开启时，随机作品可能出现NSFW内容。",
+        "type": "bool",
+        "default": false,
+        "invisible": true
+      },
+      "producerVns": {
+        "description": "显示制作者的作品数量",
+        "hint": "当使用VNDB搜索制作者信息的时候，选择展示其至多多少个作品（0表示展示所有作品），建议默认值，过多可能导致等待时间过长或者渲染图片失败，作品默认按贝叶斯评分降序排序。",
+        "type": "int",
+        "slider": {
+          "min": 0,
+          "max": 100,
+          "step": 5
+        },
+        "default": 10
+      }
+    }
+  }
+}
