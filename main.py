@@ -1,54 +1,52 @@
 from typing import Any
-from os import path
+from pathlib import Path
 
 from astrbot.api.event import filter, AstrMessageEvent
-from astrbot.api.star import Context, Star, register
-from astrbot.api import AstrBotConfig
+from astrbot.api.star import Context, Star
+from astrbot.api import AstrBotConfig, logger
 from astrbot.api.message_components import Reply, Node, Plain, Image, Nodes
 from astrbot.core.utils.session_waiter import (
     session_waiter,
     SessionController,
 )
 
-from .core.api.type import CommandBody, CommandType, Dict
+from .core.api.type import CommandBody, CommandType
 from .core.builder import Builder
-from .core.http import VNDBRequest, TouchGalRequest
-from .core.utils.file import File
+from .core.http import TouchGalRequest
 from .core.handler import Handler
-from .core.api.excption import *
+from .core.api.exception import *
 from .core.cache import Cache
+from .core.manager.task_manager import TaskLine
 
 
-
-
-@register("galgame_box", "PyuraMazo", "结合了VNDB和TouchGal的API，更全面地展示关于Galgame的完整信息，还提供更多的相关服务。", "1.0.0")
-class MyPlugin(Star):
-    resource_path = path.join(path.dirname(path.abspath(__file__)), 'core', 'resources')
-    template_path = path.join(resource_path, 'template')
-    render_options = {
-        'type': 'jpeg',
-        'quality': 100
-    }
-
+class GalgameBoxPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
+        self.resource_path = Path(__file__).parent / "resources"
+        self.render_options = {
+            'type': 'jpeg',
+            'quality': 100
+        }
+
         self.config = config
-        self.builder = Builder(self.config)
+        self.session_data: dict[str, int] = {}
+        self.builder = Builder(self.config, self.resource_path)
         self.handler = Handler()
-        self.session_data: dict = {}
-        self.cache = Cache(self.config)
+        self.cache = None
+
+
 
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
-        pass
 
+        self.cache = Cache(self.config)
 
     @filter.command_group("gb", alias={'旮旯', 'gal', 'GAL'})
     async def gb(self, event: AstrMessageEvent):
         """galgame_info插件的主指令"""
         pass
 
-    @gb.command('vn', alias={'作品'})
+    @gb.command('vn', alias={'作品', '游戏'})
     async def vn(self, event: AstrMessageEvent, keyword: str):
         """通过关键词查询作品"""
         try:
@@ -57,23 +55,20 @@ class MyPlugin(Star):
                 value=keyword,
                 msg_id=event.unified_msg_origin
             )
-            cache = self.cache.get_cache(cmd)
-            print(cache)
+            cache = await self.cache.get_cache(cmd)
             if cache:
                 yield event.chain_result([Image.fromBytes(cache)])
                 return
 
-            request = VNDBRequest(self.config, cmd)
-            rendered_html = path.join(self.template_path, Dict.html_list[cmd.type.value])
-            res = await request.request_simply()
-            data = await self.builder.build_options(cmd, res)
-            buffer = File.read_text(rendered_html)
+            buf, extra = await TaskLine(self.config, self.resource_path, cmd).start()
 
-            url = await self.html_render(buffer, data.model_dump(), options=self.render_options)
+            url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
             yield event.image_result(url)
             await self.cache.download_get_image(url, cmd, True)
         except Exception as e:
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e))])
+            logger.error(str(e))
+
 
     @gb.command('cha', alias={'角色'})
     async def cha(self, event: AstrMessageEvent, keyword: str):
@@ -84,22 +79,19 @@ class MyPlugin(Star):
                 value=keyword,
                 msg_id=event.unified_msg_origin
             )
-            cache = self.cache.get_cache(cmd)
+            cache = await self.cache.get_cache(cmd)
             if cache:
                 yield event.chain_result([Image.fromBytes(cache)])
                 return
 
-            request = VNDBRequest(self.config, cmd)
-            rendered_html = path.join(self.template_path, Dict.html_list[cmd.type.value])
-            res = await request.request_simply()
-            data = await self.builder.build_options(cmd, res)
-            buffer = File.read_text(rendered_html)
+            buf, extra = await TaskLine(self.config, self.resource_path, cmd).start()
 
-            url = await self.html_render(buffer, data.model_dump(), options=self.render_options)
+            url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
             yield event.image_result(url)
             await self.cache.download_get_image(url, cmd, True)
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e))])
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生了错误！')])
+            logger.error(str(e))
 
 
     @gb.command('pro', alias={'厂商'})
@@ -111,26 +103,23 @@ class MyPlugin(Star):
                 value=keyword,
                 msg_id=event.unified_msg_origin
             )
-            cache = self.cache.get_cache(cmd)
+            cache = await self.cache.get_cache(cmd)
             if cache:
                 yield event.chain_result([Image.fromBytes(cache)])
                 return
 
-            request = VNDBRequest(self.config, cmd)
-            rendered_html = path.join(self.template_path, Dict.html_list[cmd.type.value])
-            pro, vns = await request.request_by_producer()
-            data = await self.builder.build_options(cmd, pro, vns=vns)
-            buffer = File.read_text(rendered_html)
+            buf, extra = await TaskLine(self.config, self.resource_path, cmd).start()
 
-            url = await self.html_render(buffer, data.model_dump(), options=self.render_options)
+            url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
             yield event.image_result(url)
             await self.cache.download_get_image(url, cmd, True)
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e))])
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生了错误！')])
+            logger.error(str(e))
 
 
-    @gb.command('id', alias={'ID'})
-    async def id(self, event: AstrMessageEvent, keyword: str):
+    @gb.command('vn_id', alias={'ID'})
+    async def vn_id(self, event: AstrMessageEvent, keyword: str):
         """通过VNDB ID查询特定内容"""
         try:
             cmd = CommandBody(
@@ -138,30 +127,19 @@ class MyPlugin(Star):
                 value=keyword,
                 msg_id=event.unified_msg_origin
             )
-            cache = self.cache.get_cache(cmd)
+            cache = await self.cache.get_cache(cmd)
             if cache:
                 yield event.chain_result([Image.fromBytes(cache)])
                 return
 
-            request = VNDBRequest(self.config, cmd)
-            if cmd.value[0] not in Dict.id2command.keys():
-                raise InvalidArgsException
+            buf, extra = await TaskLine(self.config, self.resource_path, cmd).start()
 
-            actual_type_value = Dict.id2command[cmd.value[0]]
-            rendered_html = path.join(self.template_path, Dict.html_list[actual_type_value])
-            res = await request.request_by_id()
-
-            if actual_type_value == CommandType.PRODUCER.value:
-                data = await self.builder.build_options(cmd, res[0], vns=res[1])
-            else:
-                data = await self.builder.build_options(cmd, res)
-
-            buffer = File.read_text(rendered_html)
-            url = await self.html_render(buffer, data.model_dump(), options=self.render_options)
+            url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
             yield event.image_result(url)
             await self.cache.download_get_image(url, cmd, True)
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e))])
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生了错误！')])
+            logger.error(str(e))
 
 
     @gb.command('random', alias={'随机'})
@@ -174,20 +152,14 @@ class MyPlugin(Star):
                 msg_id=event.unified_msg_origin
             )
 
-            request = TouchGalRequest(self.config)
-            rendered_html = path.join(self.template_path, Dict.html_list[cmd.type.value])
-            unique_id = await request.request_random()
-            text = await request.request_html(unique_id)
-            details = self.handler.handle_touchgal_details(text)
-            resp = (await request.request_vn_by_search(details.vndb_id))[0]
-            data = await self.builder.build_options(cmd, resp, details=details)
-            buffer = File.read_text(rendered_html)
+            buf, extra = await TaskLine(self.config, self.resource_path, cmd).start()
 
-            url = await self.html_render(buffer, data.model_dump(), options=self.render_options)
+            url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
             yield event.image_result(url)
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e))])
-            raise e
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生了错误！')])
+            logger.error(str(e))
+
 
     @gb.command('download', alias={'下载'})
     async def download(self, event: AstrMessageEvent, id: str):
@@ -233,7 +205,7 @@ class MyPlugin(Star):
 
                         if accept and 0 < accept <= total:
                             controller.stop()
-                            self.session_data['index'] = accept - 1
+                            self.session_data[sess_event.get_session_id()] = accept - 1
                             return
                         else:
                             invalid = '无效的消息，请重新输入'
@@ -243,7 +215,7 @@ class MyPlugin(Star):
 
                     try:
                         await empty_mention_waiter(event)
-                        index = self.session_data.pop('index')
+                        index = self.session_data.pop(event.get_session_id())
                         touchgal_id = res[index].id
                         cmd.type = CommandType.DOWNLOAD
                     except TimeoutError:
@@ -258,10 +230,11 @@ class MyPlugin(Star):
 
             yield event.chain_result([Nodes(nodes)])
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e))])
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生了错误！')])
+            logger.error(str(e))
 
 
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
-        self.cache.clean_cache()
+        await self.cache.clean_cache_async()
 

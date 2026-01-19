@@ -4,9 +4,9 @@ from aiohttp import ClientError
 
 from astrbot.api import AstrBotConfig
 
-from .api.type import Dict, CommandType, CommandBody
+from .api.type import ConfigDict, CommandType, CommandBody
 from .api.model import VNDBVnResponse, VNDBCharacterResponse, VNDBProducerResponse, TouchGalResponse, ResourceResponse
-from .api.excption import *
+from .api.exception import *
 
 
 class Http:
@@ -69,13 +69,13 @@ class VNDBRequest:
 
     def _build_self_payload(self) -> dict[str, object]:
         if self.type == CommandType.ID:
-            fields = Dict.vndb_command_fields[Dict.id2command[self.value[0]]]
+            fields = ConfigDict.vndb_command_fields[ConfigDict.id2command[self.value[0]]]
             return {
                 "filters": ["id", "=", self.value],
                 "fields": fields,
             }
         else:
-            fields = Dict.vndb_command_fields[self.type.value]
+            fields = ConfigDict.vndb_command_fields[self.type.value]
             return {
                 "filters": ["search", "=", self.value],
                 "fields": fields,
@@ -104,7 +104,7 @@ class VNDBRequest:
 
 
         vn_url = self.kana_url + CommandType.VN.value
-        vn_fields = Dict.vndb_command_fields['vn_of_producer']
+        vn_fields = ConfigDict.vndb_command_fields['vn_of_producer']
         vns: list[list[VNDBVnResponse]] = []
         for item in pro_res:
             vn_payload = {
@@ -177,6 +177,5 @@ class TouchGalRequest:
 
     async def request_resources(self, touchgal_id: int) -> list[ResourceResponse]:
         resource_url = f'{self.base_url}api/patch/resource?patchId={touchgal_id}'
-        print(resource_url)
         res = await self.http.get(resource_url, 'json', cookies=self.nsfw)
         return [ResourceResponse.model_validate(i) for i in res]

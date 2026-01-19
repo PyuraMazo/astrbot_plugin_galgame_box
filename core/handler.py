@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 
-from .api.type import TouchGalDetails, Dict
+from .api.type import TouchGalDetails, ConfigDict
 
 
 class Handler:
@@ -9,7 +9,7 @@ class Handler:
         vndb_id = ''
         try:
             last = soup.find('div', class_='grid gap-4 mt-6 sm:grid-cols-2').find_all('div')[-1].find('a').get_text()
-            vndb_id = last if last[0] in Dict.id2command.keys() else ''
+            vndb_id = last if last[0] in ConfigDict.id2command.keys() else ''
         except Exception:
             pass
 

@@ -44,7 +44,7 @@ class TouchGalDetails(BaseModel):
     images: list[str]
     description: str
 
-class Dict:
+class ConfigDict:
     MIME_TYPE = {
         'png': 'image/png',
         'jpg': 'image/jpeg',

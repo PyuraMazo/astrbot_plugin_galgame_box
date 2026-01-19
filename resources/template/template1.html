@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @font-face {
+            font-family: 'default';
+            src: url('{{ font }}');
+        }
+        * {
+            padding: 0;
+            margin: 0;
+            font-family: 'default';
+        }
+
+        body {
+            background-image: url("{{ bg_image }}");
+            background-repeat: no-repeat;
+            background-size: cover;
+            padding: 2em;
+        }
+
+        .content {
+            width: 80vw;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 2em;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .info {
+            width: 100%;
+            text-align: center;
+            color: rgb(147, 187, 194);
+            padding: 1em;
+        }
+
+        .gap {
+            background-color: #ffffff;
+            height: 0.2em;
+            width: 80%;
+            margin: 0 auto;
+        }
+
+        .block {
+            margin: 1em auto;
+            display: flex;
+            flex-direction: column;
+            width: 25vw;
+            color: #ffffff;
+            font-size: 20px;
+        }
+
+        img {
+            height: auto;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .subtitle {
+            font-size: 25px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="content">
+        <div class="info">
+            <h1>{{ title }}</h1>
+        </div>
+        <div class="gap"></div>
+        {% for item in items %}
+        <div class="block">
+            <img src="{{ item.image }}" alt="图片失效">
+            <div class="subtitle">{{ item.sub_title }}</div>
+            <div class="text">
+                {{ item.text }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+
+</html>
