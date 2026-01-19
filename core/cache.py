@@ -101,5 +101,4 @@ class Cache:
 
 
     def _check_dir(self):
-        if not os.path.exists(self.cache_path):
-            os.makedirs(self.cache_path)
+            os.makedirs(self.cache_path, exist_ok=True)

@@ -54,9 +54,9 @@ class Builder:
         return run_type
 
     async def _init_resources(self):
-        self.bg = await File.read_buffer2base64(str(self.bg_path))
-        self.font = await File.read_buffer2base64(str(self.font_path))
-        self.err = await File.read_buffer2base64(str(self.err_path))
+        if not self.bg: self.bg = await File.read_buffer2base64(str(self.bg_path))
+        if not self.font: self.font = await File.read_buffer2base64(str(self.font_path))
+        if not self.err: self.err = await File.read_buffer2base64(str(self.err_path))
 
     async def _handle_vn(self, response, title):
         resp: list[VNDBVnResponse] = response
@@ -159,7 +159,7 @@ class Builder:
             vn_list.append(f'出场作品（VNDB ID）：「{vn.alttitle or vn.title}」（{vn.id}）')
         vns = "、".join(vn_list)
 
-        option: list[str] = self.config['searchSetting']['characterOptions']
+        option: list[str] = self.config.get('searchSetting', {}).get('characterOptions', [])
         extra: list = []
         if option:
             extra =  [i.split('-')[0] for i in option]

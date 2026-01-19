@@ -63,7 +63,7 @@ class GalgameBoxPlugin(Star):
             yield event.image_result(url)
             await self.cache.download_get_image(url, cmd, True)
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e))])
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！')])
             logger.error(str(e))
             
 
@@ -117,7 +117,7 @@ class GalgameBoxPlugin(Star):
             url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
             yield event.image_result(url)
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！')])
             logger.error(str(e))
             
 
@@ -190,6 +190,6 @@ class GalgameBoxPlugin(Star):
 
             yield event.chain_result([Nodes(nodes)])
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！')])
             logger.error(str(e))
             
