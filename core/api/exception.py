@@ -15,13 +15,13 @@ class ArgsOrNullException(Exception):
         super().__init__(self.message)
 
 class InternetException(Exception):
-    def __init__(self):
-        self.message = '请求网络失败'
+    def __init__(self, url: str = ''):
+        self.message = '请求网络失败：' + url
         super().__init__(self.message)
 
 class ResponseException(Exception):
     def __init__(self):
-        self.message = '请求结果未空，网站返回内容错误'
+        self.message = '请求结果为空，网站返回内容错误'
         super().__init__(self.message)
 
 class NoGameException(Exception):

@@ -1,7 +1,10 @@
 import asyncio
 from bs4 import BeautifulSoup
 
-from .api.type import TouchGalDetails, ConfigDict
+from astrbot.api import logger
+
+from .api.type import TouchGalDetails
+from .api import const
 
 
 class Handler:
@@ -10,9 +13,9 @@ class Handler:
         vndb_id = ''
         try:
             last = soup.find('div', class_='grid gap-4 mt-6 sm:grid-cols-2').find_all('div')[-1].find('a').get_text()
-            vndb_id = last if last[0] in ConfigDict.id2command.keys() else ''
-        except Exception:
-            pass
+            vndb_id = last if last[0] in const.id2command.keys() else ''
+        except Exception as e:
+            logger.error('bs4解析错误' + str(e))
 
         info = soup.find('div', class_='kun-prose max-w-none')
         entro = info.find_all('p', recursive=False)

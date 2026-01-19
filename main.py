@@ -5,10 +5,7 @@ from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.message_components import Reply, Node, Plain, Image, Nodes
-from astrbot.core.utils.session_waiter import (
-    session_waiter,
-    SessionController,
-)
+from astrbot.api.util import session_waiter, SessionController
 
 from .core.api.type import CommandBody, CommandType
 from .core.builder import Builder
@@ -36,10 +33,15 @@ class GalgameBoxPlugin(Star):
 
 
 
-
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
         pass
+
+    async def terminate(self):
+        """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
+        await self.cache.clean_cache_async()
+        await self.cache.close_http_session()
+
 
     @filter.command_group("gb", alias={'旮旯', 'gal', 'GAL'})
     async def gb(self, event: AstrMessageEvent):
@@ -56,7 +58,6 @@ class GalgameBoxPlugin(Star):
                 msg_id=event.unified_msg_origin
             )
             cache = await self.cache.get_cache_async(cmd)
-            print(cache)
             if cache:
                 yield event.chain_result([Image.fromBytes(cache)])
                 return
@@ -64,7 +65,6 @@ class GalgameBoxPlugin(Star):
             buf, extra = await TaskLine(self.config, self.resource_path, cmd).start()
 
             url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
-            print(url)
             yield event.image_result(url)
             await self.cache.download_get_image(url, cmd, True)
         except Exception as e:
@@ -92,7 +92,7 @@ class GalgameBoxPlugin(Star):
             yield event.image_result(url)
             await self.cache.download_get_image(url, cmd, True)
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生了错误！')])
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
             logger.error(str(e))
 
 
@@ -116,7 +116,7 @@ class GalgameBoxPlugin(Star):
             yield event.image_result(url)
             await self.cache.download_get_image(url, cmd, True)
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生了错误！')])
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
             logger.error(str(e))
 
 
@@ -141,7 +141,7 @@ class GalgameBoxPlugin(Star):
             yield event.image_result(url)
             await self.cache.download_get_image(url, cmd, True)
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生了错误！')])
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
             logger.error(str(e))
 
 
@@ -160,9 +160,8 @@ class GalgameBoxPlugin(Star):
             url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
             yield event.image_result(url)
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生了错误！')])
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
             logger.error(str(e))
-
 
     @gb.command('download', alias={'下载'})
     async def download(self, event: AstrMessageEvent, id: str):
@@ -233,11 +232,5 @@ class GalgameBoxPlugin(Star):
 
             yield event.chain_result([Nodes(nodes)])
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生了错误！')])
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
             logger.error(str(e))
-
-
-    async def terminate(self):
-        """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
-        await self.cache.clean_cache_async()
-

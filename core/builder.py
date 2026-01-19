@@ -1,11 +1,12 @@
 import asyncio
-from typing import Any
+from typing import Any, Callable, Dict
 from pathlib import Path
 
-from astrbot.core import AstrBotConfig
+from astrbot.api import AstrBotConfig
 
-from .api.type import CommandBody, UnrenderedData, ConfigDict, RenderedItem, CommandType, RenderedProducer, TouchGalDetails, RenderedInfo
-from .api.model import VNDBVnResponse, VNDBCharacterResponse, VNDBProducerResponse, ModelDict, TouchGalResponse, ResourceResponse
+from .api import const
+from .api.type import CommandBody, UnrenderedData, RenderedItem, CommandType, RenderedProducer, TouchGalDetails, RenderedInfo
+from .api.model import VNDBVnResponse, VNDBCharacterResponse, VNDBProducerResponse, TouchGalResponse, ResourceResponse
 from .cache import Cache
 from .utils.file import File
 
@@ -17,74 +18,92 @@ class Builder:
         _err = resources_path / 'image' / 'error.jpg'
         self.err = File.read_buffer2base64(str(_err))
         self.font = resources_path / 'font' / 'hpsimplifiedhans-regular.ttf'
-        
+        self._handlers: Dict[CommandType, Callable] = {
+            CommandType.VN: self._handle_vn,
+            CommandType.CHARACTER: self._handle_character,
+            CommandType.PRODUCER: self._handle_producer,
+            CommandType.RANDOM: self._handle_random,
+            CommandType.DOWNLOAD: self._handle_download,
+            CommandType.SELECT: self._handle_select,
+        }
+
         self.cache = Cache(self.config)
-        
 
-
-    async def build_options(self, command_body: CommandBody,
-                            response: list[VNDBVnResponse] | list[VNDBCharacterResponse] | list[VNDBProducerResponse] | list[TouchGalResponse] | list[ResourceResponse],
-                            **kwargs)\
-            -> UnrenderedData | list[tuple[str, str]]:
+    async def build_options(self,
+                            command_body: CommandBody,
+                            response,
+                            **kwargs) -> UnrenderedData | list[tuple[str, str]]:
         bgi = await File.read_buffer2base64(str(self.bg))
-        font = await File.read_buffer2base64(str(self.font))
-        
+        font_data = await File.read_buffer2base64(str(self.font))
         title = self._build_title(command_body, len(response))
+
+        handler_type = self._determine_handler_type(command_body)
+
+        handler = self._handlers[handler_type]
+        result = await handler(response, title, bgi, font_data, **kwargs)
+
+        return result
+
+    def _determine_handler_type(self, command_body: CommandBody) -> CommandType:
         run_type = command_body.type
         if run_type == CommandType.ID:
             for cmd_type in CommandType:
                 if cmd_type.value[0] == command_body.value[0]:
-                    run_type = cmd_type
-                    break
+                    return cmd_type
+        return run_type
 
-        if run_type == CommandType.VN:
-            resp: list[VNDBVnResponse] = response
-            co_items = [self._build_vn(res) for res in resp]
-            items = await asyncio.gather(*co_items)
-            return UnrenderedData(
-                title=title,
-                items=items,
-                bg_image=bgi,
-                font=font
-            )
-        elif run_type == CommandType.CHARACTER:
-            resp: list[VNDBCharacterResponse] = response
-            co_items = [self._build_character(res) for res in resp]
-            items = await asyncio.gather(*co_items)
-            return UnrenderedData(
-                title=title,
-                items=items,
-                bg_image=bgi,
-                font=font
-            )
-        elif run_type == CommandType.PRODUCER:
-            resp: list[VNDBProducerResponse] = response
-            vns: list[list[VNDBVnResponse]] = kwargs['vns']
-            co_pros = [self._build_producer(pro, vn) for pro, vn in zip(resp, vns)]
-            pros = await asyncio.gather(*co_pros)
-            return UnrenderedData(
-                title=title,
-                items=pros,
-                bg_image=bgi,
-                font=font
-            )
-        elif run_type == CommandType.RANDOM:
-            resp: list[TouchGalResponse] = response
-            details: TouchGalDetails = kwargs['details']
-            res = await self._build_details(resp[0], details)
-            return UnrenderedData(
-                title=title,
-                items=[res],
-                bg_image=bgi,
-                font=font
-            )
-        elif run_type == CommandType.DOWNLOAD:
-            resp: list[ResourceResponse] = response
-            return [('', self._build_resources(i)) for i in resp]
-        elif run_type == CommandType.SELECT:
-            resp: list[TouchGalResponse] = response
-            return [await self._build_details(i) for i in resp]
-        else: raise NotImplementedError
+    async def _handle_vn(self, response, title, bg_image, font):
+        resp: list[VNDBVnResponse] = response
+        co_items = [self._build_vn(res) for res in resp]
+        items = await asyncio.gather(*co_items)
+        return UnrenderedData(
+            title=title,
+            items=items,
+            bg_image=bg_image,
+            font=font
+        )
+
+    async def _handle_character(self, response, title, bg_image, font):
+        resp: list[VNDBCharacterResponse] = response
+        co_items = [self._build_character(res) for res in resp]
+        items = await asyncio.gather(*co_items)
+        return UnrenderedData(
+            title=title,
+            items=items,
+            bg_image=bg_image,
+            font=font
+        )
+
+    async def _handle_producer(self, response, title, bg_image, font, **kwargs):
+        resp: list[VNDBProducerResponse] = response
+        vns: list[list[VNDBVnResponse]] = kwargs['vns']
+        co_pros = [self._build_producer(pro, vn) for pro, vn in zip(resp, vns)]
+        pros = await asyncio.gather(*co_pros)
+        return UnrenderedData(
+            title=title,
+            items=pros,
+            bg_image=bg_image,
+            font=font
+        )
+
+    async def _handle_random(self, response, title, bg_image, font, **kwargs):
+        resp: list[TouchGalResponse] = response
+        details: TouchGalDetails = kwargs['details']
+        res = await self._build_details(resp[0], details)
+        return UnrenderedData(
+            title=title,
+            items=[res],
+            bg_image=bg_image,
+            font=font
+        )
+
+    async def _handle_download(self, response, *extra):
+        resp: list[ResourceResponse] = response
+        return [('', self._build_resources(i)) for i in resp]
+
+    async def _handle_select(self, response, *extra):
+        resp: list[TouchGalResponse] = response
+        return [await self._build_details(i) for i in resp]
 
 
     def _build_title(self, command_body: CommandBody, count: int) -> str:
@@ -112,8 +131,8 @@ class Builder:
         lang = []
         if response.titles:
             for title in response.titles:
-                if title.lang in ConfigDict.lang.keys():
-                    lang.append(f'{ConfigDict.lang[title.lang]}标题（{"官方" if title.official else "非官方"}）：{title.title}')
+                if title.lang in const.lang.keys():
+                    lang.append(f'{const.lang[title.lang]}标题（{"官方" if title.official else "非官方"}）：{title.title}')
         titles = "<br>".join(lang)
 
         data_list = [i for i in [id, titles, alias, rating, avg, length, dev, release, platform] if i]
@@ -143,8 +162,8 @@ class Builder:
         wh = f'身高/体重（cm/kg）：{response.height or "??"}/{response.weight or "??"}' \
             if 'b' in extra and (response.weight or response.height) \
             else ''
-        gender_outer = f'性别：{ModelDict.gender[response.sex[0]]}' if 'c' in extra else ''
-        gender_inner =  f'真实性别：{ModelDict.gender[response.sex[1]]}' if 'd' in extra else ''
+        gender_outer = f'性别：{const.gender[response.sex[0]]}' if 'c' in extra else ''
+        gender_inner =  f'真实性别：{const.gender[response.sex[1]]}' if 'd' in extra else ''
         bwh = f'三围：{response.bust or "??"}-{response.waist or "??"}-{response.hips or "??"}' \
             if 'e' in extra and (response.bust or response.waist or response.hips) \
             else ''
@@ -160,8 +179,8 @@ class Builder:
         id = f'VNDB ID：{response.id}'
         name = f'名称：{response.original or response.name}'
         aliases = f'别称：{"、".join(response.aliases)}' if response.aliases else ''
-        lang = f'文本语言：{ConfigDict.lang[response.lang]}' if response.lang in ConfigDict.lang.keys() else ''
-        type = f'类型：{ConfigDict.develop_type[response.type]}'
+        lang = f'文本语言：{const.lang[response.lang]}' if response.lang in const.lang.keys() else ''
+        type = f'类型：{const.develop_type[response.type]}'
         info_list = [i for i in [id, name, aliases, lang, type] if i]
         info = "<br>".join(info_list)
 
@@ -195,8 +214,8 @@ class Builder:
 
         lang = []
         for i in response.language:
-            if i in ConfigDict.lang.keys():
-                lang.append(ConfigDict.lang[i])
+            if i in const.lang.keys():
+                lang.append(const.lang[i])
         language = f'资源语言：{'、'.join(lang)}'
 
         if not details:
@@ -227,8 +246,8 @@ class Builder:
 
         lang = []
         for i in response.language:
-            if i in ConfigDict.lang.keys():
-                lang.append(ConfigDict.lang[i])
+            if i in const.lang.keys():
+                lang.append(const.lang[i])
         language = f'资源语言：{"、".join(lang)}' if lang else ''
         note = f'备注：{response.note}' if response.note else ''
         content = f'链接：{response.content}' if response.content else ''

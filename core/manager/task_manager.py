@@ -3,14 +3,14 @@ from pathlib import Path
 from astrbot.api import AstrBotConfig
 
 
-from ..api.type import CommandBody, CommandType, ConfigDict, UnrenderedData
+from ..api.type import CommandBody, CommandType, UnrenderedData
 from ..builder import Builder
 from ..http import VNDBRequest, TouchGalRequest
 from ..utils.file import File
 from ..handler import Handler
 from ..api.exception import *
 from ..cache import Cache
-
+from ..api import const
 
 
 class TaskLine:
@@ -42,7 +42,7 @@ class TaskLine:
 
     async def _vn_cha_task(self) -> tuple[str, UnrenderedData]:
         request = VNDBRequest(self.config, self.cmd)
-        rendered_html = self.template_path / ConfigDict.html_list[self.cmd.type.value]
+        rendered_html = self.template_path / const.html_list[self.cmd.type.value]
         res = await request.request_simply()
         data = await self.builder.build_options(self.cmd, res)
         buffer = await File.read_text(rendered_html)
@@ -52,7 +52,7 @@ class TaskLine:
 
     async def _pro_task(self) -> tuple[str, UnrenderedData]:
         request = VNDBRequest(self.config, self.cmd)
-        rendered_html = self.template_path / ConfigDict.html_list[self.cmd.type.value]
+        rendered_html = self.template_path / const.html_list[self.cmd.type.value]
         pro, vns = await request.request_by_producer()
         data = await self.builder.build_options(self.cmd, pro, vns=vns)
         buffer = await File.read_text(rendered_html)
@@ -62,11 +62,11 @@ class TaskLine:
 
     async def _id_task(self) -> tuple[str, UnrenderedData]:
         request = VNDBRequest(self.config, self.cmd)
-        if self.cmd.value[0] not in ConfigDict.id2command.keys():
+        if self.cmd.value[0] not in const.id2command.keys():
             raise InvalidArgsException
 
-        actual_type_value = ConfigDict.id2command[self.cmd.value[0]]
-        rendered_html = self.template_path / ConfigDict.html_list[actual_type_value]
+        actual_type_value = const.id2command[self.cmd.value[0]]
+        rendered_html = self.template_path / const.html_list[actual_type_value]
         res = await request.request_by_id()
 
         data = await self.builder.build_options(self.cmd, res[0], vns=res[1]) \
@@ -80,7 +80,7 @@ class TaskLine:
 
     async def _random_task(self) -> tuple[str, UnrenderedData]:
         request = TouchGalRequest(self.config)
-        rendered_html = self.template_path / ConfigDict.html_list[self.cmd.type.value]
+        rendered_html = self.template_path / const.html_list[self.cmd.type.value]
         unique_id = await request.request_random()
         text = await request.request_html(unique_id)
         details = await self.handler.handle_touchgal_details(text)

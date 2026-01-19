@@ -14,51 +14,50 @@ from .api.type import CommandBody
 class Cache:
     def __init__(self, config: AstrBotConfig):
         data_path = StarTools.get_data_dir('astrbot_plugin_galgame_box')
-        self.cache_path = os.path.join(data_path, 'cache')
+        self.cache_path = data_path / 'cache'
         self.http = Http(config)
 
 
-    async def download_get_image(self, url: str, tag: str | int | CommandBody = None, cache: bool = False, suffix: str = 'jpg') -> bytes:
+    async def download_get_image(self, url: str, tag: str | int | CommandBody = None, cache: bool = False) -> bytes:
         self._check_dir()
         source_suffix = url.split('.')[-1]
 
         if tag:
             formated = self._format_filename(tag)
-            path = os.path.join(self.cache_path, formated)
-
+            path = str(self.cache_path / formated)
+            print(path)
 
             if self._check_cache(path):
                 return await self.get_cache_async(formated)
             else:
                 buffer = await self.http.get(url, 'byte')
 
-                if source_suffix.lower() == suffix:
-                    if cache:
-                        await self.do_cache_async(path, buffer)
-                    return buffer
-                else:
+                if source_suffix.lower() == 'avif':
                     buf = await File.avif2jpg_async(buffer)
                     if cache:
-                        await self.do_cache_async(path, buf)
+                        await self._do_cache_async(path, buf)
                     return buf
+                else:
+                    if cache:
+                        await self._do_cache_async(path, buffer)
+                    return buffer
+
         else:
             buffer = await self.http.get(url, 'byte')
-            return await File.avif2jpg_async(buffer) if source_suffix.lower() != suffix else buffer
+            return await File.avif2jpg_async(buffer) if source_suffix.lower() == 'avif' else buffer
 
     async def get_cache_async(self, tag: str | int | CommandBody) -> bytes | None:
         self._check_dir()
         filename = self._format_filename(tag)
-        path = os.path.join(self.cache_path, filename)
+        path = str(self.cache_path / filename)
 
         cache = self._check_cache(path)
         return await File.read_buffer(path) if cache else None
 
 
-    async def do_cache_async(self, tag: str | int | CommandBody, data: bytes):
+    async def _do_cache_async(self, path: str, data: bytes):
         """filename统一使用【TouchGal ID】或者【命令-参数】"""
-
         self._check_dir()
-        path = self._format_filename(tag)
 
         if self._check_cache(path):
             return
@@ -75,6 +74,8 @@ class Cache:
                 await asyncio.to_thread(lambda: shutil.rmtree(self.cache_path))
         self._check_dir()
 
+    async def close_http_session(self):
+        await self.http.close()
 
 
     def _format_filename(self, tag: str | int | CommandBody) -> str:

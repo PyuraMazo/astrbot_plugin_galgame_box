@@ -2,22 +2,20 @@ import asyncio
 import base64
 import os
 import aiofiles
-from typing import LiteralString
 
-from ..api.type import ConfigDict
+
+from ..api import const
 
 class File:
-
-
     @staticmethod
-    async def read_buffer(path: LiteralString | str) -> bytes:
+    async def read_buffer(path: str) -> bytes:
         if not os.path.exists(path): raise FileNotFoundError(path)
 
         async with aiofiles.open(path, 'rb') as f:
             return await f.read()
 
     @staticmethod
-    async def read_text(path: LiteralString | str) -> str:
+    async def read_text(path: str) -> str:
 
         if not os.path.exists(path): raise FileNotFoundError(path)
 
@@ -26,7 +24,7 @@ class File:
 
 
     @staticmethod
-    async def write_buffer(path: LiteralString | str | bytes, data: bytes) -> bool:
+    async def write_buffer(path: str | bytes, data: bytes) -> bool:
         if os.path.exists(path): raise FileExistsError(path)
 
         async with aiofiles.open(path, 'wb') as f:
@@ -37,7 +35,7 @@ class File:
     async def read_buffer2base64(path: str) -> str:
         if not os.path.exists(path): raise FileNotFoundError(path)
 
-        mime_type = ConfigDict.MIME_TYPE[path.split('.')[-1]]
+        mime_type = const.MIME_TYPE[path.split('.')[-1]]
         async with aiofiles.open(path, 'rb') as f:
             buffer = await f.read()
             base64_data = await asyncio.to_thread(base64.b64encode, buffer)
@@ -45,7 +43,7 @@ class File:
 
     @staticmethod
     async def buffer2base64(file_buffer: bytes, prefix: bool = True, extend: str = 'jpg') -> str:
-        mime_type = ConfigDict.MIME_TYPE[extend]
+        mime_type = const.MIME_TYPE[extend]
         base64_data = await asyncio.to_thread(base64.b64encode, file_buffer)
         return f'data:{mime_type};base64,{base64_data.decode("utf-8")}' if prefix else base64_data.decode('utf-8')
 

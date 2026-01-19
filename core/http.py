@@ -1,28 +1,45 @@
 import aiohttp
 import json
-from aiohttp import ClientError
+import asyncio
+from typing import Optional
 
-from astrbot.api import AstrBotConfig
+from astrbot.api import AstrBotConfig, logger
 
-from .api.type import ConfigDict, CommandType, CommandBody
+from .api import const
+from .api.type import CommandType, CommandBody
 from .api.model import VNDBVnResponse, VNDBCharacterResponse, VNDBProducerResponse, TouchGalResponse, ResourceResponse
 from .api.exception import *
 
 
 class Http:
-    def __init__(self, config: AstrBotConfig):
-        self.timeout = config['basicSetting']['requestTimeout']
+    _instance: Optional['Http'] = None
+    _initialized: bool = False
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self, config):
+        if self.__class__._initialized:
+            return
+
+        self.timeout_times = config['basicSetting']['requestTimeout']
         self.headers = {
             "Content-Type": "application/json"
         }
         self.session = aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(10)
+            timeout=aiohttp.ClientTimeout(total=config['basicSetting']['requestTime'])
         )
+
+        self.__class__._initialized = True
+
+
 
 
     async def get(self, url: str, res_type: str = 'text', **kwargs) -> str | dict | bytes:
         count = 0
-        while count < self.timeout:
+        while count < self.timeout_times:
             try:
                 if res_type == 'json':
                     async with self.session.get(url, **kwargs) as response:
@@ -33,33 +50,28 @@ class Http:
                 else:
                     async with self.session.get(url, **kwargs) as response:
                         return await response.text()
-            except Exception:
+            except Exception as e:
                 count += 1
-        raise InternetException
+                await asyncio.sleep(0.5)
+                logger.info(str(e) + '网络请求失败一次...')
+        raise InternetException(url)
 
 
     async def post(self, url: str, data: dict, **kwargs) -> str | dict | bytes:
         count = 0
-        while count < self.timeout:
+        while count < self.timeout_times:
             try:
                 async with self.session.post(url, headers=self.headers, json=data, **kwargs) as response:
                     return await response.json()
-            except ClientError:
+            except Exception as e:
                 count += 1
-        raise InternetException
+                await asyncio.sleep(0.5)
+                logger.info(str(e) + '网络请求失败一次...')
+        raise InternetException(url)
 
     async def close(self):
         if not self.session.closed:
             await self.session.close()
-
-    def __del__(self):
-        try:
-            import asyncio
-            loop = asyncio.get_event_loop()
-            if not self.session.closed and loop.is_running():
-                loop.create_task(self.close())
-        except Exception:
-            pass
 
 
 class VNDBRequest:
@@ -74,15 +86,16 @@ class VNDBRequest:
         self.http = Http(config)
 
 
+
     def _build_self_payload(self) -> dict[str, object]:
         if self.type == CommandType.ID:
-            fields = ConfigDict.vndb_command_fields[ConfigDict.id2command[self.value[0]]]
+            fields = const.vndb_command_fields[const.id2command[self.value[0]]]
             return {
                 "filters": ["id", "=", self.value],
                 "fields": fields,
             }
         else:
-            fields = ConfigDict.vndb_command_fields[self.type.value]
+            fields = const.vndb_command_fields[self.type.value]
             return {
                 "filters": ["search", "=", self.value],
                 "fields": fields,
@@ -111,7 +124,7 @@ class VNDBRequest:
 
 
         vn_url = self.kana_url + CommandType.VN.value
-        vn_fields = ConfigDict.vndb_command_fields['vn_of_producer']
+        vn_fields = const.vndb_command_fields['vn_of_producer']
         vns: list[list[VNDBVnResponse]] = []
         for item in pro_res:
             vn_payload = {
@@ -153,6 +166,7 @@ class TouchGalRequest:
         self.config = config
         self.http = Http(self.config)
         self.nsfw = {'kun-patch-setting-store|state|data|kunNsfwEnable': 'all' if self.config['searchSetting']['enableNSFW'] else 'sfw'}
+
 
     async def request_vn_by_search(self, keyword: str) -> tuple[list[TouchGalResponse], int]:
         query_string = json.dumps([{"type": "keyword", "name": keyword}])

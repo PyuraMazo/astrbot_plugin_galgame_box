@@ -2,13 +2,6 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class ModelDict:
-    gender = {
-        'm': '男性',
-        'f': '女性',
-        'b': '双性',
-        'n': '无性'
-    }
 
 class Image(BaseModel):
     url: str
