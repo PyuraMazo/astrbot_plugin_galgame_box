@@ -9,7 +9,8 @@ from astrbot.api.util import session_waiter, SessionController
 
 from .core.api.type import CommandBody, CommandType
 from .core.builder import Builder
-from .core.http import TouchGalRequest
+from .core.http import get_http
+from .core.request import TouchGalRequest
 from .core.handler import Handler
 from .core.api.exception import *
 from .core.cache import Cache
@@ -24,9 +25,10 @@ class GalgameBoxPlugin(Star):
             'type': 'jpeg',
             'quality': 100
         }
-
-        self.config = config
         self.session_data: dict[str, int] = {}
+        self.config = config
+
+        get_http(self.config)
         self.builder = Builder(self.config, self.resource_path)
         self.handler = Handler()
         self.cache = Cache(self.config)
@@ -70,7 +72,7 @@ class GalgameBoxPlugin(Star):
         except Exception as e:
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e))])
             logger.error(str(e))
-
+             
 
     @gb.command('cha', alias={'角色'})
     async def cha(self, event: AstrMessageEvent, keyword: str):
@@ -94,7 +96,7 @@ class GalgameBoxPlugin(Star):
         except Exception as e:
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
             logger.error(str(e))
-
+             
 
     @gb.command('pro', alias={'厂商'})
     async def pro(self, event: AstrMessageEvent, keyword: str):
@@ -118,7 +120,7 @@ class GalgameBoxPlugin(Star):
         except Exception as e:
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
             logger.error(str(e))
-
+             
 
     @gb.command('vn_id', alias={'ID', 'id'})
     async def vn_id(self, event: AstrMessageEvent, keyword: str):
@@ -143,7 +145,7 @@ class GalgameBoxPlugin(Star):
         except Exception as e:
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
             logger.error(str(e))
-
+             
 
     @gb.command('random', alias={'随机'})
     async def random(self, event: AstrMessageEvent):
@@ -162,6 +164,7 @@ class GalgameBoxPlugin(Star):
         except Exception as e:
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
             logger.error(str(e))
+             
 
     @gb.command('download', alias={'下载'})
     async def download(self, event: AstrMessageEvent, id: str):
@@ -234,3 +237,4 @@ class GalgameBoxPlugin(Star):
         except Exception as e:
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
             logger.error(str(e))
+             

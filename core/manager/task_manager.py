@@ -5,7 +5,7 @@ from astrbot.api import AstrBotConfig
 
 from ..api.type import CommandBody, CommandType, UnrenderedData
 from ..builder import Builder
-from ..http import VNDBRequest, TouchGalRequest
+from ..request import VNDBRequest, TouchGalRequest
 from ..utils.file import File
 from ..handler import Handler
 from ..api.exception import *

@@ -5,7 +5,7 @@ import asyncio
 from astrbot.api import AstrBotConfig
 from astrbot.api.star import StarTools
 
-from .http import Http
+from .http import get_http
 from .utils.file import File
 from .api.type import CommandBody
 
@@ -15,8 +15,7 @@ class Cache:
     def __init__(self, config: AstrBotConfig):
         data_path = StarTools.get_data_dir('astrbot_plugin_galgame_box')
         self.cache_path = data_path / 'cache'
-        self.http = Http(config)
-
+        self.http = get_http(config)
 
     async def download_get_image(self, url: str, tag: str | int | CommandBody = None, cache: bool = False) -> bytes:
         self._check_dir()
