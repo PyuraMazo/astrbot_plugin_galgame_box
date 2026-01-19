@@ -1,9 +1,9 @@
-# astrbot_plugin_galgame_tools
+# astrbot_plugin_galgame_box
 ## 简介
 [AstrBot](https://github.com/Soulter/AstrBot)的社区插件，结合了VNDB和TouchGal的API，不但能够提供全面、细节的Galgame帮助信息，还能提供TouchGal的随机作品和资源下载等功能。后续会结合更多Gal网站的API提供更有趣的功能。
 
 ## 使用
-本插件以`gt`（别名`旮旯`）作为主指令，加空格调用子指令。
+本插件以`gb`（别名`旮旯`）作为主指令，加空格调用子指令。
 指令如下：
 
 ### 通过VNDB查找作品

@@ -21,7 +21,7 @@ from .core.cache import Cache
 
 
 
-@register("galgame_info", "PyuraMazo", "结合了VNDB和TouchGal的API，更全面地展示关于Galgame的完整信息，还提供更多的相关服务。", "1.0.0")
+@register("galgame_box", "PyuraMazo", "结合了VNDB和TouchGal的API，更全面地展示关于Galgame的完整信息，还提供更多的相关服务。", "1.0.0")
 class MyPlugin(Star):
     resource_path = path.join(path.dirname(path.abspath(__file__)), 'core', 'resources')
     template_path = path.join(resource_path, 'template')
@@ -43,12 +43,12 @@ class MyPlugin(Star):
         pass
 
 
-    @filter.command_group("gi", alias={'旮旯', 'gal', 'GAL'})
-    async def gi(self, event: AstrMessageEvent):
+    @filter.command_group("gb", alias={'旮旯', 'gal', 'GAL'})
+    async def gb(self, event: AstrMessageEvent):
         """galgame_info插件的主指令"""
         pass
 
-    @gi.command('vn', alias={'作品'})
+    @gb.command('vn', alias={'作品'})
     async def vn(self, event: AstrMessageEvent, keyword: str):
         """通过关键词查询作品"""
         try:
@@ -75,7 +75,7 @@ class MyPlugin(Star):
         except Exception as e:
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e))])
 
-    @gi.command('cha', alias={'角色'})
+    @gb.command('cha', alias={'角色'})
     async def cha(self, event: AstrMessageEvent, keyword: str):
         """通过关键词查询角色"""
         try:
@@ -102,7 +102,7 @@ class MyPlugin(Star):
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e))])
 
 
-    @gi.command('pro', alias={'厂商'})
+    @gb.command('pro', alias={'厂商'})
     async def pro(self, event: AstrMessageEvent, keyword: str):
         """通过关键词查询厂商"""
         try:
@@ -129,7 +129,7 @@ class MyPlugin(Star):
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e))])
 
 
-    @gi.command('id', alias={'ID'})
+    @gb.command('id', alias={'ID'})
     async def id(self, event: AstrMessageEvent, keyword: str):
         """通过VNDB ID查询特定内容"""
         try:
@@ -164,7 +164,7 @@ class MyPlugin(Star):
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e))])
 
 
-    @gi.command('random', alias={'随机'})
+    @gb.command('random', alias={'随机'})
     async def random(self, event: AstrMessageEvent):
         """通过TouchGal随机获取一部作品"""
         try:
@@ -189,7 +189,7 @@ class MyPlugin(Star):
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e))])
             raise e
 
-    @gi.command('download', alias={'下载'})
+    @gb.command('download', alias={'下载'})
     async def download(self, event: AstrMessageEvent, id: str):
         """优先通过VNDB ID、TouchGal ID，最后通过关键词搜索获取指定资源的下载链接"""
         try:
