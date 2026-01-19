@@ -187,10 +187,10 @@ class GalgameBoxPlugin(Star):
                     cmd.type = CommandType.SELECT
                     msgs: list[tuple[Any, str]] = await self.builder.build_options(cmd, res)
                     content = []
-                    for msg in msgs:
+                    for idx, msg in enumerate(msgs, start=1):
                         node = Node(uin=event.get_self_id(),
                                     content=[
-                                        Plain(f'【{msgs.index(msg) + 1}】'),
+                                        Plain(f'【{idx}】'),
                                         Image.fromBase64(msg[0]),
                                         Plain(msg[1])
                                     ])

@@ -25,7 +25,6 @@ class Cache:
         if tag:
             formated = self._format_filename(tag)
             path = str(self.cache_path / formated)
-            print(path)
 
             if self._check_cache(path):
                 return await self.get_cache_async(formated)

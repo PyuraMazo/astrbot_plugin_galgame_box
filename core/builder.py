@@ -216,7 +216,7 @@ class Builder:
         for i in response.language:
             if i in const.lang.keys():
                 lang.append(const.lang[i])
-        language = f'资源语言：{'、'.join(lang)}'
+        language = f'资源语言：{"、".join(lang)}'
 
         if not details:
             text = '\n'.join([i for i in [title, touchgal_id, avg, source_type, platform, language] if i])

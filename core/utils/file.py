@@ -25,7 +25,8 @@ class File:
 
     @staticmethod
     async def write_buffer(path: str | bytes, data: bytes) -> bool:
-        if os.path.exists(path): raise FileExistsError(path)
+        if os.path.exists(path):
+            return False
 
         async with aiofiles.open(path, 'wb') as f:
             await f.write(data)
