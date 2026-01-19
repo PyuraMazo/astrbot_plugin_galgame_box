@@ -16,11 +16,10 @@ class Cache:
         data_path = StarTools.get_data_dir('astrbot_plugin_galgame_box')
         self.cache_path = os.path.join(data_path, 'cache')
         self.http = Http(config)
-        self._check_dir()
-
 
 
     async def download_get_image(self, url: str, tag: str | int | CommandBody = None, cache: bool = False, suffix: str = 'jpg') -> bytes:
+        self._check_dir()
         source_suffix = url.split('.')[-1]
 
         if tag:
@@ -29,24 +28,25 @@ class Cache:
 
 
             if self._check_cache(path):
-                return await self.get_cache(formated)
+                return await self.get_cache_async(formated)
             else:
                 buffer = await self.http.get(url, 'byte')
 
                 if source_suffix.lower() == suffix:
                     if cache:
-                        await self.do_cache(path, buffer)
+                        await self.do_cache_async(path, buffer)
                     return buffer
                 else:
                     buf = await File.avif2jpg_async(buffer)
                     if cache:
-                        await self.do_cache(path, buf)
+                        await self.do_cache_async(path, buf)
                     return buf
         else:
             buffer = await self.http.get(url, 'byte')
             return await File.avif2jpg_async(buffer) if source_suffix.lower() != suffix else buffer
 
-    async def get_cache(self, tag: str | int | CommandBody) -> bytes | None:
+    async def get_cache_async(self, tag: str | int | CommandBody) -> bytes | None:
+        self._check_dir()
         filename = self._format_filename(tag)
         path = os.path.join(self.cache_path, filename)
 
@@ -54,8 +54,10 @@ class Cache:
         return await File.read_buffer(path) if cache else None
 
 
-    async def do_cache(self, tag: str | int | CommandBody, data: bytes):
+    async def do_cache_async(self, tag: str | int | CommandBody, data: bytes):
         """filename统一使用【TouchGal ID】或者【命令-参数】"""
+
+        self._check_dir()
         path = self._format_filename(tag)
 
         if self._check_cache(path):

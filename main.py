@@ -32,14 +32,14 @@ class GalgameBoxPlugin(Star):
         self.session_data: dict[str, int] = {}
         self.builder = Builder(self.config, self.resource_path)
         self.handler = Handler()
-        self.cache = None
+        self.cache = Cache(self.config)
+
 
 
 
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
-
-        self.cache = Cache(self.config)
+        pass
 
     @filter.command_group("gb", alias={'旮旯', 'gal', 'GAL'})
     async def gb(self, event: AstrMessageEvent):
@@ -55,7 +55,8 @@ class GalgameBoxPlugin(Star):
                 value=keyword,
                 msg_id=event.unified_msg_origin
             )
-            cache = await self.cache.get_cache(cmd)
+            cache = await self.cache.get_cache_async(cmd)
+            print(cache)
             if cache:
                 yield event.chain_result([Image.fromBytes(cache)])
                 return
@@ -63,6 +64,7 @@ class GalgameBoxPlugin(Star):
             buf, extra = await TaskLine(self.config, self.resource_path, cmd).start()
 
             url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
+            print(url)
             yield event.image_result(url)
             await self.cache.download_get_image(url, cmd, True)
         except Exception as e:
@@ -79,7 +81,7 @@ class GalgameBoxPlugin(Star):
                 value=keyword,
                 msg_id=event.unified_msg_origin
             )
-            cache = await self.cache.get_cache(cmd)
+            cache = await self.cache.get_cache_async(cmd)
             if cache:
                 yield event.chain_result([Image.fromBytes(cache)])
                 return
@@ -103,7 +105,7 @@ class GalgameBoxPlugin(Star):
                 value=keyword,
                 msg_id=event.unified_msg_origin
             )
-            cache = await self.cache.get_cache(cmd)
+            cache = await self.cache.get_cache_async(cmd)
             if cache:
                 yield event.chain_result([Image.fromBytes(cache)])
                 return
@@ -118,7 +120,7 @@ class GalgameBoxPlugin(Star):
             logger.error(str(e))
 
 
-    @gb.command('vn_id', alias={'ID'})
+    @gb.command('vn_id', alias={'ID', 'id'})
     async def vn_id(self, event: AstrMessageEvent, keyword: str):
         """通过VNDB ID查询特定内容"""
         try:
@@ -127,8 +129,9 @@ class GalgameBoxPlugin(Star):
                 value=keyword,
                 msg_id=event.unified_msg_origin
             )
-            cache = await self.cache.get_cache(cmd)
+            cache = await self.cache.get_cache_async(cmd)
             if cache:
+
                 yield event.chain_result([Image.fromBytes(cache)])
                 return
 
@@ -178,7 +181,7 @@ class GalgameBoxPlugin(Star):
                 touchgal_id = int(keyword)
             else:
                 res, total = await request.request_vn_by_search(keyword)
-                if keyword[0] == 'v' and keyword[1:].isdigit() and total == 1:
+                if len(keyword) > 1 and keyword[0] == 'v' and keyword[1:].isdigit() and total == 1:
                     if not res: raise InternetException
                     touchgal_id = res[0].id
                 elif total > 0:
@@ -196,7 +199,7 @@ class GalgameBoxPlugin(Star):
 
                     tips = '未识别到ID，改为关键词搜索\n从以下内容中选择一项\n30s内回复输入对应数字获取相应资源'
                     yield event.plain_result(tips)
-                    yield event.chain_result(content)
+                    yield event.chain_result([Nodes(content)])
 
                     @session_waiter(timeout=30, record_history_chains=False)
                     async def empty_mention_waiter(controller: SessionController, sess_event: AstrMessageEvent):

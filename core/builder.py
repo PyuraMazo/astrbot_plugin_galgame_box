@@ -14,7 +14,8 @@ class Builder:
     def __init__(self, config: AstrBotConfig, resources_path: Path):
         self.config = config
         self.bg = resources_path / 'image' / 'pixiv139681518.jpg'
-        self.err = resources_path / 'image' / 'error.jpg'
+        _err = resources_path / 'image' / 'error.jpg'
+        self.err = File.read_buffer2base64(str(_err))
         self.font = resources_path / 'font' / 'hpsimplifiedhans-regular.ttf'
         
         self.cache = Cache(self.config)
@@ -96,7 +97,7 @@ class Builder:
 
     async def _build_vn(self, response: VNDBVnResponse) -> RenderedItem:
         id = f'VNDB ID：{response.id}'
-        img = await File.buffer2base64(await self.cache.download_get_image(response.image.url)) if response.image else self.err
+        img = await File.buffer2base64(await self.cache.download_get_image(response.image.url)) if response.image else await self.err
         avg = f'平均分：{response.average}' if response.average else ''
         rating = f'贝叶斯评分：{response.rating}' if response.rating else ''
         release = f'发布日期：{response.released}' if response.released else ''
@@ -112,7 +113,7 @@ class Builder:
         if response.titles:
             for title in response.titles:
                 if title.lang in ConfigDict.lang.keys():
-                    lang.append(f'{ConfigDict.lang[title.lang]}标题（{'官方' if title.official else '非官方'}）：{title.title}')
+                    lang.append(f'{ConfigDict.lang[title.lang]}标题（{"官方" if title.official else "非官方"}）：{title.title}')
         titles = "<br>".join(lang)
 
         data_list = [i for i in [id, titles, alias, rating, avg, length, dev, release, platform] if i]
@@ -123,7 +124,7 @@ class Builder:
 
     async def _build_character(self, response: VNDBCharacterResponse) -> RenderedItem:
         id = f'VNDB ID：{response.id}'
-        img = await File.buffer2base64(await self.cache.download_get_image(response.image.url)) if response.image else self.err
+        img = await File.buffer2base64(await self.cache.download_get_image(response.image.url)) if response.image else await self.err
         name = response.original or response.name
         aliases = f'别名：{"、".join(response.aliases)}' if response.aliases else ''
         birthday = f'生日：{response.birthday[0]}月{response.birthday[1]}日' if response.birthday else ''
@@ -139,12 +140,12 @@ class Builder:
             extra =  [i.split('-')[0] for i in option]
 
         blood = f'血型：{response.blood_type}' if 'a' in extra and response.blood_type else ''
-        wh = f'身高/体重（cm/kg）：{response.height or '??'}/{response.weight or '??'}' \
+        wh = f'身高/体重（cm/kg）：{response.height or "??"}/{response.weight or "??"}' \
             if 'b' in extra and (response.weight or response.height) \
             else ''
         gender_outer = f'性别：{ModelDict.gender[response.sex[0]]}' if 'c' in extra else ''
         gender_inner =  f'真实性别：{ModelDict.gender[response.sex[1]]}' if 'd' in extra else ''
-        bwh = f'三围：{response.bust or '??'}-{response.waist or '??'}-{response.hips or '??'}' \
+        bwh = f'三围：{response.bust or "??"}-{response.waist or "??"}-{response.hips or "??"}' \
             if 'e' in extra and (response.bust or response.waist or response.hips) \
             else ''
         cup = f'罩杯：{response.cup}' if 'f' in extra and response.cup else ''
@@ -167,7 +168,7 @@ class Builder:
         vns: list[RenderedItem] = []
         for vn in vn_response:
             vn_id = f'VNDB ID：{vn.id}'
-            vn_img = await File.buffer2base64(await self.cache.download_get_image(vn.image.url)) if vn.image else self.err
+            vn_img = await File.buffer2base64(await self.cache.download_get_image(vn.image.url)) if vn.image else await self.err
             vn_title = f'名称：{vn.alttitle or vn.title}'
             vn_released = f'发布日期：{vn.released}' if vn.released else ''
             vn_rating = f'贝叶斯评分：{vn.rating}' if vn.rating else ''
@@ -200,18 +201,18 @@ class Builder:
 
         if not details:
             text = '\n'.join([i for i in [title, touchgal_id, avg, source_type, platform, language] if i])
-            file_path = await File.buffer2base64(await File.avif2jpg_async(await self.cache.download_get_image(cover)), False) if response.banner else self.err
+            file_path = await File.buffer2base64(await File.avif2jpg_async(await self.cache.download_get_image(cover)), False) if response.banner else await self.err
             return file_path, text
 
         vndb_id = f'VNDB ID：{details.vndb_id}'
         description = details.description.replace('、', '<br>')
-        co_imgs = [File.buffer2base64(await self.cache.download_get_image(img), extend='avif') or self.err for img in details.images]
+        co_imgs = [File.buffer2base64(await self.cache.download_get_image(img), extend='avif') or await self.err for img in details.images]
         imgs = await asyncio.gather(*co_imgs)
         data_list = [i for i in [vndb_id, touchgal_id, tags, avg, source_type, language, platform] if i]
         return RenderedInfo(
             text=f"<br>".join(data_list),
             sub_title=title,
-            main_image=await File.buffer2base64(await self.cache.download_get_image(cover), extend='avif') if response.banner else self.err,
+            main_image=await File.buffer2base64(await self.cache.download_get_image(cover), extend='avif') if response.banner else await self.err,
             images=imgs,
             description=description,
         )

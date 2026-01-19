@@ -47,7 +47,7 @@ class File:
     async def buffer2base64(file_buffer: bytes, prefix: bool = True, extend: str = 'jpg') -> str:
         mime_type = ConfigDict.MIME_TYPE[extend]
         base64_data = await asyncio.to_thread(base64.b64encode, file_buffer)
-        return f'data:{mime_type};base64,{base64_data.decode('utf-8')}' if prefix else base64_data.decode('utf-8')
+        return f'data:{mime_type};base64,{base64_data.decode("utf-8")}' if prefix else base64_data.decode('utf-8')
 
     @staticmethod
     def avif2jpg(avif_data: bytes) -> bytes:

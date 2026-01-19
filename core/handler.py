@@ -1,11 +1,12 @@
+import asyncio
 from bs4 import BeautifulSoup
 
 from .api.type import TouchGalDetails, ConfigDict
 
 
 class Handler:
-    def handle_touchgal_details(self, text: str) -> TouchGalDetails | None:
-        soup = BeautifulSoup(text, 'lxml')
+    async def handle_touchgal_details(self, text: str) -> TouchGalDetails | None:
+        soup = await asyncio.to_thread(lambda: BeautifulSoup(text, 'lxml'))
         vndb_id = ''
         try:
             last = soup.find('div', class_='grid gap-4 mt-6 sm:grid-cols-2').find_all('div')[-1].find('a').get_text()

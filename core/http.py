@@ -10,49 +10,56 @@ from .api.exception import *
 
 
 class Http:
-    headers = {
-        "Content-Type": "application/json"
-    }
-
     def __init__(self, config: AstrBotConfig):
         self.timeout = config['basicSetting']['requestTimeout']
+        self.headers = {
+            "Content-Type": "application/json"
+        }
+        self.session = aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(10)
+        )
 
 
     async def get(self, url: str, res_type: str = 'text', **kwargs) -> str | dict | bytes:
-        async with aiohttp.ClientSession() as session:
-            count = 0
-            while count < self.timeout:
-                    if res_type == 'json':
-                        async with session.get(url, headers=self.headers, **kwargs) as response:
-                            if response.status != 200:
-                                count += 1
-                                break
-                            return await response.json()
-                    elif res_type == 'byte':
-                        async with session.get(url, headers=self.headers, **kwargs) as response:
-                            if response.status != 200:
-                                count += 1
-                                break
-                            return await response.read()
-                    else:
-                        async with session.get(url, **kwargs) as response:
-                            if response.status != 200:
-                                count += 1
-                                break
-                            return await response.text()
-            raise InternetException
+        count = 0
+        while count < self.timeout:
+            try:
+                if res_type == 'json':
+                    async with self.session.get(url, **kwargs) as response:
+                        return await response.json()
+                elif res_type == 'byte':
+                    async with self.session.get(url, **kwargs) as response:
+                        return await response.read()
+                else:
+                    async with self.session.get(url, **kwargs) as response:
+                        return await response.text()
+            except Exception:
+                count += 1
+        raise InternetException
 
 
     async def post(self, url: str, data: dict, **kwargs) -> str | dict | bytes:
-        async with aiohttp.ClientSession() as session:
-            count = 0
-            while count < self.timeout:
-                try:
-                    async with session.post(url, json=data, headers=self.headers, **kwargs) as response:
-                        return await response.json()
-                except ClientError:
-                    count += 1
-            raise InternetException
+        count = 0
+        while count < self.timeout:
+            try:
+                async with self.session.post(url, headers=self.headers, json=data, **kwargs) as response:
+                    return await response.json()
+            except ClientError:
+                count += 1
+        raise InternetException
+
+    async def close(self):
+        if not self.session.closed:
+            await self.session.close()
+
+    def __del__(self):
+        try:
+            import asyncio
+            loop = asyncio.get_event_loop()
+            if not self.session.closed and loop.is_running():
+                loop.create_task(self.close())
+        except Exception:
+            pass
 
 
 class VNDBRequest:

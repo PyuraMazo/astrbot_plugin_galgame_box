@@ -83,7 +83,7 @@ class TaskLine:
         rendered_html = self.template_path / ConfigDict.html_list[self.cmd.type.value]
         unique_id = await request.request_random()
         text = await request.request_html(unique_id)
-        details = self.handler.handle_touchgal_details(text)
+        details = await self.handler.handle_touchgal_details(text)
         resp = (await request.request_vn_by_search(details.vndb_id))[0]
         data = await self.builder.build_options(self.cmd, resp, details=details)
         buffer = await File.read_text(rendered_html)
