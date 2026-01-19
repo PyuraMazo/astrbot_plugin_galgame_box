@@ -24,7 +24,7 @@ class File:
 
 
     @staticmethod
-    async def write_buffer(path: str | bytes, data: bytes) -> bool:
+    async def write_buffer(path: str, data: bytes) -> bool:
         if os.path.exists(path):
             return False
 

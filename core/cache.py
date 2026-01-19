@@ -13,11 +13,17 @@ from .api.type import CommandBody
 
 class Cache:
     def __init__(self, config: AstrBotConfig):
+        self.config = config
         data_path = StarTools.get_data_dir('astrbot_plugin_galgame_box')
         self.cache_path = data_path / 'cache'
-        self.http = get_http(config)
+        self.http = None
+
+    async def initialize(self):
+        if self.http is None:
+            self.http = await get_http(self.config)
 
     async def download_get_image(self, url: str, tag: str | int | CommandBody = None, cache: bool = False) -> bytes:
+        await self.initialize()
         self._check_dir()
         source_suffix = url.split('.')[-1]
 
@@ -45,6 +51,7 @@ class Cache:
             return await File.avif2jpg_async(buffer) if source_suffix.lower() == 'avif' else buffer
 
     async def get_cache_async(self, tag: str | int | CommandBody) -> bytes | None:
+        await self.initialize()
         self._check_dir()
         filename = self._format_filename(tag)
         path = str(self.cache_path / filename)
@@ -55,6 +62,7 @@ class Cache:
 
     async def _do_cache_async(self, path: str, data: bytes):
         """filename统一使用【TouchGal ID】或者【命令-参数】"""
+        await self.initialize()
         self._check_dir()
 
         if self._check_cache(path):
@@ -63,6 +71,7 @@ class Cache:
         await File.write_buffer(path, data)
 
     async def clean_cache_async(self):
+        await self.initialize()
 
         if os.path.exists(self.cache_path):
             dirs = await asyncio.to_thread(os.listdir, self.cache_path)

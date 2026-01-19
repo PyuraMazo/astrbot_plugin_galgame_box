@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Callable
 from pathlib import Path
 
 from astrbot.api.event import filter, AstrMessageEvent
@@ -28,16 +28,16 @@ class GalgameBoxPlugin(Star):
         self.session_data: dict[str, int] = {}
         self.config = config
 
-        get_http(self.config)
-        self.builder = Builder(self.config, self.resource_path)
-        self.handler = Handler()
-        self.cache = Cache(self.config)
-
-
+        self.builder = None
+        self.handler = None
+        self.cache = None
 
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
-        pass
+        await get_http(self.config, True)
+        self.builder = Builder(self.config, self.resource_path)
+        self.handler = Handler()
+        self.cache = Cache(self.config)
 
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
@@ -45,17 +45,10 @@ class GalgameBoxPlugin(Star):
         await self.cache.close_http_session()
 
 
-    @filter.command_group("gb", alias={'旮旯', 'gal', 'GAL'})
-    async def gb(self, event: AstrMessageEvent):
-        """galgame_info插件的主指令"""
-        pass
-
-    @gb.command('vn', alias={'作品', '游戏'})
-    async def vn(self, event: AstrMessageEvent, keyword: str):
-        """通过关键词查询作品"""
+    async def _galgame_command(self, event: AstrMessageEvent, cmd_type: CommandType, keyword: str):
         try:
             cmd = CommandBody(
-                type=CommandType.VN,
+                type=cmd_type,
                 value=keyword,
                 msg_id=event.unified_msg_origin
             )
@@ -72,79 +65,41 @@ class GalgameBoxPlugin(Star):
         except Exception as e:
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e))])
             logger.error(str(e))
-             
+            
+
+
+    @filter.command_group("gb", alias={'旮旯', 'gal', 'GAL'})
+    async def gb(self, event: AstrMessageEvent):
+        """galgame_info插件的主指令"""
+        pass
+
+
+    @gb.command('vn', alias={'作品', '游戏'})
+    async def vn(self, event: AstrMessageEvent, keyword: str):
+        """通过关键词查询作品"""
+        async for result in self._galgame_command(event, CommandType.VN, keyword):
+            yield result
+
 
     @gb.command('cha', alias={'角色'})
     async def cha(self, event: AstrMessageEvent, keyword: str):
         """通过关键词查询角色"""
-        try:
-            cmd = CommandBody(
-                type=CommandType.CHARACTER,
-                value=keyword,
-                msg_id=event.unified_msg_origin
-            )
-            cache = await self.cache.get_cache_async(cmd)
-            if cache:
-                yield event.chain_result([Image.fromBytes(cache)])
-                return
+        async for result in self._galgame_command(event, CommandType.CHARACTER, keyword):
+            yield result
 
-            buf, extra = await TaskLine(self.config, self.resource_path, cmd).start()
-
-            url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
-            yield event.image_result(url)
-            await self.cache.download_get_image(url, cmd, True)
-        except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
-            logger.error(str(e))
-             
 
     @gb.command('pro', alias={'厂商'})
     async def pro(self, event: AstrMessageEvent, keyword: str):
         """通过关键词查询厂商"""
-        try:
-            cmd = CommandBody(
-                type=CommandType.PRODUCER,
-                value=keyword,
-                msg_id=event.unified_msg_origin
-            )
-            cache = await self.cache.get_cache_async(cmd)
-            if cache:
-                yield event.chain_result([Image.fromBytes(cache)])
-                return
+        async for result in self._galgame_command(event, CommandType.PRODUCER, keyword):
+            yield result
 
-            buf, extra = await TaskLine(self.config, self.resource_path, cmd).start()
-
-            url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
-            yield event.image_result(url)
-            await self.cache.download_get_image(url, cmd, True)
-        except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
-            logger.error(str(e))
-             
 
     @gb.command('vn_id', alias={'ID', 'id'})
     async def vn_id(self, event: AstrMessageEvent, keyword: str):
         """通过VNDB ID查询特定内容"""
-        try:
-            cmd = CommandBody(
-                type=CommandType.ID,
-                value=keyword,
-                msg_id=event.unified_msg_origin
-            )
-            cache = await self.cache.get_cache_async(cmd)
-            if cache:
-
-                yield event.chain_result([Image.fromBytes(cache)])
-                return
-
-            buf, extra = await TaskLine(self.config, self.resource_path, cmd).start()
-
-            url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
-            yield event.image_result(url)
-            await self.cache.download_get_image(url, cmd, True)
-        except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
-            logger.error(str(e))
+        async for result in self._galgame_command(event, CommandType.ID, keyword):
+            yield result
              
 
     @gb.command('random', alias={'随机'})
@@ -164,7 +119,7 @@ class GalgameBoxPlugin(Star):
         except Exception as e:
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
             logger.error(str(e))
-             
+            
 
     @gb.command('download', alias={'下载'})
     async def download(self, event: AstrMessageEvent, id: str):
@@ -237,4 +192,4 @@ class GalgameBoxPlugin(Star):
         except Exception as e:
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！' + str(e))])
             logger.error(str(e))
-             
+            

@@ -14,10 +14,9 @@ from .utils.file import File
 class Builder:
     def __init__(self, config: AstrBotConfig, resources_path: Path):
         self.config = config
-        self.bg = resources_path / 'image' / 'pixiv139681518.jpg'
-        _err = resources_path / 'image' / 'error.jpg'
-        self.err = File.read_buffer2base64(str(_err))
-        self.font = resources_path / 'font' / 'hpsimplifiedhans-regular.ttf'
+        self.bg_path = resources_path / 'image' / 'pixiv139681518.jpg'
+        self.err_path = resources_path / 'image' / 'error.jpg'
+        self.font_path = resources_path / 'font' / 'hpsimplifiedhans-regular.ttf'
         self._handlers: Dict[CommandType, Callable] = {
             CommandType.VN: self._handle_vn,
             CommandType.CHARACTER: self._handle_character,
@@ -26,6 +25,9 @@ class Builder:
             CommandType.DOWNLOAD: self._handle_download,
             CommandType.SELECT: self._handle_select,
         }
+        self.bg = None
+        self.err = None
+        self.font = None
 
         self.cache = Cache(self.config)
 
@@ -33,14 +35,13 @@ class Builder:
                             command_body: CommandBody,
                             response,
                             **kwargs) -> UnrenderedData | list[tuple[str, str]]:
-        bgi = await File.read_buffer2base64(str(self.bg))
-        font_data = await File.read_buffer2base64(str(self.font))
+        await self._init_resources()
         title = self._build_title(command_body, len(response))
 
         handler_type = self._determine_handler_type(command_body)
 
         handler = self._handlers[handler_type]
-        result = await handler(response, title, bgi, font_data, **kwargs)
+        result = await handler(response, title, **kwargs)
 
         return result
 
@@ -48,33 +49,38 @@ class Builder:
         run_type = command_body.type
         if run_type == CommandType.ID:
             for cmd_type in CommandType:
-                if cmd_type.value[0] == command_body.value[0]:
+                if const.id2command.get(command_body.value[0], '') == cmd_type.value:
                     return cmd_type
         return run_type
 
-    async def _handle_vn(self, response, title, bg_image, font):
+    async def _init_resources(self):
+        self.bg = await File.read_buffer2base64(str(self.bg_path))
+        self.font = await File.read_buffer2base64(str(self.font_path))
+        self.err = await File.read_buffer2base64(str(self.err_path))
+
+    async def _handle_vn(self, response, title):
         resp: list[VNDBVnResponse] = response
         co_items = [self._build_vn(res) for res in resp]
         items = await asyncio.gather(*co_items)
         return UnrenderedData(
             title=title,
             items=items,
-            bg_image=bg_image,
-            font=font
+            bg_image=self.bg,
+            font=self.font
         )
 
-    async def _handle_character(self, response, title, bg_image, font):
+    async def _handle_character(self, response, title):
         resp: list[VNDBCharacterResponse] = response
         co_items = [self._build_character(res) for res in resp]
         items = await asyncio.gather(*co_items)
         return UnrenderedData(
             title=title,
             items=items,
-            bg_image=bg_image,
-            font=font
+            bg_image=self.bg,
+            font=self.font
         )
 
-    async def _handle_producer(self, response, title, bg_image, font, **kwargs):
+    async def _handle_producer(self, response, title, **kwargs):
         resp: list[VNDBProducerResponse] = response
         vns: list[list[VNDBVnResponse]] = kwargs['vns']
         co_pros = [self._build_producer(pro, vn) for pro, vn in zip(resp, vns)]
@@ -82,19 +88,19 @@ class Builder:
         return UnrenderedData(
             title=title,
             items=pros,
-            bg_image=bg_image,
-            font=font
+            bg_image=self.bg,
+            font=self.font
         )
 
-    async def _handle_random(self, response, title, bg_image, font, **kwargs):
+    async def _handle_random(self, response, title, **kwargs):
         resp: list[TouchGalResponse] = response
         details: TouchGalDetails = kwargs['details']
         res = await self._build_details(resp[0], details)
         return UnrenderedData(
             title=title,
             items=[res],
-            bg_image=bg_image,
-            font=font
+            bg_image=self.bg,
+            font=self.font
         )
 
     async def _handle_download(self, response, *extra):

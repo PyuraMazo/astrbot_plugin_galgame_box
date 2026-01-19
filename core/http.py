@@ -10,13 +10,20 @@ from .api.exception import InternetException
 
 class _Http:
     def __init__(self, config: AstrBotConfig):
-        basic_config = config.get('basicSetting', {})
-        self.timeout_times = basic_config.get('requestTimeout', 3)
+        self.basic_config = config.get('basicSetting', {})
+        self.timeout_times = self.basic_config.get('requestTimeout', 3)
         self.headers = {"Content-Type": "application/json"}
 
-        self.session = aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=basic_config.get('requestTime', 30))
-        )
+        self.session: Optional[aiohttp.ClientSession] = None
+
+    async def initialize(self):
+        if self.session is None:
+            self.session = aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=self.basic_config.get('requestTime', 30)),
+                headers=self.headers
+            )
+
+
 
 
     async def get(self, url: str, res_type: str = 'text', **kwargs) -> str | dict | bytes:
@@ -58,8 +65,9 @@ class _Http:
 
 _http: Optional[_Http] = None
 
-def get_http(config: AstrBotConfig) -> _Http:
+async def get_http(config: AstrBotConfig, reload: bool = False) -> _Http:
     global _http
-    if _http is None:
+    if reload or _http is None:
         _http = _Http(config)
+        await _http.initialize()
     return _http

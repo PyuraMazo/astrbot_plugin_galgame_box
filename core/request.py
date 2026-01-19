@@ -14,12 +14,17 @@ class VNDBRequest:
 
 
     def __init__(self, config: AstrBotConfig, command_body: CommandBody):
-        self.producer_vns: int = config['searchSetting']['producerVns'] if config['searchSetting']['producerVns'] != 0 else 0
+        self.config = config
+        self.producer_vns: int = config['searchSetting']['producerVns'] if self.config['searchSetting']['producerVns'] != 0 else 0
         self.type = command_body.type
         self.value = command_body.value
         self.url = self.kana_url + self.type.value
-        self.http = get_http(config)
 
+        self.http = None
+
+    async def initialize(self):
+        if self.http is None:
+            self.http = await get_http(self.config)
 
     def _build_self_payload(self) -> dict[str, object]:
         if self.type == CommandType.ID:
@@ -37,6 +42,8 @@ class VNDBRequest:
 
 
     async def request_simply(self) -> list[VNDBVnResponse] | list[VNDBCharacterResponse]:
+        await self.initialize()
+
         payload = self._build_self_payload()
         res = await self.http.post(self.url, payload)
         if not res: raise ResponseException
@@ -49,6 +56,8 @@ class VNDBRequest:
         else: raise NotImplementedError
 
     async def request_by_producer(self) -> tuple[list[VNDBProducerResponse], list[list[VNDBVnResponse]]]:
+        await self.initialize()
+
         pro_payload = self._build_self_payload()
         unformat_res = await self.http.post(self.url, pro_payload)
         if not unformat_res: raise ResponseException
@@ -76,7 +85,8 @@ class VNDBRequest:
 
     async def request_by_id(self) \
             -> list[VNDBVnResponse] | list[VNDBCharacterResponse] | tuple[list[VNDBProducerResponse], list[list[VNDBVnResponse]]]:
-        # payload = self._build_self_payload()
+        await self.initialize()
+
         if self.value[0] == CommandType.VN.value[0]:
             self.url = self.kana_url + CommandType.VN.value
             self.type = CommandType.VN
@@ -99,9 +109,15 @@ class TouchGalRequest:
     def __init__(self, config: AstrBotConfig):
         self.config = config
         self.nsfw = {'kun-patch-setting-store|state|data|kunNsfwEnable': 'all' if self.config['searchSetting']['enableNSFW'] else 'sfw'}
-        self.http = get_http(config)
+        self.http = None
+
+    async def initialize(self):
+        if self.http is None:
+            self.http = await get_http(self.config)
 
     async def request_vn_by_search(self, keyword: str) -> tuple[list[TouchGalResponse], int]:
+        await self.initialize()
+
         query_string = json.dumps([{"type": "keyword", "name": keyword}])
         payload = {
             "queryString": query_string,
@@ -124,12 +140,15 @@ class TouchGalRequest:
         return [TouchGalResponse.model_validate(i) for i in res['galgames']], res['total']
 
     async def request_random(self) -> str:
+        await self.initialize()
         return (await self.http.get(self.base_url + 'api/home/random', 'json', cookies=self.nsfw))['uniqueId']
 
     async def request_html(self, unique_id: str) -> str:
+        await self.initialize()
         return await self.http.get(self.base_url + unique_id, cookies=self.nsfw)
 
     async def request_resources(self, touchgal_id: int) -> list[ResourceResponse]:
+        await self.initialize()
         resource_url = f'{self.base_url}api/patch/resource?patchId={touchgal_id}'
         res = await self.http.get(resource_url, 'json', cookies=self.nsfw)
         return [ResourceResponse.model_validate(i) for i in res]
