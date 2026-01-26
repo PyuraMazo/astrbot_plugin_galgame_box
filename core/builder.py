@@ -126,7 +126,7 @@ class Builder:
         buffer = await File.image2jpg_async(_buffer)
         blocks = [self._build_find(data, chas, buffer) for data, chas in zip(trace_resp.data, vndb_resp)]
         title = kwargs.get('title', [])
-        title.append(f'检测模型「{"GAL专用" if kwargs['model'] == AnimeTraceModel.Profession else "GAL+动画"}」')
+        title.append(f'检测模型「{"GAL专用" if kwargs["model"] == AnimeTraceModel.Profession else "GAL+动画"}」')
         title.append(f'是否AI图「{"是" if response.ai else "否"}」')
         return UnrenderedData(
             title='<br>'.join(title) if len(title) > 1 else '标题出错',
