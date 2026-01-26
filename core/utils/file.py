@@ -2,7 +2,8 @@ import asyncio
 import base64
 import os
 import aiofiles
-
+from PIL import Image
+from io import BytesIO
 
 from ..api import const
 
@@ -49,19 +50,60 @@ class File:
         return f'data:{mime_type};base64,{base64_data.decode("utf-8")}' if prefix else base64_data.decode('utf-8')
 
     @staticmethod
-    def avif2jpg(avif_data: bytes) -> bytes:
-        from PIL import Image
-        import io
-        img = Image.open(io.BytesIO(avif_data))
+    def image2jpg(image_data: bytes) -> bytes:
 
-        if img.mode != 'RGB':
+        if not image_data:
+            raise ValueError("图片数据为空")
+
+        img = Image.open(BytesIO(image_data))
+        try:
+            if img.mode == 'RGBA':
+                if img.getchannel('A').getextrema() != (255, 255):
+                    background = Image.new('RGB', img.size, (255, 255, 255))
+                    background.paste(img, mask=img.split()[3])
+                    img = background
+                else:
+                    img = img.convert('RGB')
+
+            elif img.mode == 'P' and 'transparency' in img.info:
+                img = img.convert('RGBA')
+                return File._image2jpg_simple(img)
+
+            elif img.mode == 'LA':
+                img = img.convert('RGBA')
+                return File._image2jpg_simple(img)
+
+            elif img.mode not in ['RGB', 'L']:
+                img = img.convert('RGB')
+
+            buffer = BytesIO()
+            img.save(buffer, 'JPEG', quality=85)
+            result = buffer.getvalue()
+
+            return result
+
+        except Exception as e:
+            raise ValueError(f"图片转换失败: {e}")
+        finally:
+            if 'img' in locals():
+                img.close()
+
+    @staticmethod
+    def _image2jpg_simple(img: Image.Image) -> bytes:
+        if img.mode == 'RGBA':
+            if img.getchannel('A').getextrema() != (255, 255):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                background.paste(img, mask=img.split()[3])
+                img = background
+            else:
+                img = img.convert('RGB')
+        elif img.mode not in ['RGB', 'L']:
             img = img.convert('RGB')
 
-        buffer = io.BytesIO()
-        img.save(buffer, 'JPEG')
-
+        buffer = BytesIO()
+        img.save(buffer, 'JPEG', quality=85)
         return buffer.getvalue()
 
     @staticmethod
-    async def avif2jpg_async(avif_data: bytes) -> bytes:
-        return await asyncio.to_thread(File.avif2jpg, avif_data)
+    async def image2jpg_async(image_data: bytes) -> bytes:
+        return await asyncio.to_thread(File.image2jpg, image_data)

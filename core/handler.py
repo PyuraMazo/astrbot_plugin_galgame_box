@@ -21,6 +21,7 @@ class Handler:
         entro = info.find_all('p', recursive=False)
         entro_text = '\n'.join([p.get_text() for p in entro])
 
+
         image = info.find('div', class_='data-kun-img-container').find_all('img')
         images = [img.get('src') for img in image]
 
