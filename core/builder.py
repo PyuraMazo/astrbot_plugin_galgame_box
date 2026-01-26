@@ -1,12 +1,16 @@
 import asyncio
 from typing import Any, Callable, Dict
 from pathlib import Path
+from PIL import Image
+from io import BytesIO
 
 from astrbot.api import AstrBotConfig
 
 from .api import const
-from .api.type import CommandBody, UnrenderedData, RenderedItem, CommandType, RenderedProducer, TouchGalDetails, RenderedInfo
-from .api.model import VNDBVnResponse, VNDBCharacterResponse, VNDBProducerResponse, TouchGalResponse, ResourceResponse
+from .api.type import CommandBody, UnrenderedData, RenderedItem, CommandType, RenderedBlock, TouchGalDetails, \
+    RenderedRandom, ColumnStyle, AnimeTraceModel
+from .api.model import VNDBVnResponse, VNDBCharacterResponse, VNDBProducerResponse, TouchGalResponse, ResourceResponse, \
+    AnimeTraceData, AnimeTraceResponse
 from .cache import Cache
 from .utils.file import File
 
@@ -24,6 +28,7 @@ class Builder:
             CommandType.RANDOM: self._handle_random,
             CommandType.DOWNLOAD: self._handle_download,
             CommandType.SELECT: self._handle_select,
+            CommandType.FIND: self._handle_find
         }
         self.bg = None
         self.err = None
@@ -36,13 +41,14 @@ class Builder:
                             response,
                             **kwargs) -> UnrenderedData | list[tuple[str, str]]:
         await self._init_resources()
-        title = self._build_title(command_body, len(response))
+        count = kwargs['count'] if 'count' in kwargs else len(response)
+        title = self._build_title(command_body, count)
 
         handler_type = self._determine_handler_type(command_body)
 
         handler = self._handlers[handler_type]
-        result = await handler(response, title, **kwargs)
 
+        result = await handler(response, title=title, **kwargs)
         return result
 
     def _determine_handler_type(self, command_body: CommandBody) -> CommandType:
@@ -58,67 +64,85 @@ class Builder:
         if not self.font: self.font = await File.read_buffer2base64(str(self.font_path))
         if not self.err: self.err = await File.read_buffer2base64(str(self.err_path))
 
-    async def _handle_vn(self, response, title):
+    async def _handle_vn(self, response, **kwargs):
         resp: list[VNDBVnResponse] = response
         co_items = [self._build_vn(res) for res in resp]
         items = await asyncio.gather(*co_items)
         return UnrenderedData(
-            title=title,
+            title='<br>'.join(kwargs.get('title', '标题出错')),
             items=items,
             bg_image=self.bg,
             font=self.font
         )
 
-    async def _handle_character(self, response, title):
+    async def _handle_character(self, response, **kwargs):
         resp: list[VNDBCharacterResponse] = response
         co_items = [self._build_character(res) for res in resp]
         items = await asyncio.gather(*co_items)
         return UnrenderedData(
-            title=title,
+            title='<br>'.join(kwargs.get('title', '标题出错')),
             items=items,
             bg_image=self.bg,
             font=self.font
         )
 
-    async def _handle_producer(self, response, title, **kwargs):
+    async def _handle_producer(self, response, **kwargs):
         resp: list[VNDBProducerResponse] = response
         vns: list[list[VNDBVnResponse]] = kwargs['vns']
         co_pros = [self._build_producer(pro, vn) for pro, vn in zip(resp, vns)]
         pros = await asyncio.gather(*co_pros)
         return UnrenderedData(
-            title=title,
+            title='<br>'.join(kwargs.get('title', '标题出错')),
             items=pros,
             bg_image=self.bg,
             font=self.font
         )
 
-    async def _handle_random(self, response, title, **kwargs):
+    async def _handle_random(self, response, **kwargs):
         resp: list[TouchGalResponse] = response
         details: TouchGalDetails = kwargs['details']
         res = await self._build_details(resp[0], details)
         return UnrenderedData(
-            title=title,
+            title='<br>'.join(kwargs.get('title', '标题出错')),
             items=[res],
             bg_image=self.bg,
             font=self.font
         )
 
-    async def _handle_download(self, response, *extra):
+    async def _handle_download(self, response, **kwargs):
         resp: list[ResourceResponse] = response
         return [('', self._build_resources(i)) for i in resp]
 
-    async def _handle_select(self, response, *extra):
+    async def _handle_select(self, response, **kwargs):
         resp: list[TouchGalResponse] = response
         return [await self._build_details(i) for i in resp]
 
+    async def _handle_find(self, response, **kwargs):
+        trace_resp: AnimeTraceResponse = response
+        vndb_resp = kwargs['vndb_resp']
 
-    def _build_title(self, command_body: CommandBody, count: int) -> str:
+        _buffer = await self.cache.download_get_image(kwargs['image'])
+        # 转换为合法jpg
+        buffer = await File.image2jpg_async(_buffer)
+        blocks = [self._build_find(data, chas, buffer) for data, chas in zip(trace_resp.data, vndb_resp)]
+        title = kwargs.get('title', [])
+        title.append(f'检测模型「{"GAL专用" if kwargs['model'] == AnimeTraceModel.Profession else "GAL+动画"}」')
+        title.append(f'是否AI图「{"是" if response.ai else "否"}」')
+        return UnrenderedData(
+            title='<br>'.join(title) if len(title) > 1 else '标题出错',
+            items=await asyncio.gather(*blocks),
+            bg_image=self.bg,
+            font=self.font,
+            main_image=await File.buffer2base64(buffer)
+        )
+
+
+
+    def _build_title(self, command_body: CommandBody, count: int) -> list[str]:
         run_type = f'搜索指令「{command_body.type.value}」'
-        value = f'搜索词「{command_body.value}」' if command_body.value else ''
+        value = f'搜索词「{command_body.value if not command_body.value.startswith("http") else "网络链接"}」' if command_body.value else ''
         count = f'搜索结果「{count}条」' if command_body.type != CommandType.RANDOM else ''
-        format_title = [i for i in [run_type, value, count] if i]
-        return "<br>".join(format_title)
-
+        return [i for i in [run_type, value, count] if i]
 
     async def _build_vn(self, response: VNDBVnResponse) -> RenderedItem:
         id = f'VNDB ID：{response.id}'
@@ -147,7 +171,7 @@ class Builder:
             text="<br>".join(data_list),
             sub_title='')
 
-    async def _build_character(self, response: VNDBCharacterResponse) -> RenderedItem:
+    async def _build_character(self, response: VNDBCharacterResponse, ignore_extra = False) -> RenderedItem:
         id = f'VNDB ID：{response.id}'
         img = await File.buffer2base64(await self.cache.download_get_image(response.image.url)) if response.image else await self.err
         name = response.original or response.name
@@ -161,7 +185,7 @@ class Builder:
 
         option: list[str] = self.config.get('searchSetting', {}).get('characterOptions', [])
         extra: list = []
-        if option:
+        if option and not ignore_extra:
             extra =  [i.split('-')[0] for i in option]
 
         blood = f'血型：{response.blood_type}' if 'a' in extra and response.blood_type else ''
@@ -181,7 +205,7 @@ class Builder:
             text="<br>".join(data_list),
             sub_title=name)
 
-    async def _build_producer(self, response: VNDBProducerResponse, vn_response: list[VNDBVnResponse]) -> RenderedProducer:
+    async def _build_producer(self, response: VNDBProducerResponse, vn_response: list[VNDBVnResponse]) -> RenderedBlock:
         id = f'VNDB ID：{response.id}'
         name = f'名称：{response.original or response.name}'
         aliases = f'别称：{"、".join(response.aliases)}' if response.aliases else ''
@@ -203,13 +227,12 @@ class Builder:
                 text="<br>".join(vn_list),
                 sub_title=''
             ))
-        return RenderedProducer(
+        return RenderedBlock(
             column_info=info,
             vns=vns,
         )
 
-
-    async def _build_details(self, response: TouchGalResponse, details: TouchGalDetails = None) -> RenderedInfo | tuple[Any, str]:
+    async def _build_details(self, response: TouchGalResponse, details: TouchGalDetails = None) -> RenderedRandom | tuple[Any, str]:
         touchgal_id = f'TouchGal ID：{response.id}'
         cover = response.banner
         title = response.name
@@ -226,7 +249,7 @@ class Builder:
 
         if not details:
             text = '\n'.join([i for i in [title, touchgal_id, avg, source_type, platform, language] if i])
-            file_path = await File.buffer2base64(await File.avif2jpg_async(await self.cache.download_get_image(cover)), False) if response.banner else await self.err
+            file_path = await File.buffer2base64(await File.image2jpg_async(await self.cache.download_get_image(cover)), False) if response.banner else await self.err
             return file_path, text
 
         vndb_id = f'VNDB ID：{details.vndb_id}'
@@ -234,7 +257,7 @@ class Builder:
         co_imgs = [File.buffer2base64(await self.cache.download_get_image(img), extend='avif') or await self.err for img in details.images]
         imgs = await asyncio.gather(*co_imgs)
         data_list = [i for i in [vndb_id, touchgal_id, tags, avg, source_type, language, platform] if i]
-        return RenderedInfo(
+        return RenderedRandom(
             text=f"<br>".join(data_list),
             sub_title=title,
             main_image=await File.buffer2base64(await self.cache.download_get_image(cover), extend='avif') if response.banner else await self.err,
@@ -263,3 +286,35 @@ class Builder:
 
         data = [i for i in [title, kind, storage, platform, size, source_type, language, content, code, password ,note] if i]
         return '\n'.join(data)
+
+    async def _build_find(self, response: AnimeTraceData, character_response, buffer: bytes) -> RenderedBlock:
+        image = Image.open(BytesIO(buffer))
+        width, height = image.size
+        left = int(width * response.box[0])
+        top = int(height * response.box[1])
+        right = int(width * response.box[2])
+        bottom = int(height * response.box[3])
+        area = await asyncio.to_thread(image.crop, (left, top, right, bottom))
+
+        output = BytesIO()
+        area.save(output, format='JPEG')
+
+        cha_list = []
+        for cha, err_if in zip(character_response, response.character):
+            if cha:
+                cha_list.append(await self._build_character(cha[0], True))
+            else:
+                cha_list.append(RenderedItem(
+                    sub_title=err_if.character,
+                    image=self.err,
+                    text=f'出场作品：{err_if.work}<br>VNDB暂无记录，角色可能并非来自Gal'
+                ))
+
+        column = ColumnStyle(
+            image=await File.buffer2base64(output.getvalue()),
+            title=f'检测区域如左图<br>可信度：{"不" if response.not_confident else ""}可信'
+        )
+        return RenderedBlock(
+            column_info=column,
+            vns=cha_list,
+        )

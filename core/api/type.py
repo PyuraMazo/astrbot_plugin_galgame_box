@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 from enum import Enum
 
@@ -8,16 +10,21 @@ class RenderedItem(BaseModel):
     text: str
 
 
-class RenderedProducer(BaseModel):
-    column_info: str
+class ColumnStyle(BaseModel):
+    image: str
+    title: str
+
+class RenderedBlock(BaseModel):
+    column_info: str | ColumnStyle
     vns: list[RenderedItem]
 
-class RenderedInfo(BaseModel):
+class RenderedRandom(BaseModel):
     sub_title: str
     main_image: str
     images: list[str]
     description: str
     text: str
+
 
 class CommandType(Enum):
     VN = 'vn'
@@ -26,7 +33,8 @@ class CommandType(Enum):
     ID = 'id'
     RANDOM = 'random'
     DOWNLOAD = 'download'
-    SELECT = 'select'
+    SELECT = 'select',
+    FIND = 'find'
 
 class CommandBody(BaseModel):
     type: CommandType
@@ -35,11 +43,17 @@ class CommandBody(BaseModel):
 
 class UnrenderedData(BaseModel):
     title: str
-    items: list[RenderedItem | RenderedProducer | RenderedInfo]
+    items: list[RenderedItem | RenderedBlock | RenderedRandom]
     bg_image: str
     font: str
+    main_image: Optional[str] = None
 
 class TouchGalDetails(BaseModel):
     vndb_id: str
     images: list[str]
     description: str
+
+
+class AnimeTraceModel(Enum):
+    Profession = 'full_game_model_kira'
+    Common = 'animetrace_high_beta'

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @font-face {
+            font-family: 'default';
+            src: url('{{ font }}');
+        }
+
+        * {
+            padding: 0;
+            margin: 0;
+            font-family: 'default';
+        }
+
+        body {
+            background-image: url("{{ bg_image }}");
+            background-repeat: no-repeat;
+            background-size: cover;
+            padding: 2em;
+        }
+
+        .content {
+            width: 80vw;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 2em;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .main_title {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            color: rgb(147, 187, 194);
+        }
+
+        .main_title img {
+            max-width: 50vw;
+            max-height: 35vw;
+            object-fit: contain;
+            scale: 80%;
+            flex: 1;
+        }
+
+        .main_title .title {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 1;                                                 
+        }
+
+        .info {
+            width: 100%;
+            text-align: center;
+            color: rgb(147, 187, 194);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            font-size: 30px;
+            flex: 1;
+        }
+
+        .gap {
+            background-color: #ffffff;
+            height: 0.2em;
+            width: 80%;
+            margin: 0 auto;
+        }
+
+        .block {
+            margin: 1em auto;
+            display: flex;
+            flex-direction: column;
+            width: 25vw;
+            color: #ffffff;
+            font-size: 20px;
+        }
+
+        .block img {
+            height: auto;
+            width: 100%;
+            margin: 0 auto;
+            scale: 90%;
+        }
+
+        .subtitle {
+            font-size: 25px;
+            text-align: center;
+        }
+
+        .column {
+            width: 75vw;
+            margin: 1em auto;
+            border-radius: 1.5em;
+            border-color: aqua;
+            border-width: 0.3em;
+            background-color: rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .column_info {
+            display: flex;
+            justify-content: space-evenly;
+            width: 100%;
+        }
+
+        .column_image {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            scale: 95%;
+        }
+
+        .column_info img {
+            width: 10vw;
+            height: auto;
+            margin: 0 auto;
+        }
+
+        .content {
+            width: 80vw;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 2em;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="content">
+        <div class="main_title">
+            <img src="{{ main_image }}" alt="图片加载失败">
+            <div class="title">
+                <h1>{{ title }}</h1>
+            </div>
+        </div>
+        <div class="gap"></div>
+        {% for item in items %}
+        <div class="column">
+            <div class="column_info">
+                <div class="column_image"><img src="{{ item.column_info.image }}" alt="图片加载失败"></div>
+                <div class="info">{{ item.column_info.title }}</div>
+            </div>
+            {% for cha in item.vns %}
+            <div class="block">
+                <img src="{{ cha.image }}" alt="图片加载失败">
+                <div class="subtitle">{{ cha.sub_title }}</div>
+                <div class="text">
+                    {{ cha.text }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</body>
+
+</html>

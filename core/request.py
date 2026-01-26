@@ -4,9 +4,9 @@ from astrbot.api import AstrBotConfig
 
 from .http import get_http
 from .api import const
-from .api.type import CommandType, CommandBody
-from .api.model import VNDBVnResponse, VNDBCharacterResponse, VNDBProducerResponse, TouchGalResponse, ResourceResponse
-from .api.exception import *
+from .api.type import CommandType, CommandBody, AnimeTraceModel
+from .api.model import VNDBVnResponse, VNDBCharacterResponse, VNDBProducerResponse, TouchGalResponse, ResourceResponse, AnimeTraceResponse
+from .api.exception import ResponseException, NoResultException, InternetException, CodeException
 
 
 class VNDBRequest:
@@ -15,7 +15,9 @@ class VNDBRequest:
 
     def __init__(self, config: AstrBotConfig, command_body: CommandBody):
         self.config = config
-        self.producer_vns: int = config['searchSetting']['producerVns'] if self.config['searchSetting']['producerVns'] != 0 else 0
+        self.producer_vns: int = config.get('searchSetting', {}).get('producerVns', 10) \
+            if self.config.get('searchSetting', {}).get('producerVns', 10) != 0 \
+            else 0
         self.type = command_body.type
         self.value = command_body.value
         self.url = self.kana_url + self.type.value
@@ -23,7 +25,7 @@ class VNDBRequest:
         self.http = None
 
     async def initialize(self):
-        if self.http is None:
+        if not self.http:
             self.http = await get_http(self.config)
 
     def _build_self_payload(self) -> dict[str, object]:
@@ -46,8 +48,10 @@ class VNDBRequest:
 
         payload = self._build_self_payload()
         res = await self.http.post(self.url, payload)
-        if not res: raise ResponseException
-        if not res["results"]: raise NoGameException
+        if not res:
+            raise ResponseException(self.url)
+        if not res["results"]:
+            raise NoResultException(f'{self.type}-{self.value}')
 
         if self.type == CommandType.VN:
             return [VNDBVnResponse.model_validate(i) for i in res["results"]]
@@ -60,14 +64,16 @@ class VNDBRequest:
 
         pro_payload = self._build_self_payload()
         unformat_res = await self.http.post(self.url, pro_payload)
-        if not unformat_res: raise ResponseException
+        if not unformat_res:
+            raise ResponseException(self.url)
 
         pro_res = [VNDBProducerResponse.model_validate(i) for i in unformat_res["results"]]
-        if not pro_res: raise NoGameException
+        if not pro_res:
+            raise NoResultException(f'{self.type}-{self.value}')
 
 
         vn_url = self.kana_url + CommandType.VN.value
-        vn_fields = const.vndb_command_fields['vn_of_producer']
+        vn_fields = const.vndb_command_fields['vn_short']
         vns: list[list[VNDBVnResponse]] = []
         for item in pro_res:
             vn_payload = {
@@ -99,6 +105,19 @@ class VNDBRequest:
             self.url = self.kana_url + CommandType.PRODUCER.value
             return await self.request_by_producer()
         else: raise NotImplementedError
+
+    async def request_by_find(self, character: str, vn: str) -> list[VNDBCharacterResponse]:
+        await self.initialize()
+
+        self.url = self.kana_url + CommandType.CHARACTER.value
+        fields = const.vndb_command_fields['character_short']
+        payload = {
+            "filters": ['and', ["search", "=", character], ['vn', '=', ['search', '=', vn]]],
+            "fields": fields,
+            "results": 1
+        }
+        res = await self.http.post(self.url, payload)
+        return [VNDBCharacterResponse.model_validate(i) for i in res["results"]]
 
 
 class TouchGalRequest:
@@ -137,6 +156,7 @@ class TouchGalRequest:
             "selectedMonths": ["all"]
         }
         res = await self.http.post(self.search_api, payload, cookies=self.nsfw)
+
         return [TouchGalResponse.model_validate(i) for i in res['galgames']], res['total']
 
     async def request_random(self) -> str:
@@ -152,3 +172,34 @@ class TouchGalRequest:
         resource_url = f'{self.base_url}api/patch/resource?patchId={touchgal_id}'
         res = await self.http.get(resource_url, 'json', cookies=self.nsfw)
         return [ResourceResponse.model_validate(i) for i in res]
+
+
+class AnimeTreceRequest:
+    api_url = 'https://api.animetrace.com/v1/search'
+
+    def __init__(self, config: AstrBotConfig):
+        self.config = config
+
+        self.http = None
+
+    async def initialize(self):
+        if self.http is None:
+            self.http = await get_http(self.config)
+
+    async def request(self, url: str, model: AnimeTraceModel) -> AnimeTraceResponse:
+        await self.initialize()
+
+        resp = await self.http.post(self.api_url, self._build_payload(model, url))
+        # 特定检测状态码
+        code = resp.get('code', 400)
+        if code != 200 and code != 0:
+            raise CodeException(code)
+
+        return AnimeTraceResponse.model_validate(resp)
+
+    def _build_payload(self, model: AnimeTraceModel, url: str):
+        return {
+            'model': model.value,
+            'ai_detect': 1,
+            'url': url
+        }

@@ -2,7 +2,6 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-
 class Image(BaseModel):
     url: str
 
@@ -24,6 +23,15 @@ class Vn(BaseModel):
 
 class Tag(BaseModel):
     tag: dict
+
+class DetectedInfo(BaseModel):
+    work: str
+    character: str
+
+class AnimeTraceData(BaseModel):
+    box: tuple[float, float, float, float]
+    not_confident: bool
+    character: list[DetectedInfo]
 
 
 class VNDBVnResponse(BaseModel):
@@ -95,5 +103,8 @@ class ResourceResponse(BaseModel):
     platform: list[str]
 
 
-
+class AnimeTraceResponse(BaseModel):
+    code: int
+    data: list[AnimeTraceData]
+    ai: bool
 

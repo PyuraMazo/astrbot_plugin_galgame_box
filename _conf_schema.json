@@ -66,7 +66,7 @@
         "invisible": true
       },
       "producerVns": {
-        "description": "显示制作者的作品数量",
+        "description": "显示厂商的作品数量",
         "hint": "当使用VNDB搜索制作者信息的时候，选择展示其至多多少个作品（0表示展示所有作品），建议默认值，过多可能导致等待时间过长或者渲染图片失败，作品默认按贝叶斯评分降序排序。",
         "type": "int",
         "slider": {
@@ -75,6 +75,17 @@
           "step": 5
         },
         "default": 10
+      },
+      "findResults": {
+        "description": "显示可信结果数量",
+        "hint": "识别角色出处时，展示最接近的多少个结果。",
+        "type": "int",
+        "slider": {
+          "min": 1,
+          "max": 10,
+          "step": 1
+        },
+        "default": 3
       }
     }
   }

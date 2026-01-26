@@ -36,19 +36,20 @@ class Cache:
             else:
                 buffer = await self.http.get(url, 'byte')
 
-                if source_suffix.lower() == 'avif':
-                    buf = await File.avif2jpg_async(buffer)
-                    if cache:
-                        await self._do_cache_async(path, buf)
-                    return buf
-                else:
+                if source_suffix.lower() == 'jpg' or source_suffix.lower() != 'jpeg':
                     if cache:
                         await self._do_cache_async(path, buffer)
                     return buffer
+                else:
+                    buf = await File.image2jpg_async(buffer)
+                    if cache:
+                        await self._do_cache_async(path, buf)
+                    return buf
+
 
         else:
             buffer = await self.http.get(url, 'byte')
-            return await File.avif2jpg_async(buffer) if source_suffix.lower() == 'avif' else buffer
+            return buffer if source_suffix.lower() != 'jpg' or source_suffix.lower() != 'jpeg' else await File.image2jpg_async(buffer)
 
     async def get_cache_async(self, tag: str | int | CommandBody) -> bytes | None:
         await self.initialize()

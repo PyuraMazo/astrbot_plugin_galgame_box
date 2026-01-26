@@ -11,7 +11,8 @@ vndb_command_fields = {
     'vn': 'id,average,rating,released,length_minutes,platforms,aliases,developers{id,original,name},titles{lang,title,official},image{url},alttitle,title',
     'character': 'id,name,aliases,sex,birthday,waist,hips,bust,blood_type,weight,height,cup,original,image{url},vns{id,alttitle,title}',
     'producer': 'id,name,original,aliases,lang,type',
-    'vn_of_producer': 'id,alttitle,title,released,rating,image{url}',
+    'vn_short': 'id,alttitle,title,released,rating,image{url}',
+    'character_short': 'id,name,original,aliases,image{url},vns{id,alttitle,title}',
 }
 
 id2command = {
@@ -38,7 +39,8 @@ html_list = {
     'vn': 'template1.html',
     'character': 'template1.html',
     'producer': 'template2.html',
-    'random': 'template3.html'
+    'random': 'template3.html',
+    'find': 'template4.html'
 }
 
 gender = {
@@ -46,4 +48,12 @@ gender = {
     'f': '女性',
     'b': '双性',
     'n': '无性'
+}
+
+trace_code = {
+    17701: '图片大小过大',
+    17702: '服务器繁忙，请重试',
+    17704: 'API维护中',
+    17722: '图片下载失败',
+    17728: '已达到本次使用上限'
 }

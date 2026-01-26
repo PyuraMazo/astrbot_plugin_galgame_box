@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any
 from pathlib import Path
 
 from astrbot.api.event import filter, AstrMessageEvent
@@ -12,9 +12,11 @@ from .core.builder import Builder
 from .core.http import get_http
 from .core.request import TouchGalRequest
 from .core.handler import Handler
-from .core.api.exception import *
+from .core.api.exception import Tips, SessionTimeoutException, InvalidArgsException, NoResultException
 from .core.cache import Cache
 from .core.manager.task_manager import TaskLine
+
+
 
 
 class GalgameBoxPlugin(Star):
@@ -25,7 +27,7 @@ class GalgameBoxPlugin(Star):
             'type': 'jpeg',
             'quality': 100
         }
-        self.session_data: dict[str, int] = {}
+        self.session_data: dict = {}
         self.config = config
 
         self.builder = None
@@ -39,10 +41,78 @@ class GalgameBoxPlugin(Star):
         self.handler = Handler()
         self.cache = Cache(self.config)
 
+
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
         await self.cache.clean_cache_async()
         await self.cache.close_http_session()
+
+
+    @filter.command_group("旮旯", alias={'gal', 'GAL'})
+    async def gb(self, event: AstrMessageEvent):
+        """Galgame百宝盒插件的主指令"""
+        pass
+
+
+    @gb.command('作品', alias={'游戏'})
+    async def vn(self, event: AstrMessageEvent, keyword: str):
+        """通过关键词查询作品"""
+        async for result in self._galgame_command(event, CommandType.VN, keyword):
+            yield result
+
+
+    @gb.command('角色', alias={'人物'})
+    async def cha(self, event: AstrMessageEvent, keyword: str):
+        """通过关键词查询角色"""
+        async for result in self._galgame_command(event, CommandType.CHARACTER, keyword):
+            yield result
+
+
+    @gb.command('厂商', alias={'作者'})
+    async def pro(self, event: AstrMessageEvent, keyword: str):
+        """通过关键词查询厂商"""
+        async for result in self._galgame_command(event, CommandType.PRODUCER, keyword):
+            yield result
+
+
+    @gb.command('id', alias={'ID'})
+    async def vn_id(self, event: AstrMessageEvent, keyword: str):
+        """通过VNDB ID查询特定内容"""
+        async for result in self._galgame_command(event, CommandType.ID, keyword):
+            yield result
+             
+
+    @gb.command('随机')
+    async def random(self, event: AstrMessageEvent):
+        """通过TouchGal随机获取一部作品"""
+        async for result in self._random_command(event):
+            yield result
+            
+
+    @gb.command('下载', alias={'资源'})
+    async def download(self, event: AstrMessageEvent, id: str):
+        """优先通过VNDB ID、TouchGal ID，最后通过关键词搜索获取指定资源的下载链接"""
+        async for result in self._download_command(event, id):
+            yield result
+
+
+    @gb.command('出处', alias={'识别'})
+    async def find(self, event: AstrMessageEvent, url: str = ''):
+        """提供图片或者图片链接识别角色出处，可以先不填参数"""
+        async for result in self._find_command(event, url):
+            yield result
+
+
+
+    def _handle_command_exception(self, event: AstrMessageEvent, e: Exception):
+        # 开发用
+        # raise e
+        logger.error(str(e), exc_info=True)
+        if isinstance(e, Tips):
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain(str(e).split('：')[0])])
+        else:
+            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生非预期异常！')])
+
 
 
     async def _galgame_command(self, event: AstrMessageEvent, cmd_type: CommandType, keyword: str):
@@ -56,55 +126,15 @@ class GalgameBoxPlugin(Star):
             if cache:
                 yield event.chain_result([Image.fromBytes(cache)])
                 return
-
             buf, extra = await TaskLine(self.config, self.resource_path, cmd).start()
-
             url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
             yield event.image_result(url)
             await self.cache.download_get_image(url, cmd, True)
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！')])
-            logger.error(str(e))
-            
+            yield next(self._handle_command_exception(event, e))
 
 
-    @filter.command_group("gb", alias={'旮旯', 'gal', 'GAL'})
-    async def gb(self, event: AstrMessageEvent):
-        """galgame_info插件的主指令"""
-        pass
-
-
-    @gb.command('vn', alias={'作品', '游戏'})
-    async def vn(self, event: AstrMessageEvent, keyword: str):
-        """通过关键词查询作品"""
-        async for result in self._galgame_command(event, CommandType.VN, keyword):
-            yield result
-
-
-    @gb.command('cha', alias={'角色'})
-    async def cha(self, event: AstrMessageEvent, keyword: str):
-        """通过关键词查询角色"""
-        async for result in self._galgame_command(event, CommandType.CHARACTER, keyword):
-            yield result
-
-
-    @gb.command('pro', alias={'厂商'})
-    async def pro(self, event: AstrMessageEvent, keyword: str):
-        """通过关键词查询厂商"""
-        async for result in self._galgame_command(event, CommandType.PRODUCER, keyword):
-            yield result
-
-
-    @gb.command('vn_id', alias={'ID', 'id'})
-    async def vn_id(self, event: AstrMessageEvent, keyword: str):
-        """通过VNDB ID查询特定内容"""
-        async for result in self._galgame_command(event, CommandType.ID, keyword):
-            yield result
-             
-
-    @gb.command('random', alias={'随机'})
-    async def random(self, event: AstrMessageEvent):
-        """通过TouchGal随机获取一部作品"""
+    async def _random_command(self, event: AstrMessageEvent):
         try:
             cmd = CommandBody(
                 type=CommandType.RANDOM,
@@ -117,13 +147,10 @@ class GalgameBoxPlugin(Star):
             url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
             yield event.image_result(url)
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！')])
-            logger.error(str(e))
-            
+            yield next(self._handle_command_exception(event, e))
 
-    @gb.command('download', alias={'下载'})
-    async def download(self, event: AstrMessageEvent, id: str):
-        """优先通过VNDB ID、TouchGal ID，最后通过关键词搜索获取指定资源的下载链接"""
+
+    async def _download_command(self, event: AstrMessageEvent, id: str):
         try:
             cmd = CommandBody(
                 type=CommandType.DOWNLOAD,
@@ -139,7 +166,8 @@ class GalgameBoxPlugin(Star):
             else:
                 res, total = await request.request_vn_by_search(keyword)
                 if len(keyword) > 1 and keyword[0] == 'v' and keyword[1:].isdigit() and total == 1:
-                    if not res: raise InternetException
+                    if not res:
+                        raise NoResultException(f'{cmd.type}-{cmd.value}')
                     touchgal_id = res[0].id
                 elif total > 0:
                     cmd.type = CommandType.SELECT
@@ -158,8 +186,9 @@ class GalgameBoxPlugin(Star):
                     yield event.plain_result(tips)
                     yield event.chain_result([Nodes(content)])
 
-                    @session_waiter(timeout=30, record_history_chains=False)
+                    @session_waiter(timeout=30)
                     async def empty_mention_waiter(controller: SessionController, sess_event: AstrMessageEvent):
+
                         message = sess_event.message_str
                         accept = int(message) if message.isdigit() else None
 
@@ -179,10 +208,10 @@ class GalgameBoxPlugin(Star):
                         touchgal_id = res[index].id
                         cmd.type = CommandType.DOWNLOAD
                     except TimeoutError:
-                        raise SessionTimeoutException
+                        raise SessionTimeoutException(f'{cmd.type}-{cmd.value}')
 
                 else:
-                    raise InvalidArgsException
+                    raise InvalidArgsException(f'{cmd.type}-{cmd.value}')
 
             resp = await request.request_resources(touchgal_id)
             msg_arr: list[tuple[str, str]] = await self.builder.build_options(cmd, resp)
@@ -190,6 +219,53 @@ class GalgameBoxPlugin(Star):
 
             yield event.chain_result([Nodes(nodes)])
         except Exception as e:
-            yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生错误！')])
-            logger.error(str(e))
-            
+            yield next(self._handle_command_exception(event, e))
+
+    async def _find_command(self, event: AstrMessageEvent, url: str):
+        try:
+            cmd = CommandBody(
+                type=CommandType.FIND,
+                value='',
+                msg_id=event.unified_msg_origin
+            )
+            if url.startswith('http'):
+                cmd.value = url
+            else:
+                for msg in event.message_obj.message:
+                    if isinstance(msg, Image):
+                        cmd.value = msg.url
+                        break
+            if not cmd.value:
+                tips = '未检测到指令参数\n改为从下一条消息中获取\n在30s内发送一张图片'
+                yield event.plain_result(tips)
+                @session_waiter(timeout=30)
+                async def empty_mention_waiter(controller: SessionController, sess_event: AstrMessageEvent):
+
+                    message = sess_event.message_obj.message
+                    _url = ''
+                    for _msg in message:
+                        if isinstance(_msg, Image):
+                            _url = _msg.url
+                            controller.stop()
+                            break
+                    if not _url:
+                        invalid = '无效的消息，请重新输入'
+                        result = event.make_result()
+                        result.chain = [Plain(invalid)]
+                        await event.send(result)
+                    else:
+                        self.session_data[sess_event.get_session_id()] = _url
+                try:
+                    await empty_mention_waiter(event)
+                    cmd.value = self.session_data.pop(event.get_session_id())
+                except TimeoutError:
+                    raise SessionTimeoutException(f'{cmd.type}-{cmd.value}')
+
+            buf, extra = await TaskLine(self.config, self.resource_path, cmd).start()
+            url = await self.html_render(buf, extra.model_dump(), options=self.render_options)
+            yield event.image_result(url)
+
+        except Exception as e:
+            yield next(self._handle_command_exception(event, e))
+
+
