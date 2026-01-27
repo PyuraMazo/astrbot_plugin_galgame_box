@@ -10,13 +10,13 @@ from astrbot.api.util import SessionController, session_waiter
 from ..api.const import html_list, id2command
 from ..api.exception import InvalidArgsException, CodeException, NoResultException, SessionTimeoutException
 from ..api.model import AnimeTraceResponse
-from ..api.type import CommandBody, CommandType, UnrenderedData, AnimeTraceModel
-from ..builder import _Builder, get_builder
+from ..api.type import CommandBody, CommandType, AnimeTraceModel
+from ..builder import Builder, get_builder
 from ..cache import Cache, get_cache
-from ..html_handler import _HTMLHandler, get_handler
-from ..internet.vndb_request import get_vndb_request, _VNDBRequest
-from ..internet.touchgal_request import get_touchgal_request, _TouchGalRequest
-from ..internet.animetrace_request import get_animetrace_request, _AnimeTreceRequest
+from ..html_handler import HTMLHandler, get_handler
+from ..internet.vndb_request import get_vndb_request, VNDBRequest
+from ..internet.touchgal_request import get_touchgal_request, TouchGalRequest
+from ..internet.animetrace_request import get_animetrace_request, AnimeTreceRequest
 from ..utils.file import File
 
 class TaskLine:
@@ -25,11 +25,11 @@ class TaskLine:
         self.template_dir = self.resources_dir / 'template'
         self.session_data_storage = {}
 
-        self.vndb_request: Optional[_VNDBRequest] = None
-        self.touchgal_request: Optional[_TouchGalRequest] = None
-        self.animetrace_request: Optional[_AnimeTreceRequest] = None
-        self.builder: Optional[_Builder] = None
-        self.html_handler: Optional[_HTMLHandler] = None
+        self.vndb_request: Optional[VNDBRequest] = None
+        self.touchgal_request: Optional[TouchGalRequest] = None
+        self.animetrace_request: Optional[AnimeTreceRequest] = None
+        self.builder: Optional[Builder] = None
+        self.html_handler: Optional[HTMLHandler] = None
         self.cache: Optional[Cache] = None
 
         self.task_map: Optional[dict[CommandType, Callable]] = None

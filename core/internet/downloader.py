@@ -3,7 +3,7 @@ from pathlib import Path
 
 from astrbot.core import AstrBotConfig
 
-from .http import _Http, get_http
+from .http import Http, get_http
 from ..api.exception import InternetException
 from ..utils.file import File
 
@@ -12,14 +12,14 @@ class Downloader:
     def __init__(self):
         self.err_image_path = Path(__file__).parent / '..' / '..' / 'resources' / 'image' / 'error.jpg'
 
-        self.http: Optional[_Http] = None
+        self.http: Optional[Http] = None
         self.err_image: Optional[bytes] = None
 
     async def initialize(self, config: AstrBotConfig):
         self.http = get_http()
 
         await self.http.initialize(config)
-        await File.read_buffer(str(self.err_image_path))
+        self.err_image = await File.read_buffer(str(self.err_image_path))
 
     async def terminate(self):
         await self.http.terminate()

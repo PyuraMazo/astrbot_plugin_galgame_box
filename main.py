@@ -10,6 +10,7 @@ from .core.api.exception import Tips, InvalidArgsException
 from .core.api.type import CommandType, CommandBody
 from .core.cache import Cache, get_cache
 from .core.manager.task_line import TaskLine, get_task_line
+from .core.internet.downloader import Downloader, get_downloader
 from .core.utils.file import File
 
 
@@ -25,19 +26,23 @@ class GalgameBoxPlugin(Star):
         self.config = config
         self.task_line: Optional[TaskLine] = None
         self.cache: Optional[Cache] = None
+        self.downloader: Optional[Downloader] = None
 
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
         self.task_line = get_task_line()
         self.cache = get_cache()
+        self.downloader = get_downloader()
 
         await self.task_line.initialize(self.config)
         await self.cache.initialize(self.config)
+        await self.downloader.initialize(self.config)
 
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
         await self.task_line.terminate()
         await self.cache.terminate()
+        await self.downloader.terminate()
 
 
     @filter.command_group("旮旯", alias={'gal', 'GAL'})
@@ -91,13 +96,14 @@ class GalgameBoxPlugin(Star):
             cmd = self._check_keyword_validity(event, cmd_type, keyword)
 
             res = await anext(self.task_line.run(cmd))
+
             if isinstance(res, Image):
                 yield event.chain_result([res])
                 return
 
-            path = await self.html_render(res[0], res[1].model_dump(), False, self.render_options)
-            await File.copy_delete(path, self.cache.get_cache_path(cmd))
-            yield event.image_result(path)
+            url = await self.html_render(res[0], res[1].model_dump(), options=self.render_options)
+            await self.cache.store_image(cmd, await self.downloader.do(url))
+            yield event.image_result(url)
 
         except Exception as e:
             yield next(self._handle_command_exception(event, e))
@@ -108,8 +114,9 @@ class GalgameBoxPlugin(Star):
 
             async for res in self.task_line.run(cmd):
                 if isinstance(res, tuple) or isinstance(res, list):
-                    path = await self.html_render(res[0], res[1].model_dump(), False, self.render_options)
-                    yield event.image_result(path)
+                    url = await self.html_render(res[0], res[1].model_dump(), options=self.render_options)
+                    await self.cache.store_image(cmd, await self.downloader.do(url))
+                    yield event.image_result(url)
                 else:
                     yield res
 

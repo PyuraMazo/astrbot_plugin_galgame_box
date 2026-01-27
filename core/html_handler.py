@@ -6,7 +6,7 @@ from .api.const import id2command
 from .api.type import TouchGalDetails
 
 
-class _HTMLHandler:
+class HTMLHandler:
     def __init__(self):
         pass
 
@@ -40,9 +40,9 @@ class _HTMLHandler:
 
 
 
-_handler: Optional[_HTMLHandler] = None
+_handler: Optional[HTMLHandler] = None
 def get_handler():
     global _handler
     if _handler is None:
-        _handler = _HTMLHandler()
+        _handler = HTMLHandler()
     return _handler

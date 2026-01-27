@@ -8,7 +8,7 @@ from astrbot.api import AstrBotConfig
 from ..api.exception import InternetException
 
 
-class _Http:
+class Http:
     def __init__(self):
         self.headers = {"Content-Type": "application/json"}
 
@@ -60,10 +60,10 @@ class _Http:
         raise InternetException(url)
 
 
-_http: Optional[_Http] = None
+_http: Optional[Http] = None
 
-def get_http() -> _Http:
+def get_http() -> Http:
     global _http
     if _http is None:
-        _http = _Http()
+        _http = Http()
     return _http

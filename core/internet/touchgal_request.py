@@ -3,18 +3,18 @@ from typing import Optional
 
 from astrbot.core import AstrBotConfig
 
-from .http import _Http, get_http
+from .http import Http, get_http
 from ..api.model import TouchGalResponse, ResourceResponse
 
 
-class _TouchGalRequest:
+class TouchGalRequest:
 
     def __init__(self):
         self.base_url = 'https://www.touchgal.top/'
         self.search_api = self.base_url + 'api/search/'
 
 
-        self.http: Optional[_Http] = None
+        self.http: Optional[Http] = None
         self.nsfw: Optional[dict] = None
 
     async def initialize(self, config: AstrBotConfig):
@@ -61,9 +61,9 @@ class _TouchGalRequest:
         return [ResourceResponse.model_validate(i) for i in res]
 
 
-_touchgal_request: Optional[_TouchGalRequest] = None
+_touchgal_request: Optional[TouchGalRequest] = None
 def get_touchgal_request():
     global _touchgal_request
     if _touchgal_request is None:
-        _touchgal_request = _TouchGalRequest()
+        _touchgal_request = TouchGalRequest()
     return _touchgal_request

@@ -16,7 +16,7 @@ from .api.const import id2command, lang, develop_type, gender
 from .utils.file import File
 from .utils.image import Image
 
-class _Builder:
+class Builder:
     def __init__(self):
         self.resources_dir = Path(__file__).parent/ '..' / 'resources'
         self.bg_path = self.resources_dir / 'image' / 'pixiv139681518.jpg'
@@ -147,7 +147,7 @@ class _Builder:
             items=await asyncio.gather(*blocks),
             bg_image=self.bg,
             font=self.font,
-            main_image=await File.buffer2base64(buffer)
+            main_image=await File.buffer2base64(buffer) if buffer else self.err
         )
 
 
@@ -323,9 +323,9 @@ class _Builder:
                     image=self.err,
                     text=f'出场作品：{err_if.work}<br>VNDB暂无记录，角色可能并非来自Gal'
                 ))
-
+        buf = output.getvalue()
         column = ColumnStyle(
-            image=await File.buffer2base64(output.getvalue()),
+            image=await File.buffer2base64(buf) if buf else self.err,
             title=f'检测区域如左图<br>可信度：{"不" if response.not_confident else ""}可信'
         )
         return RenderedBlock(
@@ -333,9 +333,9 @@ class _Builder:
             vns=cha_list,
         )
 
-_builder: Optional[_Builder] = None
+_builder: Optional[Builder] = None
 def get_builder():
     global _builder
     if _builder is None:
-        _builder = _Builder()
+        _builder = Builder()
     return _builder

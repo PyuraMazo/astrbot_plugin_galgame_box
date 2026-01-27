@@ -27,9 +27,7 @@ class Cache:
     async def store_image(self, filename: str | int | CommandBody, buffer: bytes, source_suffix = 'jpg'):
         path = str(self.get_cache_path(filename))
 
-        if self._check_cache(path):
-            return
-        else:
+        if not self._check_cache(path):
             if source_suffix.lower() != 'jpg' and source_suffix.lower() != 'jpeg':
                 buffer = await Image.image2jpg_async(buffer)
             await File.write_buffer(path, buffer)
