@@ -17,10 +17,11 @@ class HTMLHandler:
         pass
 
     async def handle_touchgal_details(self, text: str) -> TouchGalDetails | None:
-        soup = await asyncio.to_thread(lambda: BeautifulSoup(text, 'lxml'))
+        soup = await asyncio.to_thread(lambda: BeautifulSoup(text, 'html.parser'))
 
-        last = soup.find('div', class_='grid gap-4 mt-6 sm:grid-cols-2').find_all('div')[-1].find('a').get_text()
-        vndb_id = last if last[0] in id2command.keys() else ''
+        last = soup.find('div', class_='grid gap-4 mt-6 sm:grid-cols-2').find_all('div')[-1].find('a')
+        vndb_id = last.get_text() if last in id2command.keys() else ''
+        title = soup.find('h1', class_='text-2xl font-bold leading-tight sm:text-3xl').get_text() if not vndb_id else ''
 
 
         info = soup.find('div', class_='kun-prose max-w-none')
@@ -34,7 +35,8 @@ class HTMLHandler:
         return TouchGalDetails(
             vndb_id=vndb_id,
             images=images,
-            description=entro_text
+            description=entro_text,
+            title=title
         )
 
 

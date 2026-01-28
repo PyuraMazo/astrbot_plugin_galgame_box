@@ -115,7 +115,8 @@ class Builder:
     async def _handle_random(self, response, **kwargs):
         resp: list[TouchGalResponse] = response
         details: TouchGalDetails = kwargs['details']
-        res = await self._build_select(resp[0], details)
+
+        res = await self._build_select(resp[0], details) if resp else {}
         return UnrenderedData(
             title='<br>'.join(kwargs.get('title', '标题出错')),
             items=[res],
@@ -164,7 +165,7 @@ class Builder:
         avg = f'平均分：{response.average}' if response.average else ''
         rating = f'贝叶斯评分：{response.rating}' if response.rating else ''
         release = f'发布日期：{response.released}' if response.released else ''
-        length = f'游玩时间：{response.length_minutes}' if response.length_minutes else ''
+        length = f'游玩时间：{response.length_minutes / 60}小时' if response.length_minutes else ''
 
         platform = f'支持平台：{"、".join(response.platforms)}' if response.platforms else ''
         alias = f'别称：{"、".join(response.aliases)}' if response.aliases else ''

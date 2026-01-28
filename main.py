@@ -115,7 +115,6 @@ class GalgameBoxPlugin(Star):
             async for res in self.task_line.run(cmd):
                 if isinstance(res, tuple) or isinstance(res, list):
                     url = await self.html_render(res[0], res[1].model_dump(), options=self.render_options)
-                    await self.cache.store_image(cmd, await self.downloader.do(url))
                     yield event.image_result(url)
                 else:
                     yield res

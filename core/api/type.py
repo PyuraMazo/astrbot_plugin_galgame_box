@@ -56,6 +56,7 @@ class TouchGalDetails(BaseModel):
     vndb_id: str
     images: list[str]
     description: str
+    title: str
 
 
 class AnimeTraceModel(Enum):

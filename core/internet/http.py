@@ -48,10 +48,11 @@ class Http:
 
 
     async def post(self, url: str, data: dict, **kwargs) -> str | dict | bytes:
+        headers = self.headers | kwargs.pop('headers', {})
         count = 0
         while count < self.timeout_times:
             try:
-                async with self.session.post(url, headers=self.headers, json=data, **kwargs) as response:
+                async with self.session.post(url, headers=headers, json=data, **kwargs) as response:
                     return await response.json()
             except Exception as e:
                 count += 1
