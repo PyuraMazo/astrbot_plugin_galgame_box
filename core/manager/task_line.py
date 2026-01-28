@@ -133,7 +133,7 @@ class TaskLine:
         unique_id = await self.touchgal_request.request_random()
         text = await self.touchgal_request.request_html(unique_id)
         details = await self.html_handler.handle_touchgal_details(text)
-        resp = (await self.touchgal_request.request_vn_by_search(details.vndb_id))[0]
+        resp = (await self.touchgal_request.request_vn_by_search(details.vndb_id or details.title))[0]
         data = self.builder.build_options(cmd_body, resp, details=details)
         tmpl = File.read_text(rendered_html)
 
@@ -141,6 +141,7 @@ class TaskLine:
         yield res
 
     async def _download_task(self, cmd_body: CommandBody):
+        event = cmd_body.event
         keyword = cmd_body.value
         touchgal_id: int
         if keyword.isdigit():
@@ -154,7 +155,6 @@ class TaskLine:
             else:
                 cmd_body.type = CommandType.SELECT
                 msgs = await self.builder.build_options(cmd_body, res)
-                event = cmd_body.event
                 content = []
                 for idx, msg in enumerate(msgs, start=1):
                     node = comp.Node(uin=event.get_self_id(),
@@ -169,7 +169,7 @@ class TaskLine:
                 yield event.plain_result(tips)
                 yield event.chain_result([comp.Nodes(content)])
                 # 注册进session_data_storage
-                self.session_data_storage[event.get_group_id() + event.get_sender_id()] = ''
+                self.session_data_storage[event.get_group_id() + event.get_sender_id()] = -1
 
                 @session_waiter(timeout=30)
                 async def index_waiter(controller: SessionController, sess_event: AstrMessageEvent):
@@ -179,8 +179,8 @@ class TaskLine:
                         accept = int(message) if message.isdigit() else None
 
                         if accept and 0 < accept <= total:
+                            self.session_data_storage[event.get_group_id() + event.get_sender_id()] = accept - 1
                             controller.stop()
-                            self.session_data_storage[sess_event.get_sender_id()] = accept - 1
                             return
                         else:
                             invalid = '无效的消息，请重新输入'
@@ -200,9 +200,9 @@ class TaskLine:
 
 
         resp = await self.touchgal_request.request_download(touchgal_id)
-        res = await self.builder.build_options(cmd_body, resp)
-        yield res
-
+        msg_arr: list[tuple[str, str]] = await self.builder.build_options(cmd_body, resp)
+        nodes = [comp.Node(uin=event.get_self_id(), content=[comp.Plain(msg[1])]) for msg in msg_arr]
+        yield event.chain_result([comp.Nodes(nodes)])
 
 
     async def _find_task(self, cmd_body: CommandBody):
