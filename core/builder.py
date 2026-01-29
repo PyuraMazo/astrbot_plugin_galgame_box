@@ -29,7 +29,8 @@ class Builder:
             CommandType.RANDOM: self._handle_random,
             CommandType.DOWNLOAD: self._handle_download,
             CommandType.SELECT: self._handle_select,
-            CommandType.FIND: self._handle_find
+            CommandType.FIND: self._handle_find,
+            CommandType.RECOMMEND: self._handle_random
         }
 
         self.downloader: Optional[Downloader] = None
@@ -55,7 +56,8 @@ class Builder:
                             response,
                             **kwargs) -> UnrenderedData | list[tuple[str, str]]:
         await self._init_resources()
-        count = kwargs['count'] if 'count' in kwargs else len(response)
+        # count = kwargs['count'] if 'count' in kwargs else len(response)
+        count = kwargs.get('count', 0) or len(response)
         title = self._build_title(command_body, count)
 
         handler_type = self._determine_handler_type(command_body)
@@ -114,12 +116,13 @@ class Builder:
 
     async def _handle_random(self, response, **kwargs):
         resp: list[TouchGalResponse] = response
-        details: TouchGalDetails = kwargs['details']
+        details: list[TouchGalDetails] = kwargs['details']
 
-        res = await self._build_select(resp[0], details) if resp else {}
+        # res = await self._build_select(resp[0], details) if resp else {}
+        co = [self._build_select(i, j) for i, j in zip(resp, details)]
         return UnrenderedData(
             title='<br>'.join(kwargs.get('title', '标题出错')),
-            items=[res],
+            items=await asyncio.gather(*co),
             bg_image=self.bg,
             font=self.font
         )
@@ -130,7 +133,8 @@ class Builder:
 
     async def _handle_select(self, response, **kwargs):
         resp: list[TouchGalResponse] = response
-        return [await self._build_select(i) for i in resp]
+        co = [self._build_select(i) for i in resp]
+        return await asyncio.gather(*co)
 
     async def _handle_find(self, response, **kwargs):
         trace_resp: AnimeTraceResponse = response
@@ -151,13 +155,12 @@ class Builder:
             main_image=await File.buffer2base64(buffer) if buffer else self.err
         )
 
-
-
     def _build_title(self, command_body: CommandBody, count: int) -> list[str]:
         run_type = f'搜索指令「{command_body.type.value}」'
         value = f'搜索词「{command_body.value if not command_body.value.startswith("http") else "网络链接"}」' if command_body.value else ''
         count = f'搜索结果「{count}条」' if command_body.type != CommandType.RANDOM else ''
         return [i for i in [run_type, value, count] if i]
+
 
     async def _build_vn(self, response: VNDBVnResponse) -> RenderedItem:
         id = f'VNDB ID：{response.id}'
@@ -165,7 +168,7 @@ class Builder:
         avg = f'平均分：{response.average}' if response.average else ''
         rating = f'贝叶斯评分：{response.rating}' if response.rating else ''
         release = f'发布日期：{response.released}' if response.released else ''
-        length = f'游玩时间：{response.length_minutes / 60}小时' if response.length_minutes else ''
+        length = f'游玩时间：{round(response.length_minutes / 60, 1)}小时' if response.length_minutes else ''
 
         platform = f'支持平台：{"、".join(response.platforms)}' if response.platforms else ''
         alias = f'别称：{"、".join(response.aliases)}' if response.aliases else ''
@@ -273,11 +276,11 @@ class Builder:
         imgs = await asyncio.gather(*co_imgs)
         data_list = [i for i in [vndb_id, touchgal_id, tags, avg, source_type, language, platform] if i]
         return RenderedRandom(
-            text=f"<br>".join(data_list),
+            text="<br>".join(data_list),
             sub_title=title,
             main_image=await File.buffer2base64(await self.downloader.do(cover), suffix='avif') if response.banner else self.err,
             images=imgs,
-            description=description,
+            description=description
         )
 
     def _build_download(self, response: ResourceResponse) -> str:

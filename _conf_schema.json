@@ -14,7 +14,7 @@
         "default": 3
       },
       "requestTime": {
-        "description": "网络请求超时时间",
+        "description": "网络请求超时时间（秒）",
         "type": "int",
         "slider": {
           "min": 10,
@@ -23,8 +23,18 @@
         },
         "default": 30
       },
+      "sessionTimeout": {
+        "description": "会话维持时间（秒）",
+        "type": "int",
+        "slider": {
+          "min": 10,
+          "max": 120,
+          "step": 10
+        },
+        "default": 30
+      },
       "cleanInterval": {
-        "description": "缓存清除间隔",
+        "description": "缓存清除间隔（天）",
         "type": "int",
         "slider": {
           "min": 1,
@@ -75,6 +85,17 @@
           "step": 5
         },
         "default": 10
+      },
+      "recommendCache": {
+        "description": "推荐时缓存数量",
+        "hint": "使用推荐指令时，一次网络请求缓存的结果数量，缓存的结果提前开启渲染，发送时间更短",
+        "type": "int",
+        "slider": {
+          "min": 3,
+          "max": 12,
+          "step": 1
+        },
+        "default": 3
       },
       "findResults": {
         "description": "显示可信结果数量",

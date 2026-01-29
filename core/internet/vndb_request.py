@@ -103,7 +103,7 @@ class VNDBRequest:
 
     async def request_by_id(self, cmd_type: CommandType, keyword: str) \
             -> list[VNDBVnResponse] | list[VNDBCharacterResponse] | tuple[list[VNDBProducerResponse], list[list[VNDBVnResponse]]]:
-        handle_type_value = id2command[cmd_type.value[0]]
+        handle_type_value = id2command[keyword[0]]
         payload = self._build_self_payload(cmd_type, keyword)
         try:
             if handle_type_value == CommandType.VN.value:

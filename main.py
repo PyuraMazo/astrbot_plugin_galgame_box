@@ -8,41 +8,25 @@ from .core.api.const import id2command
 
 from .core.api.exception import Tips, InvalidArgsException
 from .core.api.type import CommandType, CommandBody
-from .core.cache import Cache, get_cache
 from .core.manager.task_line import TaskLine, get_task_line
-from .core.internet.downloader import Downloader, get_downloader
-from .core.utils.file import File
 
 
 
 class GalgameBoxPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
-        self.render_options = {
-            'type': 'jpeg',
-            'quality': 100
-        }
-
         self.config = config
         self.task_line: Optional[TaskLine] = None
-        self.cache: Optional[Cache] = None
-        self.downloader: Optional[Downloader] = None
 
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
         self.task_line = get_task_line()
-        self.cache = get_cache()
-        self.downloader = get_downloader()
 
         await self.task_line.initialize(self.config)
-        await self.cache.initialize(self.config)
-        await self.downloader.initialize(self.config)
 
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
         await self.task_line.terminate()
-        await self.cache.terminate()
-        await self.downloader.terminate()
 
 
     @filter.command_group("旮旯", alias={'gal', 'GAL'})
@@ -65,7 +49,7 @@ class GalgameBoxPlugin(Star):
         """通过关键词查询厂商"""
         yield await anext(self._single_image_command(event, CommandType.PRODUCER, keyword))
 
-    @gal_box.command('id', alias={'ID'})
+    @gal_box.command('ID', alias={'id'})
     async def vndb_id(self, event: AstrMessageEvent, keyword: str):
         """通过VNDB ID查询特定内容"""
         yield await anext(self._single_image_command(event, CommandType.ID, keyword))
@@ -73,7 +57,7 @@ class GalgameBoxPlugin(Star):
     @gal_box.command('随机')
     async def random(self, event: AstrMessageEvent):
         """通过TouchGal随机获取一部作品"""
-        yield await anext(self._single_image_command(event, CommandType.RANDOM, ''))
+        yield await anext(self._single_image_command(event, CommandType.RANDOM))
 
     @gal_box.command('下载', alias={'资源'})
     async def download(self, event: AstrMessageEvent, id: str):
@@ -82,43 +66,34 @@ class GalgameBoxPlugin(Star):
             yield res
 
     @gal_box.command('出处', alias={'识别'})
-    async def find(self, event: AstrMessageEvent, url: Any = ''):
+    async def find(self, event: AstrMessageEvent, url: str = ''):
         """提供图片或者图片链接识别角色出处，可以先不填参数"""
         async for res in self._multi_feedback_command(event, CommandType.FIND, url):
+            yield res
+
+    @gal_box.command('推荐', alias={'标签'})
+    async def recommend(self, event: AstrMessageEvent, tags: str):
+        """提供一个或多个标签，从TouchGal网站中获取推荐内容"""
+        async for res in self._multi_feedback_command(event, CommandType.RECOMMEND, tags):
             yield res
 
 
 
 
 
-    async def _single_image_command(self, event: AstrMessageEvent, cmd_type: CommandType, keyword: str):
+    async def _single_image_command(self, event: AstrMessageEvent, cmd_type: CommandType, keyword: str = ''):
         try:
             cmd = self._check_keyword_validity(event, cmd_type, keyword)
-
             res = await anext(self.task_line.run(cmd))
-
-            if isinstance(res, Image):
-                yield event.chain_result([res])
-                return
-
-            url = await self.html_render(res[0], res[1].model_dump(), options=self.render_options)
-            await self.cache.store_image(cmd, await self.downloader.do(url))
-            yield event.image_result(url)
-
+            yield res
         except Exception as e:
             yield next(self._handle_command_exception(event, e))
 
-    async def _multi_feedback_command(self, event: AstrMessageEvent, cmd_type: CommandType, keyword: Any):
+    async def _multi_feedback_command(self, event: AstrMessageEvent, cmd_type: CommandType, keyword: str = ''):
         try:
             cmd = self._check_keyword_validity(event, cmd_type, keyword)
-
             async for res in self.task_line.run(cmd):
-                if isinstance(res, tuple) or isinstance(res, list):
-                    url = await self.html_render(res[0], res[1].model_dump(), options=self.render_options)
-                    yield event.image_result(url)
-                else:
-                    yield res
-
+                yield res
         except Exception as e:
             yield next(self._handle_command_exception(event, e))
 
@@ -140,6 +115,15 @@ class GalgameBoxPlugin(Star):
         if cmd_type == CommandType.ID:
             if keyword[0] not in id2command.keys():
                 valid = False
+        elif cmd_type == CommandType.FIND:
+            cmd.value = keyword if keyword.startswith('http') else ''
+        elif cmd_type == CommandType.RECOMMEND:
+            if keyword == '':
+                valid = False
+            else:
+                msg = event.message_str.strip()
+                index = msg.find(keyword)
+                cmd.value = msg[index:]
 
         if valid:
             return cmd

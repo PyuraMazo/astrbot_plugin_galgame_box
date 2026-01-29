@@ -2,7 +2,8 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict
 from enum import Enum
 
-from astrbot.api.event import AstrMessageEvent
+from astrbot.api.event import AstrMessageEvent, MessageEventResult
+
 
 class RenderedItem(BaseModel):
     sub_title: str
@@ -34,11 +35,12 @@ class CommandType(Enum):
     RANDOM = 'random'
     DOWNLOAD = 'download'
     SELECT = 'select',
-    FIND = 'find'
+    FIND = 'find',
+    RECOMMEND = 'recommend'
 
 class CommandBody(BaseModel):
     type: CommandType
-    value: str
+    value: str | list[str]
     event: AstrMessageEvent
 
     model_config = ConfigDict(
@@ -62,3 +64,11 @@ class TouchGalDetails(BaseModel):
 class AnimeTraceModel(Enum):
     Profession = 'full_game_model_kira'
     Common = 'animetrace_high_beta'
+
+class SelectInfo(BaseModel):
+    cmd_body: CommandBody
+    cache: list[UnrenderedData]
+    current: int
+    total: int
+    tmpl: str
+    ready: Optional[str] = None

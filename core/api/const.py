@@ -40,7 +40,8 @@ html_list = {
     'character': 'template1.html',
     'producer': 'template2.html',
     'random': 'template3.html',
-    'find': 'template4.html'
+    'find': 'template4.html',
+    'recommend': 'template3.html'
 }
 
 gender = {

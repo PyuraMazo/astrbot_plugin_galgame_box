@@ -8,7 +8,6 @@ from ..api.model import TouchGalResponse, ResourceResponse
 
 
 class TouchGalRequest:
-
     def __init__(self):
         self.base_url = 'https://www.touchgal.top/'
         self.search_api = self.base_url + 'api/search/'
@@ -26,17 +25,17 @@ class TouchGalRequest:
     async def terminate(self):
         await self.http.terminate()
 
-    async def request_vn_by_search(self, keyword: str) -> tuple[list[TouchGalResponse], int]:
-        query_string = json.dumps([{"type": "keyword", "name": i} for i in keyword.split(' ')])
+    async def request_vn_by_search(self, keyword: str, **kwargs) -> tuple[list[TouchGalResponse], int]:
+        query_string = json.dumps([{"type": "keyword", "name": i} for i in keyword.strip().split(' ')])
         payload = {
             "queryString": query_string,
-            "limit": 12,
+            "limit": kwargs.get('limit', 12),
             "searchOption": {
                 "searchInIntroduction": False,
-                "searchInAlias": True,
-                "searchInTag": False,
+                "searchInAlias": kwargs.get('searchInAlias', True),
+                "searchInTag": kwargs.get('searchInTag', False),
             },
-            "page": 1,
+            "page": kwargs.get('page', 1),
             "selectedType": "all",
             "selectedLanguage": "all",
             "selectedPlatform": "all",

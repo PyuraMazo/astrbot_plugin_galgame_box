@@ -20,7 +20,7 @@ class HTMLHandler:
         soup = await asyncio.to_thread(lambda: BeautifulSoup(text, 'html.parser'))
 
         last = soup.find('div', class_='grid gap-4 mt-6 sm:grid-cols-2').find_all('div')[-1].find('a')
-        vndb_id = last.get_text() if last in id2command.keys() else ''
+        vndb_id = last.get_text() if last else ''
         title = soup.find('h1', class_='text-2xl font-bold leading-tight sm:text-3xl').get_text() if not vndb_id else ''
 
 
