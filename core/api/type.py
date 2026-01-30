@@ -34,8 +34,8 @@ class CommandType(Enum):
     ID = 'id'
     RANDOM = 'random'
     DOWNLOAD = 'download'
-    SELECT = 'select',
-    FIND = 'find',
+    SELECT = 'select'
+    FIND = 'find'
     RECOMMEND = 'recommend'
 
 class CommandBody(BaseModel):

@@ -338,7 +338,7 @@ class TaskLine:
 
             @session_waiter(timeout=120)
             async def select_waiter(controller: SessionController, sess_event: AstrMessageEvent):
-                controller.keep(120)
+                controller.keep(120, True)
                 alter = '换一个'
                 end = '结束'
                 _id = sess_event.get_group_id() + sess_event.get_sender_id()
@@ -364,7 +364,7 @@ class TaskLine:
 
                     _image = sess_event.image_result(_url)
                     await sess_event.send(_image)
-                    controller.keep(120)
+                    controller.keep(120, True)
 
                     # 提前准备
                     if body.cache:
