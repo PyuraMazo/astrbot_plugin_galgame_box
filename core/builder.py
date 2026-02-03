@@ -1,17 +1,19 @@
 import asyncio
+import math
 from typing import Any, Callable, Dict, Optional
 from pathlib import Path
 from PIL import Image as PILImage
 from io import BytesIO
+from datetime import date
 
 from astrbot.api import AstrBotConfig
 
 
 from .internet.downloader import get_downloader, Downloader
 from .api.type import CommandType, CommandBody, UnrenderedData, TouchGalDetails, AnimeTraceModel, RenderedItem, \
-    ColumnStyle, RenderedBlock, RenderedRandom
+    ColumnStyle, RenderedBlock, RenderedRandom, SteamVnsInfo, RenderedPuzzle
 from .api.model import VNDBVnResponse, VNDBCharacterResponse, VNDBProducerResponse, TouchGalResponse, ResourceResponse, \
-    AnimeTraceResponse, AnimeTraceData
+    AnimeTraceResponse, AnimeTraceData, SteamProfileResponse, VNDBReleaseResponse
 from .api.const import id2command, lang, develop_type, gender
 from .utils.file import File
 from .utils.image import Image
@@ -30,7 +32,8 @@ class Builder:
             CommandType.DOWNLOAD: self._handle_download,
             CommandType.SELECT: self._handle_select,
             CommandType.FIND: self._handle_find,
-            CommandType.RECOMMEND: self._handle_random
+            CommandType.RECOMMEND: self._handle_random,
+            CommandType.SCHEDULE: self._handle_schedule
         }
 
         self.downloader: Optional[Downloader] = None
@@ -56,7 +59,6 @@ class Builder:
                             response,
                             **kwargs) -> UnrenderedData | list[tuple[str, str]]:
         await self._init_resources()
-        # count = kwargs['count'] if 'count' in kwargs else len(response)
         count = kwargs.get('count', 0) or len(response)
         title = self._build_title(command_body, count)
 
@@ -155,12 +157,38 @@ class Builder:
             main_image=await File.buffer2base64(buffer) if buffer else self.err
         )
 
-    def _build_title(self, command_body: CommandBody, count: int) -> list[str]:
-        run_type = f'搜索指令「{command_body.type.value}」'
-        value = f'搜索词「{command_body.value if not command_body.value.startswith("http") else "网络链接"}」' if command_body.value else ''
-        count = f'搜索结果「{count}条」' if command_body.type != CommandType.RANDOM else ''
-        return [i for i in [run_type, value, count] if i]
+    async def _handle_schedule(self, response, **kwargs):
+        vns: dict[int, SteamVnsInfo] = kwargs['vns']
+        sorted_list = sorted(vns.values(), key=lambda j: j.rate, reverse=True)
+        co = [self._build_schedule(info) for info in sorted_list]
 
+        profile: SteamProfileResponse = response[0]
+        nick = f'用户「{profile.personaname}」'
+        _all = 0
+        for i in vns:
+            _all += vns[i].play_time
+        all_play = f'Galgame总游玩时间「{round(_all / 60, 1)}」小时'
+        title = kwargs.get('title', [])
+        title.append(nick)
+        title.append(all_play)
+        return UnrenderedData(
+            title='<br>'.join(title),
+            items=await asyncio.gather(*co),
+            bg_image=self.bg,
+            font=self.font
+        )
+
+
+
+    def _build_title(self, command_body: CommandBody, count: int) -> list[str]:
+        run_type = f'指令「{command_body.type.value}」'
+        value = f'参数「{command_body.value if not command_body.value.startswith("http") else "网络链接"}」' \
+            if command_body.value and command_body.type != CommandType.SCHEDULE \
+            else ''
+        count = f'结果「{count}」条' \
+            if command_body.type != CommandType.RANDOM and command_body.type != CommandType.RECOMMEND and command_body.type != CommandType.SCHEDULE \
+            else ''
+        return [i for i in [run_type, value, count] if i]
 
     async def _build_vn(self, response: VNDBVnResponse) -> RenderedItem:
         id = f'VNDB ID：{response.id}'
@@ -336,6 +364,22 @@ class Builder:
             column_info=column,
             vns=cha_list,
         )
+
+    async def _build_schedule(self, info: SteamVnsInfo):
+        rate = info.rate
+        game = info.name
+        achi = f'成就达成率<br>{round(info.achievement_rate * 100)}%' if isinstance(info.achievement_rate, float) else info.achievement_rate
+        play_time = f'总游玩时间<br>{round(info.play_time / 60, 1)}小时'
+        last_play = f'上次游玩时间<br>{date.fromtimestamp(info.last_play) if info.last_play else "暂无"}'
+
+        return RenderedPuzzle(
+            g=math.ceil(200 * (1 - rate)),
+            span=math.ceil(3 * rate),
+            game=game,
+            img=await File.buffer2base64(await self.downloader.do(info.vndb_img)) if info.vndb_img and rate >= 0.5 else '',
+            text="<br>".join([achi, play_time, last_play])
+        )
+
 
 _builder: Optional[Builder] = None
 def get_builder():

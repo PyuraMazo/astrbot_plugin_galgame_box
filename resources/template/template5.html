@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @font-face {
+            font-family: 'default';
+            src: url('{{ font }}');
+        }
+
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            font-family: 'default';
+        }
+
+        h1 {
+            font-size: 3em;
+        }
+
+        h2 {
+            font-size: 2em;
+        }
+
+        body {
+            background-image: url("{{ bg_image }}");
+            /* background-repeat: no-repeat; */
+            background-size: cover;
+            padding: 2em;
+            width: 200vw;
+        }
+
+        .content {
+            width: 180vw;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 2em;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            color: #ffffff;
+            align-items: center;
+            padding: 2em;
+        }
+
+        .info {
+            width: 100%;
+            text-align: center;
+            color: rgb(147, 187, 194);
+            padding: 1em 0;
+        }
+
+        .gap {
+            background-color: #ffffff;
+            height: 0.2em;
+            width: 80%;
+            margin: 1em auto;
+        }
+
+        .show {
+            display: grid;
+            width: 95%;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            margin-top: 1em;
+        }
+
+        .block {
+            background-color: black;
+            font-size: 1.5em;
+            border: 0.1em solid black;
+            display: flex;
+        }
+
+        .block img {
+            height: 15em;
+            width: auto;
+        }
+
+        .text {
+            flex: 1;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="content">
+        <div class="info">
+            <h1>{{ title }}</h1>
+        </div>
+        <div class="gap"></div>
+        <h2>进度图</h2>
+        <div class="show">
+            {% for item in items %}
+            <div class="block"
+                style="background-color: rgb(255, {{ item.g }}, 0); grid-column: span {{ item.span }};">
+                <img src="{{ item.img }}" alt="">
+                <div class="text">
+                    <h3>{{ item.game }}</h3>
+                    {{ item.text }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+
+</html>

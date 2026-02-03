@@ -26,6 +26,14 @@ class RenderedRandom(BaseModel):
     description: str
     text: str
 
+class RenderedPuzzle(BaseModel):
+    g: int
+    game: str
+    span: int
+    img: str
+    text: str
+
+
 
 class CommandType(Enum):
     VN = 'vn'
@@ -37,6 +45,8 @@ class CommandType(Enum):
     SELECT = 'select'
     FIND = 'find'
     RECOMMEND = 'recommend'
+    BIND = 'bind'
+    SCHEDULE = 'schedule'
 
 class CommandBody(BaseModel):
     type: CommandType
@@ -49,7 +59,7 @@ class CommandBody(BaseModel):
 
 class UnrenderedData(BaseModel):
     title: str
-    items: list[RenderedItem | RenderedBlock | RenderedRandom]
+    items: list[RenderedItem | RenderedBlock | RenderedRandom | RenderedPuzzle]
     bg_image: str
     font: str
     main_image: Optional[str] = None
@@ -72,3 +82,20 @@ class SelectInfo(BaseModel):
     total: int
     tmpl: str
     ready: Optional[str] = None
+
+class SteamVnsInfo(BaseModel):
+    name: str
+    play_time: int
+    achievement_rate: float | str
+    last_play: int
+    vndb_img: str
+    rate: Optional[float] = None
+
+class SteamData(BaseModel):
+    channel_id: str
+    steam_id: Optional[str] = None
+    key: Optional[str] = None
+    record: bool
+    write_time: Optional[int] = None
+    others_id: Optional[list[int]] = None
+    vns: Optional[dict[int, SteamVnsInfo]] = None

@@ -1,6 +1,7 @@
 import asyncio
 from typing import Optional, Callable
 from pathlib import Path
+from datetime import datetime
 
 from astrbot.api import AstrBotConfig, html_renderer
 from astrbot.api import message_components as comp
@@ -12,17 +13,21 @@ from astrbot.core.utils.session_waiter import (
 )
 
 from ..api.const import html_list, id2command
-from ..api.exception import InvalidArgsException, CodeException, NoResultException, SessionTimeoutException
-from ..api.model import AnimeTraceResponse, TouchGalResponse
-from ..api.type import CommandBody, CommandType, AnimeTraceModel, SelectInfo, UnrenderedData
+from ..api.exception import InvalidArgsException, CodeException, NoResultException, SessionTimeoutException, \
+    HasBoundException, ArgsOrNullException
+from ..api.model import AnimeTraceResponse, TouchGalResponse, SteamOwnerResponse, VNDBReleaseResponse
+from ..api.type import CommandBody, CommandType, AnimeTraceModel, SelectInfo, UnrenderedData, SteamData, SteamVnsInfo
 from ..builder import Builder, get_builder
 from ..cache import Cache, get_cache
-from ..html_handler import HTMLHandler, get_handler
+from ..html_handler import HTMLHandler, get_html_handler
 from ..internet.downloader import get_downloader, Downloader
 from ..internet.vndb_request import get_vndb_request, VNDBRequest
 from ..internet.touchgal_request import get_touchgal_request, TouchGalRequest
 from ..internet.animetrace_request import get_animetrace_request, AnimeTreceRequest
+from ..internet.steam_request import get_steam_request, SteamRequest
+from ..data_handler import get_data_handler, DataHandler
 from ..utils.file import File
+
 
 
 class OnlySenderFilter(SessionFilter):
@@ -43,10 +48,13 @@ class TaskLine:
         self.vndb_request: Optional[VNDBRequest] = None
         self.touchgal_request: Optional[TouchGalRequest] = None
         self.animetrace_request: Optional[AnimeTreceRequest] = None
+        self.steam_request: Optional[SteamRequest] = None
         self.builder: Optional[Builder] = None
         self.html_handler: Optional[HTMLHandler] = None
         self.cache: Optional[Cache] = None
         self.downloader: Optional[Downloader] = None
+        self.data_handler: Optional[DataHandler] = None
+
 
         self.task_map: Optional[dict[CommandType, Callable]] = None
         self.find_results: Optional[int] = None
@@ -57,18 +65,23 @@ class TaskLine:
         self.vndb_request = get_vndb_request()
         self.touchgal_request = get_touchgal_request()
         self.animetrace_request = get_animetrace_request()
+        self.steam_request = get_steam_request()
         self.builder = get_builder()
-        self.html_handler = get_handler()
+        self.html_handler = get_html_handler()
         self.cache = get_cache()
         self.downloader = get_downloader()
+        self.data_handler = get_data_handler()
+
 
         await self.vndb_request.initialize(config)
         await self.touchgal_request.initialize(config)
         await self.animetrace_request.initialize(config)
+        await self.steam_request.initialize(config)
         await self.builder.initialize(config)
         await self.html_handler.initialize()
         await self.cache.initialize(config)
         await self.downloader.initialize(config)
+        await self.data_handler.initialize(config)
 
         self.task_map: dict[CommandType, Callable] = {
             CommandType.VN: self._vn_task,
@@ -78,7 +91,9 @@ class TaskLine:
             CommandType.RANDOM: self._random_task,
             CommandType.DOWNLOAD: self._download_task,
             CommandType.FIND: self._find_task,
-            CommandType.RECOMMEND: self._recommend_task
+            CommandType.RECOMMEND: self._recommend_task,
+            CommandType.BIND: self._bind_task,
+            CommandType.SCHEDULE: self._schedule_task
         }
         self.find_results = config.get('searchSetting', {}).get('findResults', 3)
         self.session_timeout = config.get('basicSetting', {}).get('sessionTimeout', 30)
@@ -89,10 +104,13 @@ class TaskLine:
         await self.vndb_request.terminate()
         await self.touchgal_request.terminate()
         await self.animetrace_request.terminate()
+        await self.steam_request.terminate()
         await self.builder.terminate()
         await self.html_handler.terminate()
         await self.cache.terminate()
         await self.downloader.terminate()
+        await self.data_handler.terminate()
+
 
 
     async def run(self, cmd_body: CommandBody):
@@ -398,6 +416,148 @@ class TaskLine:
                 raise SessionTimeoutException(cmd_body)
         else:
             yield resp
+
+    async def _bind_task(self, cmd_body: CommandBody):
+        event = cmd_body.event
+        channel_id = event.get_sender_id()
+        if self.data_handler.check_data(channel_id):
+            raise HasBoundException(channel_id)
+        else:
+            tips0 = '-Steam ID（不是好友ID）获取方法：\nhttps://help.steampowered.com/zh-cn/faqs/view/2816-BE67-5B69-0FEC\n-API获取方法：\nhttps://steamcommunity.com/dev/apikey'
+            tips1 = '-请输入你的Steam ID\n-等待时间5分钟'
+            yield event.plain_result(tips0)
+            yield event.plain_result(tips1)
+            self.session_data_storage[event.get_group_id() + event.get_sender_id()] = SteamData(
+                channel_id=event.get_sender_id(),
+                record=False
+            )
+
+            @session_waiter(timeout=300)
+            async def bind_waiter(controller: SessionController, sess_event: AstrMessageEvent):
+                _id = sess_event.get_group_id() + sess_event.get_sender_id()
+                tips2 = '-请输入你的Steam Key\n-等待时间5分钟'
+                tips4 = '输入的信息有误\n-会话已关闭'
+
+
+                data: SteamData = self.session_data_storage[_id]
+                if not data.steam_id:
+                    data.steam_id = sess_event.message_str
+                    await sess_event.send(sess_event.plain_result(tips2))
+                    controller.keep(300, True)
+                elif not data.key:
+                    data.key = sess_event.message_str
+                    try:
+                        resp = await self.steam_request.request_profile(data)
+                        await self.data_handler.store(data)
+                        tips3 = f'-绑定成功\n-绑定用户名：{resp.personaname}'
+                        await sess_event.send(sess_event.plain_result(tips3))
+                    except ArgsOrNullException:
+                        await sess_event.send(sess_event.plain_result(tips4))
+
+                    controller.stop()
+                    self.session_data_storage.pop(_id)
+                else:
+                    raise NotImplementedError
+
+            try:
+                await bind_waiter(event, session_filter=OnlySenderFilter())
+            except TimeoutError:
+                raise SessionTimeoutException(cmd_body)
+
+
+    async def _schedule_task(self, cmd_body: CommandBody):
+        now = int(datetime.now().timestamp())
+        event = cmd_body.event
+        saved = await self.data_handler.read(event.get_sender_id())
+
+        profile = await self.steam_request.request_profile(saved)
+        steam_owner = await self.steam_request.request_owner(saved)
+        # 初始化和更新超过两周
+        if not saved.record or now - saved.write_time > 2 * 7 * 24 * 3600:
+            id_list = [game.appid for game in steam_owner.games]
+            vndb_vns_list = await self.vndb_request.request_by_release(id_list, steam_owner.game_count)
+            vndb_vns_dict = {int(j.id): i.vns[0].image.url for i in vndb_vns_list for j in i.extlinks if j.label == 'Steam'}
+            steam_vn_list = [k for k in steam_owner.games if k.appid in vndb_vns_dict]
+            vn_achi_list_co = [self.steam_request.request_achievement(saved, l) for l in vndb_vns_dict]
+            vn_achi_dict = {m: n for m, n in zip(vndb_vns_dict, await asyncio.gather(*vn_achi_list_co))}
+
+            saved.record = True
+            saved.write_time = now
+            saved.others_id = list(set(id_list) - set(vn_achi_dict.keys()))
+            saved.vns = {}
+            for o in steam_vn_list:
+                achi = vn_achi_dict[o.appid]
+                play = o.playtime_forever
+                saved.vns[o.appid] = SteamVnsInfo(
+                    name=o.name,
+                    play_time=play,
+                    achievement_rate=achi,
+                    last_play=o.rtime_last_played,
+                    vndb_img=vndb_vns_dict[o.appid],
+                    rate=achi if isinstance(achi, float) else play / 750 if play / 750 < 1 else 1
+                )
+
+        # 近两周
+        else:
+            own_before = set(saved.vns.keys() | set(saved.others_id))
+            extra_img_dict: dict[int, str] = {}
+            extra_vns_id_set: set[int] = set()
+            # 库存数量有变化，添加
+            if steam_owner.game_count != len(own_before):
+                id_set = {game.appid for game in steam_owner.games}
+                extra_id_list = list((id_set - (set(saved.others) | set(saved.vns.keys()))))
+                vndb_vns_list = await self.vndb_request.request_by_release(extra_id_list, steam_owner.game_count)
+                vn_id_list = []
+
+                for i in vndb_vns_list:
+                    extra_img_dict[i.appid] = i.vns[0].image.url
+                    for j in i.extlinks:
+                        if j.label == 'Steam':
+                            vn_id_list.append(int(j.id))
+                            break
+                saved.others_id = list(set(saved.others_id) | (set(extra_id_list) - set(vn_id_list)))
+                extra_vns_id_set = set(vn_id_list)
+
+            # 更新
+            recent_list = await self.steam_request.request_recently(saved)
+            recent_dict = {game.id: game for game in recent_list if game.appid in saved.vns or game.appid in extra_vns_id_set}
+            for k, l in recent_dict:
+                achi = await self.steam_request.request_achievement(saved, k)
+                play = l.playtime_forever
+                saved.vns[k] = SteamVnsInfo(
+                    name=l.name,
+                    play_time=play,
+                    achievement_rate=achi,
+                    last_play=l.rtime_last_played,
+                    vndb_img=saved.vns.get(k, {}).get('vndb_img', '') or extra_img_dict[k],
+                    rate=achi if isinstance(achi, float) else play / 750 if play / 750 < 1 else 1
+                )
+
+                if k in extra_vns_id_set:
+                    extra_vns_id_set.remove(k)
+
+
+            for m in extra_vns_id_set:
+                saved.vns[m] = SteamVnsInfo(
+                    name=recent_dict[m].name,
+                    play_time=0,
+                    achievement_rate=0,
+                    last_play=0,
+                    vndb_img=extra_img_dict[m],
+                    rate=0
+                )
+            saved.write_time = now
+
+        await self.data_handler.store(saved, True)
+        rendered_html = self.template_dir / html_list[cmd_body.type.value]
+        data = self.builder.build_options(cmd_body, [profile], vns=saved.vns)
+        tmpl = File.read_text(rendered_html)
+
+        res = await asyncio.gather(tmpl, data)
+        url = await html_renderer.render_custom_template(res[0], res[1].model_dump(), True, self.render_options)
+        yield cmd_body.event.image_result(url)
+
+
 
     async def _recommend_subtask(self, cmd_body: CommandBody, responses: list[TouchGalResponse]):
         rendered_html = self.template_dir / html_list[cmd_body.type.value]
