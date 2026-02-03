@@ -13,6 +13,7 @@ vndb_command_fields = {
     'producer': 'id,name,original,aliases,lang,type',
     'vn_short': 'id,alttitle,title,released,rating,image{url}',
     'character_short': 'id,name,original,aliases,image{url},vns{id,alttitle,title}',
+    'release': 'id,alttitle,title,extlinks{id,label},vns{id,image{url}}'
 }
 
 id2command = {
@@ -41,7 +42,8 @@ html_list = {
     'producer': 'template2.html',
     'random': 'template3.html',
     'find': 'template4.html',
-    'recommend': 'template3.html'
+    'recommend': 'template3.html',
+    'schedule': 'template5.html'
 }
 
 gender = {

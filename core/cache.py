@@ -15,7 +15,7 @@ from .api.type import CommandBody
 class Cache:
     def __init__(self):
         data_path = StarTools.get_data_dir('astrbot_plugin_galgame_box')
-        self.cache_path = data_path / 'cache'
+        self.cache_dir = data_path / 'cache'
 
 
     async def initialize(self, config: AstrBotConfig):
@@ -41,18 +41,18 @@ class Cache:
         return await File.read_buffer(path) if cache else None
 
     async def clean_cache(self):
-        if os.path.exists(self.cache_path):
-            dirs = await asyncio.to_thread(os.listdir, self.cache_path)
+        if os.path.exists(self.cache_dir):
+            dirs = await asyncio.to_thread(os.listdir, self.cache_dir)
             if len(dirs) == 0:
                 return
             else:
-                await asyncio.to_thread(lambda: shutil.rmtree(self.cache_path))
+                await asyncio.to_thread(shutil.rmtree, self.cache_dir)
         self._check_dir()
 
 
     def get_cache_path(self, filename: str | int | CommandBody):
         formated = self._format_filename(filename)
-        return self.cache_path / formated
+        return self.cache_dir / formated
 
     def _format_filename(self, tag: str | int | CommandBody) -> str:
         formated_filename: str
@@ -70,7 +70,7 @@ class Cache:
 
 
     def _check_dir(self):
-        os.makedirs(self.cache_path, exist_ok=True)
+        os.makedirs(self.cache_dir, exist_ok=True)
 
 
 

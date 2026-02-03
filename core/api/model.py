@@ -16,9 +16,10 @@ class Title(BaseModel):
     official: bool
 
 class Vn(BaseModel):
-    alttitle: Optional[str] = None
-    title: str
     id: str
+    alttitle: Optional[str] = None
+    title: Optional[str] = None
+    image: Optional[Image] = None
     rating: Optional[float] = None
 
 class Tag(BaseModel):
@@ -32,6 +33,11 @@ class AnimeTraceData(BaseModel):
     box: tuple[float, float, float, float]
     not_confident: bool
     character: list[DetectedInfo]
+
+class Extlink(BaseModel):
+    id: str
+    label: str
+
 
 
 class VNDBVnResponse(BaseModel):
@@ -107,4 +113,31 @@ class AnimeTraceResponse(BaseModel):
     code: int
     data: list[AnimeTraceData]
     ai: bool
+
+class SteamGameResponse(BaseModel):
+    appid: int
+    name: str
+    playtime_forever: int
+    rtime_last_played: Optional[int] = 0
+
+class SteamOwnerResponse(BaseModel):
+    game_count: int
+    games: list[SteamGameResponse]
+
+class SteamProfileResponse(BaseModel):
+    steamid: str
+    personaname: str
+    avatarfull: str
+    lastlogoff: int
+    timecreated: int
+
+class SteamAchievementsResponse(BaseModel):
+    apiname: str
+    achieved: int
+    unlocktime: int
+
+class VNDBReleaseResponse(BaseModel):
+    id: str
+    extlinks: list[Extlink]
+    vns: list[Vn]
 

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from astrbot.core import AstrBotConfig
+from astrbot.api import AstrBotConfig
 
 from .http import Http, get_http
 from ..api.model import AnimeTraceResponse
@@ -37,6 +37,8 @@ class AnimeTreceRequest:
             'ai_detect': 1,
             'url': url
         }
+
+
 _animetrace_request: Optional[AnimeTreceRequest] = None
 def get_animetrace_request():
     global _animetrace_request

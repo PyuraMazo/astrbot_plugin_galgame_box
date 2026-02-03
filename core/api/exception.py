@@ -43,3 +43,11 @@ class NoCacheException(Tips):
 class CodeException(Tips):
     def __init__(self, code: int):
         super().__init__(trace_code.get(code, f'API返回码异常：{code}'))
+
+class HasBoundException(Tips):
+    def __init__(self, channel_id: str):
+        super().__init__(f'你已经绑定了Steam账号：{channel_id}')
+
+class NoBoundException(Tips):
+    def __init__(self, channel_id: str):
+        super().__init__(f'你还未绑定Steam账号：{channel_id}')

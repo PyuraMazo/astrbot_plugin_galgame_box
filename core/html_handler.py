@@ -2,7 +2,6 @@ import asyncio
 from typing import Optional
 from bs4 import BeautifulSoup
 
-from .api.const import id2command
 from .api.type import TouchGalDetails
 
 
@@ -43,7 +42,7 @@ class HTMLHandler:
 
 
 _handler: Optional[HTMLHandler] = None
-def get_handler():
+def get_html_handler():
     global _handler
     if _handler is None:
         _handler = HTMLHandler()

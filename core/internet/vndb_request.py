@@ -1,10 +1,12 @@
+import math
 from typing import Optional
 
 from astrbot.api import AstrBotConfig
 
 from .http import Http, get_http
 from ..api.type import CommandType, CommandBody, AnimeTraceModel
-from ..api.model import VNDBVnResponse, VNDBCharacterResponse, VNDBProducerResponse, TouchGalResponse, ResourceResponse, AnimeTraceResponse
+from ..api.model import VNDBVnResponse, VNDBCharacterResponse, VNDBProducerResponse, TouchGalResponse, ResourceResponse, \
+    AnimeTraceResponse, VNDBReleaseResponse
 from ..api.exception import ResponseException, NoResultException, InternetException, CodeException
 from ..api.const import id2command, vndb_command_fields
 
@@ -117,6 +119,7 @@ class VNDBRequest:
         except NoResultException:
             raise NoResultException(f'{cmd_type}-{keyword}')
 
+
     async def request_by_find(self, character: str, vn: str) -> list[VNDBCharacterResponse]:
         url = self.kana_url + CommandType.CHARACTER.value
         fields = vndb_command_fields['character_short']
@@ -128,7 +131,25 @@ class VNDBRequest:
         res = await self.http.post(url, payload)
         return [VNDBCharacterResponse.model_validate(i) for i in res["results"]]
 
+    async def request_by_release(self, id_list: list[int], length: int) -> list[VNDBReleaseResponse]:
+        query = 'release'
+        url = self.kana_url + query
+        fields = vndb_command_fields[query]
 
+        count = math.ceil(length / 100)
+        res = []
+        for page in range(count):
+            start = page * 100
+            end = (page + 1) * 100 if (page + 1) * 100 <= length else length
+            games = [["extlink", "=", ["steam", i]] for i in id_list[start: end]]
+            payload = {
+                "filters": ['or', *games],
+                "fields": fields,
+                "results": 100
+            }
+
+            res.extend((await self.http.post(url, payload))['results'])
+        return [VNDBReleaseResponse.model_validate(i) for i in res]
 
 _vndb_request: Optional[VNDBRequest] = None
 def get_vndb_request():
