@@ -26,7 +26,7 @@ class DataHandler:
         pass
 
     async def store(self, data: SteamData, force = False):
-        channel_id = data.channel_id
+        channel_id = data.platform_id
         path = self.build_path(channel_id)
         if force or not self.check_data(channel_id):
             await File.write_buffer(path, base64.b64encode(json.dumps(data.model_dump()).encode()))

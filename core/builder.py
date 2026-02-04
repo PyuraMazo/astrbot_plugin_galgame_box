@@ -1,6 +1,6 @@
 import asyncio
 import math
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Coroutine
 from pathlib import Path
 from PIL import Image as PILImage
 from io import BytesIO
@@ -33,7 +33,7 @@ class Builder:
             CommandType.SELECT: self._handle_select,
             CommandType.FIND: self._handle_find,
             CommandType.RECOMMEND: self._handle_random,
-            CommandType.SCHEDULE: self._handle_schedule
+            CommandType.PUZZLE: self._handle_schedule
         }
 
         self.downloader: Optional[Downloader] = None
@@ -41,10 +41,14 @@ class Builder:
         self.err: Optional[str] = None
         self.font: Optional[str] = None
         self.character_options: Optional[list[str]] = None
+        self.finish_consuming: Optional[int] = None
 
     async def initialize(self, config: AstrBotConfig):
         self.downloader = get_downloader()
-        self.character_options = config.get('searchSetting', {}).get('characterOptions', [])
+        search_setting = config.get('searchSetting', {})
+        self.character_options = search_setting.get('characterOptions', [])
+        self.finish_consuming = search_setting.get('finishConsuming', 20)
+
 
         await self.downloader.initialize(config)
         self.bg = await File.read_buffer2base64(str(self.bg_path))
@@ -142,7 +146,7 @@ class Builder:
         trace_resp: AnimeTraceResponse = response
         vndb_resp = kwargs['vndb_resp']
 
-        _buffer = await self.downloader.do(kwargs['image'])
+        _buffer = await self.downloader.download_once(kwargs['image'])
         # 转换为合法jpg
         buffer = await Image.image2jpg_async(_buffer)
         blocks = [self._build_find(data, chas, buffer) for data, chas in zip(trace_resp.data, vndb_resp)]
@@ -159,21 +163,28 @@ class Builder:
 
     async def _handle_schedule(self, response, **kwargs):
         vns: dict[int, SteamVnsInfo] = kwargs['vns']
-        sorted_list = sorted(vns.values(), key=lambda j: j.rate, reverse=True)
+        sorted_list = sorted(vns.values(), key=lambda j: j.play_time, reverse=True)
         co = [self._build_schedule(info) for info in sorted_list]
+        _items: list[RenderedPuzzle] = await asyncio.gather(*co)
+        buffer = await self.downloader.download_more([url.img for url in _items])
+        bs = [File.buffer2base64(buf) for buf in buffer]
+        for item, img in zip(_items, await asyncio.gather(*bs)):
+            item.img = img
 
         profile: SteamProfileResponse = response[0]
         nick = f'用户「{profile.personaname}」'
+        update = f'更新时间「{kwargs["update"]}」'
         _all = 0
         for i in vns:
             _all += vns[i].play_time
         all_play = f'Galgame总游玩时间「{round(_all / 60, 1)}」小时'
         title = kwargs.get('title', [])
+        title.append(update)
         title.append(nick)
         title.append(all_play)
         return UnrenderedData(
             title='<br>'.join(title),
-            items=await asyncio.gather(*co),
+            items=_items,
             bg_image=self.bg,
             font=self.font
         )
@@ -183,16 +194,16 @@ class Builder:
     def _build_title(self, command_body: CommandBody, count: int) -> list[str]:
         run_type = f'指令「{command_body.type.value}」'
         value = f'参数「{command_body.value if not command_body.value.startswith("http") else "网络链接"}」' \
-            if command_body.value and command_body.type != CommandType.SCHEDULE \
+            if command_body.value and command_body.type != CommandType.PUZZLE \
             else ''
         count = f'结果「{count}」条' \
-            if command_body.type != CommandType.RANDOM and command_body.type != CommandType.RECOMMEND and command_body.type != CommandType.SCHEDULE \
+            if command_body.type != CommandType.RANDOM and command_body.type != CommandType.RECOMMEND and command_body.type != CommandType.PUZZLE \
             else ''
         return [i for i in [run_type, value, count] if i]
 
     async def _build_vn(self, response: VNDBVnResponse) -> RenderedItem:
         id = f'VNDB ID：{response.id}'
-        img = await File.buffer2base64(await self.downloader.do(response.image.url)) if response.image else self.err
+        img = await File.buffer2base64(await self.downloader.download_once(response.image.url)) if response.image else self.err
         avg = f'平均分：{response.average}' if response.average else ''
         rating = f'贝叶斯评分：{response.rating}' if response.rating else ''
         release = f'发布日期：{response.released}' if response.released else ''
@@ -219,7 +230,7 @@ class Builder:
 
     async def _build_character(self, response: VNDBCharacterResponse, ignore_extra = False) -> RenderedItem:
         id = f'VNDB ID：{response.id}'
-        img = await File.buffer2base64(await self.downloader.do(response.image.url)) if response.image else self.err
+        img = await File.buffer2base64(await self.downloader.download_once(response.image.url)) if response.image else self.err
         name = response.original or response.name
         aliases = f'别名：{"、".join(response.aliases)}' if response.aliases else ''
         birthday = f'生日：{response.birthday[0]}月{response.birthday[1]}日' if response.birthday else ''
@@ -261,18 +272,23 @@ class Builder:
         info = "<br>".join(info_list)
 
         vns: list[RenderedItem] = []
+        wait = []
         for vn in vn_response:
+            wait.append(vn.image.url if vn.image else '')
+
             vn_id = f'VNDB ID：{vn.id}'
-            vn_img = await File.buffer2base64(await self.downloader.do(vn.image.url)) if vn.image else self.err
             vn_title = f'名称：{vn.alttitle or vn.title}'
             vn_released = f'发布日期：{vn.released}' if vn.released else ''
             vn_rating = f'贝叶斯评分：{vn.rating}' if vn.rating else ''
             vn_list = [i for i in [vn_id, vn_title, vn_released, vn_rating] if i]
             vns.append(RenderedItem(
-                image=vn_img,
+                image='',
                 text="<br>".join(vn_list),
                 sub_title=''
             ))
+        done = [File.buffer2base64(img) for img in await self.downloader.download_more(wait)]
+        for bs, vn in zip(await asyncio.gather(*done), vns):
+            vn.image = bs
         return RenderedBlock(
             column_info=info,
             vns=vns,
@@ -295,18 +311,19 @@ class Builder:
 
         if not details:
             text = '\n'.join([i for i in [title, touchgal_id, avg, source_type, platform, language] if i])
-            file_path = await File.buffer2base64(await Image.image2jpg_async(await self.downloader.do(cover)), False) if response.banner else self.err
+            file_path = await File.buffer2base64(await Image.image2jpg_async(await self.downloader.download_once(cover)), False) if response.banner else self.err
             return file_path, text
 
         vndb_id = f'VNDB ID：{details.vndb_id}'
         description = details.description.replace('、', '<br>')
-        co_imgs = [File.buffer2base64(await self.downloader.do(img), suffix='avif') or self.err for img in details.images]
+        img_buf = await self.downloader.download_more(details.images)
+        co_imgs = [File.buffer2base64(img, suffix='avif') or self.err for img in img_buf]
         imgs = await asyncio.gather(*co_imgs)
         data_list = [i for i in [vndb_id, touchgal_id, tags, avg, source_type, language, platform] if i]
         return RenderedRandom(
             text="<br>".join(data_list),
             sub_title=title,
-            main_image=await File.buffer2base64(await self.downloader.do(cover), suffix='avif') if response.banner else self.err,
+            main_image=await File.buffer2base64(await self.downloader.download_once(cover), suffix='avif') if response.banner else self.err,
             images=imgs,
             description=description
         )
@@ -366,18 +383,11 @@ class Builder:
         )
 
     async def _build_schedule(self, info: SteamVnsInfo):
-        rate = info.rate
-        game = info.name
-        achi = f'成就达成率<br>{round(info.achievement_rate * 100)}%' if isinstance(info.achievement_rate, float) else info.achievement_rate
-        play_time = f'总游玩时间<br>{round(info.play_time / 60, 1)}小时'
-        last_play = f'上次游玩时间<br>{date.fromtimestamp(info.last_play) if info.last_play else "暂无"}'
-
+        rate = info.play_time / self.finish_consuming / 60 if info.play_time < self.finish_consuming * 60 else 1
         return RenderedPuzzle(
-            g=math.ceil(200 * (1 - rate)),
-            span=math.ceil(3 * rate),
-            game=game,
-            img=await File.buffer2base64(await self.downloader.do(info.vndb_img)) if info.vndb_img and rate >= 0.5 else '',
-            text="<br>".join([achi, play_time, last_play])
+            span=math.ceil(4 * rate),
+            game=info.name,
+            img=info.vndb_img
         )
 
 

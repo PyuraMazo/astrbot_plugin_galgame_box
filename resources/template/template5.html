@@ -30,11 +30,11 @@
             /* background-repeat: no-repeat; */
             background-size: cover;
             padding: 2em;
-            width: 200vw;
+            width: 100vw;
         }
 
         .content {
-            width: 180vw;
+            width: 90vw;
             background-color: rgba(0, 0, 0, 0.3);
             border-radius: 2em;
             margin: 0 auto;
@@ -48,7 +48,7 @@
         .info {
             width: 100%;
             text-align: center;
-            color: rgb(147, 187, 194);
+            color: rgb(117, 187, 191);
             padding: 1em 0;
         }
 
@@ -60,32 +60,24 @@
         }
 
         .show {
-            display: grid;
-            width: 95%;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             margin-top: 1em;
+            width: 95%;
+            display: grid;
+            grid-template-columns: repeat(9, 9vw);
+            grid-template-rows: repeat(auto-fit, 12vw) ;
+            grid-auto-flow: dense;
         }
 
         .block {
-            background-color: black;
-            font-size: 1.5em;
             border: 0.1em solid black;
             display: flex;
         }
 
         .block img {
-            height: 15em;
-            width: auto;
+            min-width: 9vw;
+            object-fit: cover;
         }
 
-        .text {
-            flex: 1;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
     </style>
 </head>
 
@@ -97,19 +89,13 @@
         <div class="gap"></div>
         <h2>Galgame拼图</h2>
         <div class="show">
-            {% for item in items %}
-            <div class="block"
-                style="background-color: rgb(255, {{ item.g }}, 0); grid-column: span {{ item.span }};">
+          {% for item in items %}
+           <div class="block" style="grid-row: span {{ item.span }}; grid-column: span {{ item.span }};">
                 <img src="{{ item.img }}" alt="">
-                <div class="text">
-                    <h3>{{ item.game }}</h3>
-                    {{ item.text }}
-                </div>
-            </div>
-            {% endfor %}
+           </div>
+          {% endfor %}
         </div>
     </div>
 </body>
-
 
 </html>

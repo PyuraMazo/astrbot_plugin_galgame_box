@@ -107,6 +107,28 @@
           "step": 1
         },
         "default": 3
+      },
+      "updateInterval": {
+        "description": "Steam信息更新时间间隔（小时）",
+        "hint": "Steam相关指令调用时，超过此间隔才更新，否则沿用之前的信息。",
+        "type": "float",
+        "slider": {
+          "min": 0.5,
+          "max": 48,
+          "step": 0.5
+        },
+        "default": 24
+      },
+      "finishConsuming": {
+        "description": "拼图最佳游玩时长（小时）",
+        "hint": "调用拼图指令, 把此时长视为大展示板块的最高时长，其他板块大小按比例分配。",
+        "type": "int",
+        "slider": {
+          "min": 10,
+          "max": 100,
+          "step": 1
+        },
+        "default": 20
       }
     }
   }

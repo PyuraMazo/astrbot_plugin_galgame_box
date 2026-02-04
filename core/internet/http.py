@@ -27,7 +27,12 @@ class Http:
         if not self.session.closed:
             await self.session.close()
 
-    async def get(self, url: str, res_type: str = 'text', **kwargs) -> str | dict | bytes:
+    async def get(self, url: str, res_type: str = 'text', err_handle = None, **kwargs) -> str | dict | bytes:
+        if res_type == 'bytes' and not url.startswith('http'):
+            if err_handle:
+                return err_handle
+            else:
+                raise InternetException(url)
         count = 0
         while count < self.timeout_times:
             try:
@@ -44,6 +49,8 @@ class Http:
                 count += 1
                 await asyncio.sleep(0.5)
                 logger.info(f'网络请求失败一次...{str(e)}')
+        if res_type == 'bytes' and err_handle:
+            return err_handle
         raise InternetException(url)
 
 

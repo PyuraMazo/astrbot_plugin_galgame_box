@@ -90,9 +90,9 @@ class GalgameBoxPlugin(Star):
             yield res
 
     @gal_box.command('拼图', alias={'steam'})
-    async def schedule(self, event: AstrMessageEvent):
+    async def puzzle(self, event: AstrMessageEvent):
         """生成基于Steam的游玩记录的Galgame总览"""
-        async for res in self._common_command(event, CommandType.SCHEDULE):
+        async for res in self._common_command(event, CommandType.PUZZLE):
             yield res
 
 

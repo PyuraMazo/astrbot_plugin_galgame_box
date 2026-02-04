@@ -3,6 +3,17 @@
 ## 简介
 [AstrBot](https://github.com/AstrBotDevs/AstrBot)的社区插件，结合了VNDB和TouchGal的API，不但能够提供全面、细节的Galgame帮助信息，还能提供TouchGal的随机作品和资源下载等功能。后续会结合更多Gal网站的API提供更有趣的功能。
 
+## 效果
+
+### 查询厂商
+![查询厂商](https://github.com/user-attachments/assets/6208178e-cac9-4c89-88cc-e8fc38bd8e2d)
+
+### 按要求推荐
+![按要求推荐](https://github.com/user-attachments/assets/389ebc88-da68-4069-aab9-52da782a8381)
+
+### Steam拼图
+![Steam拼图](https://github.com/user-attachments/assets/515b86c8-ef85-4010-8a66-52222e4b28da)
+
 
 ## 使用指南
 
