@@ -1,7 +1,7 @@
 
-# astrbot_plugin_galgame_box
+# Galgame百宝盒
 ## 简介
-[AstrBot](https://github.com/AstrBotDevs/AstrBot)的社区插件，结合了VNDB和TouchGal的API，不但能够提供全面、细节的Galgame帮助信息，还能提供TouchGal的随机作品和资源下载等功能。后续会结合更多Gal网站的API提供更有趣的功能。
+[AstrBot](https://github.com/AstrBotDevs/AstrBot)的社区插件，本插件几乎满足了用户的所有与Gal相关的需求。本插件结合了VNDB、TouchGal、AnimeTrace、Steam的API，不但能够提供**全面且细致**的Galgame基础查询信息，而且能提供**随机作品推荐**、**资源下载**、**角色识别**、**Gal游戏拼图**等额外功能。
 
 ## 效果
 
@@ -19,7 +19,7 @@
 
 本插件以 **`旮旯`** 作为主指令，后接空格与子指令即可调用各项功能。
 
-> 本插件几乎所有结果反馈都是以图片形式呈现，因此使用了AstrBot官方的渲染服务，此渲染服务响应时间较长。如需缩短渲染时间以优化使用体验，请根据[官方部署教程](https://docs.astrbot.app/others/self-host-t2i.html)部署本地渲染服务。
+> 本插件几乎所有结果反馈都是以图片形式呈现，因此使用了AstrBot官方的渲染服务，此渲染服务默认渲染服务器的响应时间较长。如需缩短渲染时间以优化使用体验，请根据[官方部署教程](https://docs.astrbot.app/others/self-host-t2i.html)部署本地渲染服务。
 
 ##  功能列表
 

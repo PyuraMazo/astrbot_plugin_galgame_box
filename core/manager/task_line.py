@@ -186,7 +186,7 @@ class TaskLine:
         text = await self.touchgal_request.request_html(unique_id)
         details = await self.html_handler.handle_touchgal_details(text)
 
-        resp = (await self.touchgal_request.request_vn_by_search(details.vndb_id or details.title))[0]
+        resp = (await self.touchgal_request.request_vn_by_search(details.title or details.third_info[1]))[0]
 
         data = self.builder.build_options(cmd_body, resp, details=[details])
         tmpl = File.read_text(rendered_html)
@@ -506,12 +506,12 @@ class TaskLine:
 
             # 更新
             recent_list = await self.steam_request.request_recently(saved)
-            recent_dict = {game.id: game for game in recent_list if game.appid in saved.vns or game.appid in extra_vns_id_set}
-            for k, l in recent_dict:
+            recent_dict = {game.appid: game for game in recent_list if game.appid in saved.vns or game.appid in extra_vns_id_set}
+            for k in recent_dict:
                 saved.vns[k] = SteamVnsInfo(
-                    name=l.name,
-                    play_time=l.playtime_forever,
-                    vndb_img=saved.vns.get(k, {}).get('vndb_img', '') or extra_img_dict[k]
+                    name=recent_dict[k].name,
+                    play_time=recent_dict[k].playtime_forever,
+                    vndb_img=saved.vns[k].vndb_img or extra_img_dict[k]
                 )
 
                 if k in extra_vns_id_set:

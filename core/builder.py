@@ -314,12 +314,13 @@ class Builder:
             file_path = await File.buffer2base64(await Image.image2jpg_async(await self.downloader.download_once(cover)), False) if response.banner else self.err
             return file_path, text
 
-        vndb_id = f'VNDB ID：{details.vndb_id}'
+        third = details.third_info or ''
+        third_id = f'{third[0]}：{third[1]}' if third else ''
         description = details.description.replace('、', '<br>')
         img_buf = await self.downloader.download_more(details.images)
         co_imgs = [File.buffer2base64(img, suffix='avif') or self.err for img in img_buf]
         imgs = await asyncio.gather(*co_imgs)
-        data_list = [i for i in [vndb_id, touchgal_id, tags, avg, source_type, language, platform] if i]
+        data_list = [i for i in [third_id, touchgal_id, tags, avg, source_type, language, platform] if i]
         return RenderedRandom(
             text="<br>".join(data_list),
             sub_title=title,

@@ -62,7 +62,7 @@ class UnrenderedData(BaseModel):
     main_image: Optional[str] = None
 
 class TouchGalDetails(BaseModel):
-    vndb_id: str
+    third_info: list[str]
     images: list[str]
     description: str
     title: str

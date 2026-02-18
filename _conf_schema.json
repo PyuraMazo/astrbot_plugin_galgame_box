@@ -72,8 +72,7 @@
         "description": "NSFW内容",
         "hint": "开启时，随机作品可能出现NSFW内容。",
         "type": "bool",
-        "default": false,
-        "invisible": true
+        "default": false
       },
       "producerVns": {
         "description": "显示厂商的作品数量",

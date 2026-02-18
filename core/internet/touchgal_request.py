@@ -14,13 +14,16 @@ class TouchGalRequest:
 
 
         self.http: Optional[Http] = None
-        self.nsfw: Optional[dict] = None
+        self.cookies: Optional[dict] = None
 
     async def initialize(self, config: AstrBotConfig):
         self.http = get_http()
 
         await self.http.initialize(config)
-        self.nsfw = {'kun-patch-setting-store|state|data|kunNsfwEnable': 'all' if config.get('searchSetting', {}).get('enableNSFW', 'False') else 'sfw'}
+        self.cookies = {
+            'kun-patch-setting-store|state|data|kunNsfwEnable': 'all' if config.get('searchSetting', {}).get('enableNSFW', 'False') else 'sfw',
+            'kun-galgame-patch-moe-token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0b3VjaGdhbCIsImF1ZCI6InRvdWNoZ2FsX2FkbWluIiwidWlkIjozOTY2NDEsIm5hbWUiOiJQeXVyYSIsInJvbGUiOjEsImlhdCI6MTc3MTM5NDg1OSwiZXhwIjoxNzczOTg2ODU5fQ.BihJjjqjoeHIX1IjgEQrzlTwu520YInfvUOrjnvG1iI'
+        }
 
     async def terminate(self):
         await self.http.terminate()
@@ -44,18 +47,18 @@ class TouchGalRequest:
             "selectedYears": ["all"],
             "selectedMonths": ["all"]
         }
-        res = await self.http.post(self.search_api, payload, headers=self.nsfw)
+        res = await self.http.post(self.search_api, payload, cookies=self.cookies)
         return [TouchGalResponse.model_validate(i) for i in res['galgames']], res['total']
 
     async def request_random(self) -> str:
-        return (await self.http.get(self.base_url + 'api/home/random', 'json', headers=self.nsfw))['uniqueId']
+        return (await self.http.get(self.base_url + 'api/home/random', 'json', cookies=self.cookies))['uniqueId']
 
     async def request_html(self, unique_id: str) -> str:
-        return await self.http.get(self.base_url + unique_id, headers=self.nsfw)
+        return await self.http.get(self.base_url + unique_id, cookies=self.cookies)
 
     async def request_download(self, touchgal_id: int) -> list[ResourceResponse]:
         resource_url = f'{self.base_url}api/patch/resource?patchId={touchgal_id}'
-        res = await self.http.get(resource_url, 'json', headers=self.nsfw)
+        res = await self.http.get(resource_url, 'json', cookies=self.cookies)
         return [ResourceResponse.model_validate(i) for i in res]
 
 
