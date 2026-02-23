@@ -46,6 +46,22 @@
       }
     }
   },
+  "internetSetting": {
+    "description": "绕过cf反爬虫设置（如果使用TouchGal被cf拦截）",
+    "type": "object",
+    "items": {
+      "clearanceCookie": {
+      "description": "Cloudflare Clearance Cookie",
+      "hint": "绕过Cloudflare的反爬机制，需要手动访问https://www.touchgal.top/并获取Cookie的cf_clearance值。",
+      "type": "string"
+      },
+      "userAgent": {
+      "description": "User Agent",
+      "hint": "需要手动访问https://www.touchgal.top/并获取请求头的User-Agent值。",
+      "type": "string"
+      }
+    }
+  },
   "searchSetting": {
     "description": "搜索设置",
     "type": "object",

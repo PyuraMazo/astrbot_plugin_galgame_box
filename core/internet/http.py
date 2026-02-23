@@ -16,6 +16,9 @@ class Http:
         self.session: Optional[aiohttp.ClientSession] = None
 
     async def initialize(self, config: AstrBotConfig):
+        ua = config.get('internetSetting', {}).get('userAgent', '')
+        if ua: self.headers['user-agent'] = ua
+
         self.timeout_times = config.get('basicSetting', {}).get('requestTimeout', 3)
         if self.session is None:
             self.session = aiohttp.ClientSession(

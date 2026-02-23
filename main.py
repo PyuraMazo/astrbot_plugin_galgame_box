@@ -5,6 +5,7 @@ from astrbot.api.star import Context, Star
 from astrbot.api.message_components import Reply, Plain
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.platform import MessageType
+from astrbot.core.star.filter.command import GreedyStr
 
 from .core.api.const import id2command
 from .core.api.exception import Tips, InvalidArgsException
@@ -78,7 +79,7 @@ class GalgameBoxPlugin(Star):
             yield res
 
     @gal_box.command('推荐', alias={'标签'})
-    async def recommend(self, event: AstrMessageEvent, tags: str):
+    async def recommend(self, event: AstrMessageEvent, tags: GreedyStr):
         """提供一个或多个标签，从TouchGal网站中获取推荐内容"""
         async for res in self._common_command(event, CommandType.RECOMMEND, tags):
             yield res
@@ -115,7 +116,7 @@ class GalgameBoxPlugin(Star):
         else:
             yield event.chain_result([Reply(id=event.message_obj.message_id), Plain('发生非预期异常！')])
 
-    def _check_keyword_validity(self, event: AstrMessageEvent, cmd_type: CommandType, keyword: str):
+    def _check_keyword_validity(self, event: AstrMessageEvent, cmd_type: CommandType, keyword: str | list[str]):
         valid = True
         cmd = CommandBody(
             type=cmd_type,
@@ -127,13 +128,6 @@ class GalgameBoxPlugin(Star):
                 valid = False
         elif cmd_type == CommandType.FIND:
             cmd.value = keyword if keyword.startswith('http') else ''
-        elif cmd_type == CommandType.RECOMMEND:
-            if keyword == '':
-                valid = False
-            else:
-                msg = event.message_str.strip()
-                index = msg.find(keyword)
-                cmd.value = msg[index:]
 
         if valid:
             return cmd
