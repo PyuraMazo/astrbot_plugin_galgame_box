@@ -13,10 +13,11 @@ from .api.exception import HasBoundException, NoBoundException
 from .api.type import SteamData
 from .utils.file import File
 
+
 class DataHandler:
     def __init__(self):
-        data_path = StarTools.get_data_dir('astrbot_plugin_galgame_box')
-        self.data_dir = data_path / 'data'
+        data_path = StarTools.get_data_dir("astrbot_plugin_galgame_box")
+        self.data_dir = data_path / "data"
 
     async def initialize(self, config: AstrBotConfig):
         self._check_dir()
@@ -25,14 +26,15 @@ class DataHandler:
         # await self._clean_all()
         pass
 
-    async def store(self, data: SteamData, force = False):
+    async def store(self, data: SteamData, force=False):
         channel_id = data.platform_id
         path = self.build_path(channel_id)
         if force or not self.check_data(channel_id):
-            await File.write_buffer(path, base64.b64encode(json.dumps(data.model_dump()).encode()))
+            await File.write_buffer(
+                path, base64.b64encode(json.dumps(data.model_dump()).encode())
+            )
         else:
             raise HasBoundException(channel_id)
-
 
     async def read(self, channel_id: str) -> SteamData | None:
         if self.check_data(channel_id):
@@ -41,10 +43,8 @@ class DataHandler:
         else:
             raise NoBoundException(channel_id)
 
-
     def build_path(self, channel_id: str) -> str:
-        return str(self.data_dir / f'{channel_id}.secret')
-
+        return str(self.data_dir / f"{channel_id}.secret")
 
     def check_data(self, channel_id: str) -> bool:
         path = self.build_path(channel_id)
@@ -62,6 +62,8 @@ class DataHandler:
 
 
 _handler: Optional[DataHandler] = None
+
+
 def get_data_handler():
     global _handler
     if _handler is None:

@@ -11,12 +11,10 @@ from .utils.image import Image
 from .api.type import CommandBody
 
 
-
 class Cache:
     def __init__(self):
-        data_path = StarTools.get_data_dir('astrbot_plugin_galgame_box')
-        self.cache_dir = data_path / 'cache'
-
+        data_path = StarTools.get_data_dir("astrbot_plugin_galgame_box")
+        self.cache_dir = data_path / "cache"
 
     async def initialize(self, config: AstrBotConfig):
         self._check_dir()
@@ -24,15 +22,15 @@ class Cache:
     async def terminate(self):
         await self.clean_cache()
 
-    async def store_image(self, filename: str | int | CommandBody, buffer: bytes, source_suffix = 'jpg'):
+    async def store_image(
+        self, filename: str | int | CommandBody, buffer: bytes, source_suffix="jpg"
+    ):
         path = str(self.get_cache_path(filename))
 
         if not self._check_cache(path):
-            if source_suffix.lower() != 'jpg' and source_suffix.lower() != 'jpeg':
+            if source_suffix.lower() != "jpg" and source_suffix.lower() != "jpeg":
                 buffer = await Image.image2jpg_async(buffer)
             await File.write_buffer(path, buffer)
-
-
 
     async def get_cache(self, filename: str | int | CommandBody) -> bytes | None:
         path = str(self.get_cache_path(filename))
@@ -49,7 +47,6 @@ class Cache:
                 await asyncio.to_thread(shutil.rmtree, self.cache_dir)
         self._check_dir()
 
-
     def get_cache_path(self, filename: str | int | CommandBody):
         formated = self._format_filename(filename)
         return self.cache_dir / formated
@@ -57,24 +54,23 @@ class Cache:
     def _format_filename(self, tag: str | int | CommandBody) -> str:
         formated_filename: str
         if isinstance(tag, CommandBody):
-            formated_filename = f'{tag.type.value}-{tag.value}'
+            formated_filename = f"{tag.type.value}-{tag.value}"
         elif isinstance(tag, int):
             formated_filename = str(tag)
         else:
             formated_filename = tag
-        return formated_filename + '.jpg'
-
+        return formated_filename + ".jpg"
 
     def _check_cache(self, path: str) -> bool:
         return os.path.exists(path)
-
 
     def _check_dir(self):
         os.makedirs(self.cache_dir, exist_ok=True)
 
 
-
 _cache: Optional[Cache] = None
+
+
 def get_cache():
     global _cache
     if _cache is None:

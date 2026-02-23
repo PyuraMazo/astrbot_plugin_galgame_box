@@ -1,5 +1,16 @@
 # ChangeLog
 
+# 2026/02/24 v1.5.1
+
+## 新增
+- 增加了关于访问TouchGal的绕过Cloudflare验证，增加了新配置项`Cloudflare Clearance Cookie`和`User Agent`。（[#8](https://github.com/PyuraMazo/astrbot_plugin_galgame_box/issues/8)）
+
+
+## 修复
+- 修复了配置项`Cloudflare Clearance Cookie`不起作用的问题。
+
+---
+
 # 2026/02/23 v1.5.0
 
 ## 新增

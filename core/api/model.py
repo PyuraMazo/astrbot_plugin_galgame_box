@@ -5,15 +5,18 @@ from pydantic import BaseModel
 class Image(BaseModel):
     url: str
 
+
 class Developer(BaseModel):
     id: str
     original: Optional[str] = None
     name: str
 
+
 class Title(BaseModel):
     lang: str
     title: str
     official: bool
+
 
 class Vn(BaseModel):
     id: str
@@ -22,22 +25,25 @@ class Vn(BaseModel):
     image: Optional[Image] = None
     rating: Optional[float] = None
 
+
 class Tag(BaseModel):
     tag: dict
+
 
 class DetectedInfo(BaseModel):
     work: str
     character: str
+
 
 class AnimeTraceData(BaseModel):
     box: tuple[float, float, float, float]
     not_confident: bool
     character: list[DetectedInfo]
 
+
 class Extlink(BaseModel):
     id: str
     label: str
-
 
 
 class VNDBVnResponse(BaseModel):
@@ -53,6 +59,7 @@ class VNDBVnResponse(BaseModel):
     aliases: Optional[list[str]] = None
     developers: Optional[list[Developer]] = None
     titles: Optional[list[Title]] = None
+
 
 class VNDBCharacterResponse(BaseModel):
     id: str
@@ -71,6 +78,7 @@ class VNDBCharacterResponse(BaseModel):
     height: Optional[int] = None
     cup: Optional[str] = None
 
+
 class VNDBProducerResponse(BaseModel):
     id: str
     name: str
@@ -79,11 +87,13 @@ class VNDBProducerResponse(BaseModel):
     lang: Optional[str] = None
     type: Optional[str] = None
 
+
 class TouchGalResponse(BaseModel):
     """
     id为TouchGal的全局ID
     unique_id为作品ID，可以访问对应页面
     """
+
     id: int
     unique_id: str
     banner: str
@@ -93,6 +103,7 @@ class TouchGalResponse(BaseModel):
     platform: list[str]
     averageRating: float
     tag: list[Tag]
+
 
 class ResourceResponse(BaseModel):
     id: int
@@ -114,15 +125,18 @@ class AnimeTraceResponse(BaseModel):
     data: list[AnimeTraceData]
     ai: bool
 
+
 class SteamGameResponse(BaseModel):
     appid: int
     name: str
     playtime_forever: int
     rtime_last_played: Optional[int] = 0
 
+
 class SteamOwnerResponse(BaseModel):
     game_count: int
     games: list[SteamGameResponse]
+
 
 class SteamProfileResponse(BaseModel):
     steamid: str
@@ -131,13 +145,14 @@ class SteamProfileResponse(BaseModel):
     lastlogoff: int
     timecreated: int
 
+
 class SteamAchievementsResponse(BaseModel):
     apiname: str
     achieved: int
     unlocktime: int
 
+
 class VNDBReleaseResponse(BaseModel):
     id: str
     extlinks: list[Extlink]
     vns: list[Vn]
-

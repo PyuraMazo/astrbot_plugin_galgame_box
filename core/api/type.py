@@ -15,9 +15,11 @@ class ColumnStyle(BaseModel):
     image: str
     title: str
 
+
 class RenderedBlock(BaseModel):
     column_info: str | ColumnStyle
     vns: list[RenderedItem]
+
 
 class RenderedRandom(BaseModel):
     sub_title: str
@@ -26,6 +28,7 @@ class RenderedRandom(BaseModel):
     description: str
     text: str
 
+
 class RenderedPuzzle(BaseModel):
     game: str
     span: int
@@ -33,26 +36,26 @@ class RenderedPuzzle(BaseModel):
 
 
 class CommandType(Enum):
-    VN = 'vn'
-    CHARACTER = 'character'
-    PRODUCER = 'producer'
-    ID = 'id'
-    RANDOM = 'random'
-    DOWNLOAD = 'download'
-    SELECT = 'select'
-    FIND = 'find'
-    RECOMMEND = 'recommend'
-    BIND = 'bind'
-    PUZZLE = 'puzzle'
+    VN = "vn"
+    CHARACTER = "character"
+    PRODUCER = "producer"
+    ID = "id"
+    RANDOM = "random"
+    DOWNLOAD = "download"
+    SELECT = "select"
+    FIND = "find"
+    RECOMMEND = "recommend"
+    BIND = "bind"
+    PUZZLE = "puzzle"
+
 
 class CommandBody(BaseModel):
     type: CommandType
     value: str | list[str]
     event: AstrMessageEvent
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True
-    )
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 class UnrenderedData(BaseModel):
     title: str
@@ -60,6 +63,7 @@ class UnrenderedData(BaseModel):
     bg_image: str
     font: str
     main_image: Optional[str] = None
+
 
 class TouchGalDetails(BaseModel):
     third_info: list[str]
@@ -69,8 +73,9 @@ class TouchGalDetails(BaseModel):
 
 
 class AnimeTraceModel(Enum):
-    Profession = 'full_game_model_kira'
-    Common = 'animetrace_high_beta'
+    Profession = "full_game_model_kira"
+    Common = "animetrace_high_beta"
+
 
 class SelectInfo(BaseModel):
     cmd_body: CommandBody
@@ -80,10 +85,12 @@ class SelectInfo(BaseModel):
     tmpl: str
     ready: Optional[str] = None
 
+
 class SteamVnsInfo(BaseModel):
     name: str
     play_time: int
     vndb_img: str
+
 
 class SteamData(BaseModel):
     platform_id: str

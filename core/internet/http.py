@@ -16,22 +16,27 @@ class Http:
         self.session: Optional[aiohttp.ClientSession] = None
 
     async def initialize(self, config: AstrBotConfig):
-        ua = config.get('internetSetting', {}).get('userAgent', '')
-        if ua: self.headers['user-agent'] = ua
+        ua = config.get("internetSetting", {}).get("userAgent", "")
+        if ua:
+            self.headers["user-agent"] = ua
 
-        self.timeout_times = config.get('basicSetting', {}).get('requestTimeout', 3)
+        self.timeout_times = config.get("basicSetting", {}).get("requestTimeout", 3)
         if self.session is None:
             self.session = aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=config.get('basicSetting', {}).get('requestTime', 30)),
-                headers=self.headers
+                timeout=aiohttp.ClientTimeout(
+                    total=config.get("basicSetting", {}).get("requestTime", 30)
+                ),
+                headers=self.headers,
             )
 
     async def terminate(self):
         if not self.session.closed:
             await self.session.close()
 
-    async def get(self, url: str, res_type: str = 'text', err_handle = None, **kwargs) -> str | dict | bytes:
-        if res_type == 'bytes' and not url.startswith('http'):
+    async def get(
+        self, url: str, res_type: str = "text", err_handle=None, **kwargs
+    ) -> str | dict | bytes:
+        if res_type == "bytes" and not url.startswith("http"):
             if err_handle:
                 return err_handle
             else:
@@ -39,10 +44,10 @@ class Http:
         count = 0
         while count < self.timeout_times:
             try:
-                if res_type == 'json':
+                if res_type == "json":
                     async with self.session.get(url, **kwargs) as response:
                         return await response.json()
-                elif res_type == 'bytes':
+                elif res_type == "bytes":
                     async with self.session.get(url, **kwargs) as response:
                         return await response.read()
                 else:
@@ -51,27 +56,29 @@ class Http:
             except Exception as e:
                 count += 1
                 await asyncio.sleep(0.5)
-                logger.info(f'网络请求失败一次...{str(e)}')
-        if res_type == 'bytes' and err_handle:
+                logger.info(f"网络请求失败一次...{str(e)}")
+        if res_type == "bytes" and err_handle:
             return err_handle
         raise InternetException(url)
 
-
     async def post(self, url: str, data: dict, **kwargs) -> str | dict | bytes:
-        headers = self.headers | kwargs.pop('headers', {})
+        headers = self.headers | kwargs.pop("headers", {})
         count = 0
         while count < self.timeout_times:
             try:
-                async with self.session.post(url, headers=headers, json=data, **kwargs) as response:
+                async with self.session.post(
+                    url, headers=headers, json=data, **kwargs
+                ) as response:
                     return await response.json()
             except Exception as e:
                 count += 1
                 await asyncio.sleep(0.5)
-                logger.info(f'网络请求失败一次...{str(e)}')
+                logger.info(f"网络请求失败一次...{str(e)}")
         raise InternetException(url)
 
 
 _http: Optional[Http] = None
+
 
 def get_http() -> Http:
     global _http
