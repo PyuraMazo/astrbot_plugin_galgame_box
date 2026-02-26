@@ -11,7 +11,6 @@ class TouchGalRequest:
     def __init__(self):
         self.base_url = "https://www.touchgal.top/"
         self.search_api = self.base_url + "api/search/"
-        self.touchgal_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0b3VjaGdhbCIsImF1ZCI6InRvdWNoZ2FsX2FkbWluIiwidWlkIjozOTY2NDEsIm5hbWUiOiJQeXVyYSIsInJvbGUiOjEsImlhdCI6MTc3MTM5NDg1OSwiZXhwIjoxNzczOTg2ODU5fQ.BihJjjqjoeHIX1IjgEQrzlTwu520YInfvUOrjnvG1iI"
 
         self.http: Optional[Http] = None
         self.cookies: Optional[dict] = None
@@ -26,12 +25,15 @@ class TouchGalRequest:
             if config.get("searchSetting", {}).get("enableNSFW", "False")
             else "sfw"
         )
-        cf_clearance = config.get("internetSetting", {}).get("clearanceCookie", "")
+        token = config.get("searchSetting", {}).get("touchgalToken", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0b3VjaGdhbCIsImF1ZCI6InRvdWNoZ2FsX2FkbWluIiwidWlkIjozOTY2NDEsIm5hbWUiOiJQeXVyYSIsInJvbGUiOjEsImlhdCI6MTc3MTM5NDg1OSwiZXhwIjoxNzczOTg2ODU5fQ.BihJjjqjoeHIX1IjgEQrzlTwu520YInfvUOrjnvG1iI")
         self.cookies = {
-            "kun-galgame-patch-moe-token": self.touchgal_token,
-            "kun-patch-setting-store|state|data|kunNsfwEnable": nsfw,
-            "cf_clearance": cf_clearance,
+            "kun-galgame-patch-moe-token": token,
+            "kun-patch-setting-store|state|data|kunNsfwEnable": nsfw
         }
+        cf_clearance = config.get("internetSetting", {}).get("clearanceCookie", "")
+        if cf_clearance:
+            self.cookies["cf_clearance"] = cf_clearance
+
 
     async def terminate(self):
         await self.http.terminate()

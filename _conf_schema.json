@@ -50,6 +50,11 @@
     "description": "绕过cf反爬虫设置（如果使用TouchGal被cf拦截）",
     "type": "object",
     "items": {
+      "touchgalToken": {
+        "description": "TouchGal登录账号Token",
+        "hint": "这是开启NSFW的前置条件，需要手动访问https://www.touchgal.top/并获取Cookie的kun-galgame-patch-moe-token值。不填则默认使用开发者的测试Token，有风险。",
+        "type": "string"
+      },
       "clearanceCookie": {
         "description": "Cloudflare Clearance Cookie",
         "hint": "绕过Cloudflare的反爬机制，需要手动访问https://www.touchgal.top/并获取Cookie的cf_clearance值。",

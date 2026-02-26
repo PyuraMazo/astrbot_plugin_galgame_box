@@ -1,10 +1,23 @@
 # ChangeLog
 
+
+# 2026/02/26 v1.6.0
+
+##  新增
+- 增加了第三方依赖`curl_cffi`用于绕过cf时的指纹认证（[#9](https://github.com/PyuraMazo/astrbot_plugin_galgame_box/pull/9)）。
+- 新增配置项`浏览器指纹`，默认`chrome136`（[#9](https://github.com/PyuraMazo/astrbot_plugin_galgame_box/pull/9)）。
+
+## 修复
+- 关于`旮旯 推荐`的参数类型，采用了官方支持的GreedyStr而非自定义的解析。
+- 修复了Cookie设置错误
+- 修复了`旮旯 推荐`参数为空时的错误，增加主动拦截（[#9](https://github.com/PyuraMazo/astrbot_plugin_galgame_box/pull/9)）。
+
+---
+
 # 2026/02/24 v1.5.1
 
 ## 新增
-- 增加了关于访问TouchGal的绕过Cloudflare验证，增加了新配置项`Cloudflare Clearance Cookie`和`User Agent`。（[#8](https://github.com/PyuraMazo/astrbot_plugin_galgame_box/issues/8)）
-
+- 增加了关于访问TouchGal的绕过Cloudflare验证，增加了新配置项`Cloudflare Clearance Cookie`和`User Agent`（[#8](https://github.com/PyuraMazo/astrbot_plugin_galgame_box/issues/8)）。
 
 ## 修复
 - 修复了配置项`Cloudflare Clearance Cookie`不起作用的问题。
@@ -14,7 +27,7 @@
 # 2026/02/23 v1.5.0
 
 ## 新增
-- 增加了关于访问TouchGal的绕过Cloudflare验证，增加了新配置项`Cloudflare Clearance Cookie`和`User Agent`。（[#8](https://github.com/PyuraMazo/astrbot_plugin_galgame_box/issues/8)）
+- 增加了关于访问TouchGal的绕过Cloudflare验证，增加了新配置项`Cloudflare Clearance Cookie`和`User Agent`（[#8](https://github.com/PyuraMazo/astrbot_plugin_galgame_box/issues/8)）。
 
 ## 修复
 - 关于`旮旯 推荐`的参数类型，采用了官方支持的GreedyStr而非自定义的解析。
