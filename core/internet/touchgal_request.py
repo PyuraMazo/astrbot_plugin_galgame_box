@@ -25,7 +25,7 @@ class TouchGalRequest:
             if config.get("searchSetting", {}).get("enableNSFW", "False")
             else "sfw"
         )
-        token = config.get("searchSetting", {}).get("touchgalToken", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0b3VjaGdhbCIsImF1ZCI6InRvdWNoZ2FsX2FkbWluIiwidWlkIjozOTY2NDEsIm5hbWUiOiJQeXVyYSIsInJvbGUiOjEsImlhdCI6MTc3MTM5NDg1OSwiZXhwIjoxNzczOTg2ODU5fQ.BihJjjqjoeHIX1IjgEQrzlTwu520YInfvUOrjnvG1iI")
+        token = config.get("internetSetting", {}).get("touchgalToken", "eyJpc3MiOiJ0b3VjaGdhbCIsImF1ZCI6InRvdWNoZ2FsX2FkbWluIiwidWlkIjozOTY2NDEsIm5hbWUiOiJQeXVyYSIsInJvbGUiOjEsImlhdCI6MTc3MTM5NDg1OSwiZXhwIjoxNzczOTg2ODU5fQ.BihJjjqjoeHIX1IjgEQrzlTwu520YInfvUOrjnvG1iI")
         self.cookies = {
             "kun-galgame-patch-moe-token": token,
             "kun-patch-setting-store|state|data|kunNsfwEnable": nsfw
