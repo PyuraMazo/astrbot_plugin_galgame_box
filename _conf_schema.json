@@ -51,14 +51,20 @@
     "type": "object",
     "items": {
       "clearanceCookie": {
-      "description": "Cloudflare Clearance Cookie",
-      "hint": "绕过Cloudflare的反爬机制，需要手动访问https://www.touchgal.top/并获取Cookie的cf_clearance值。",
-      "type": "string"
+        "description": "Cloudflare Clearance Cookie",
+        "hint": "绕过Cloudflare的反爬机制，需要手动访问https://www.touchgal.top/并获取Cookie的cf_clearance值。",
+        "type": "string"
       },
       "userAgent": {
-      "description": "User Agent",
-      "hint": "需要手动访问https://www.touchgal.top/并获取请求头的User-Agent值。",
-      "type": "string"
+        "description": "User Agent",
+        "hint": "需要手动访问https://www.touchgal.top/并获取请求头的User-Agent值。",
+        "type": "string"
+      },
+      "browserImpersonate": {
+        "description": "浏览器指纹",
+        "hint": "用于curl_cffi请求指纹伪装，建议与User-Agent主版本一致，如chrome136。",
+        "type": "string",
+        "default": "chrome136"
       }
     }
   },

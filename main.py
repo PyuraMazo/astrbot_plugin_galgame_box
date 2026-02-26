@@ -131,6 +131,9 @@ class GalgameBoxPlugin(Star):
                 valid = False
         elif cmd_type == CommandType.FIND:
             cmd.value = keyword if keyword.startswith("http") else ""
+        elif cmd_type == CommandType.RECOMMEND:
+            if not isinstance(keyword, str) or not keyword.strip():
+                valid = False
 
         if valid:
             return cmd
