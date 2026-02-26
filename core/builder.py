@@ -402,16 +402,17 @@ class Builder:
                     if i
                 ]
             )
-            file_path = (
-                await File.buffer2base64(
-                    await Image.image2jpg_async(
-                        await self.downloader.download_once(cover)
-                    ),
-                    False,
-                )
-                if response.banner
-                else self.err
-            )
+            file_path = self.err
+            if response.banner:
+                try:
+                    file_path = await File.buffer2base64(
+                        await Image.image2jpg_async(
+                            await self.downloader.download_once(cover)
+                        ),
+                        False,
+                    )
+                except Exception:
+                    file_path = self.err
             return file_path, text
 
         third = details.third_info or ""

@@ -31,6 +31,13 @@ class InternetException(Tips):
         super().__init__(f"请求网络失败：{url}")
 
 
+class CloudflareChallengeException(Tips):
+    def __init__(self, url: str):
+        super().__init__(
+            f"Cloudflare验证未通过，请更新cf_clearance并配置匹配的浏览器指纹与User-Agent {url}"
+        )
+
+
 class ResponseException(Tips):
     def __init__(self, url: str):
         super().__init__(f"请求结果为空，网站返回内容错误：{url}")
