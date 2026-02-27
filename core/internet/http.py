@@ -19,17 +19,15 @@ class Http:
     def __init__(self):
         self.headers = {"Content-Type": "application/json"}
 
-        self.timeout_times = 3
-        self.request_time = 30
+        self.timeout_times: Optional[int] = None
+        self.request_time: Optional[int] = None
         self.session: Optional[aiohttp.ClientSession] = None
         self.curl_session: Optional[Any] = None
-
-        self.browser_impersonate = ""
+        self.browser_impersonate: Optional[str] = None
 
     async def initialize(self, config: AstrBotConfig):
-        ua = config.get("internetSetting", {}).get("userAgent", "")
-        if ua:
-            self.headers["user-agent"] = ua
+        ua = config.get("internetSetting", {}).get("userAgent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36")
+        self.headers["user-agent"] = ua
 
         self.timeout_times = config.get("basicSetting", {}).get("requestTimeout", 3)
         self.request_time = config.get("basicSetting", {}).get("requestTime", 30)
@@ -46,7 +44,7 @@ class Http:
         if self._curl_ready() and self.curl_session is None:
             self.curl_session = CurlAsyncSession(
                 headers=self.headers,
-                timeout=self.request_time,
+                timeout=self.request_time
             )
         elif self.browser_impersonate and CurlAsyncSession is None:
             logger.warning(

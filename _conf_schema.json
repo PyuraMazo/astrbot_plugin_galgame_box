@@ -63,7 +63,8 @@
       "userAgent": {
         "description": "User Agent",
         "hint": "需要手动访问https://www.touchgal.top/并获取请求头的User-Agent值。",
-        "type": "string"
+        "type": "string",
+        "default": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
       },
       "browserImpersonate": {
         "description": "浏览器指纹",
