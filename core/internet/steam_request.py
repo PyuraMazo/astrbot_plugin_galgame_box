@@ -25,7 +25,7 @@ class SteamRequest:
             "http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/"
         )
 
-        self.http: Http | None = None
+        self.http: Optional[Http] = None
 
     async def initialize(self, config: AstrBotConfig):
         self.http = get_http()

@@ -25,6 +25,7 @@ class Vn(BaseModel):
     rating: float | None = None
 
 
+
 class Tag(BaseModel):
     tag: dict
 
@@ -60,6 +61,7 @@ class VNDBVnResponse(BaseModel):
     titles: list[Title] | None = None
 
 
+
 class VNDBCharacterResponse(BaseModel):
     id: str
     name: str
@@ -78,6 +80,7 @@ class VNDBCharacterResponse(BaseModel):
     cup: str | None = None
 
 
+
 class VNDBProducerResponse(BaseModel):
     id: str
     name: str
@@ -85,6 +88,7 @@ class VNDBProducerResponse(BaseModel):
     aliases: list[str] | None = None
     lang: str | None = None
     type: str | None = None
+
 
 
 class TouchGalResponse(BaseModel):
@@ -130,6 +134,7 @@ class SteamGameResponse(BaseModel):
     name: str
     playtime_forever: int
     rtime_last_played: int | None = 0
+
 
 
 class SteamOwnerResponse(BaseModel):

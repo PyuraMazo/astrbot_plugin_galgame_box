@@ -4,7 +4,12 @@ import aiohttp
 
 from astrbot.api import AstrBotConfig, logger
 
-from ..api.exception import InternetException
+from ..api.exception import InternetException, CloudflareChallengeException
+
+try:
+    from curl_cffi.requests import AsyncSession as CurlAsyncSession
+except Exception:  # pragma: no cover - optional dependency
+    CurlAsyncSession = None
 
 
 class Http:
@@ -25,7 +30,7 @@ class Http:
             )
 
     async def terminate(self):
-        if not self.session.closed:
+        if self.session is not None and not self.session.closed:
             await self.session.close()
 
     async def get(
@@ -34,8 +39,8 @@ class Http:
         if res_type == "bytes" and not url.startswith("http"):
             if err_handle:
                 return err_handle
-            else:
-                raise InternetException(url)
+            raise InternetException(url)
+
         count = 0
         while count < self.timeout_times:
             try:
@@ -73,6 +78,7 @@ class Http:
 
 
 _http: Http | None = None
+
 
 
 def get_http() -> Http:

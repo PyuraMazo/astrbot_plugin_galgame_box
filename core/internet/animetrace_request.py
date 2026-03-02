@@ -6,6 +6,7 @@ from ..api.type import AnimeTraceModel
 from .http import Http, get_http
 
 
+
 class AnimeTreceRequest:
     def __init__(self):
         self.api_url = "https://api.animetrace.com/v1/search"

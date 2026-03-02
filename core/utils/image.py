@@ -3,7 +3,6 @@ from io import BytesIO
 
 from PIL import Image as PILImage
 
-
 class Image:
     @staticmethod
     def image2jpg(image_data: bytes) -> bytes:
