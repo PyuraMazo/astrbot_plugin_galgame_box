@@ -1,18 +1,17 @@
-from typing import Optional
-
 from astrbot.api import AstrBotConfig
 
-from .http import Http, get_http
+from ..api.exception import CodeException
 from ..api.model import AnimeTraceResponse
 from ..api.type import AnimeTraceModel
-from ..api.exception import CodeException
+from .http import Http, get_http
+
 
 
 class AnimeTreceRequest:
     def __init__(self):
         self.api_url = "https://api.animetrace.com/v1/search"
 
-        self.http: Optional[Http] = None
+        self.http: Http | None = None
 
     async def initialize(self, config: AstrBotConfig):
         self.http = get_http()
@@ -37,7 +36,7 @@ class AnimeTreceRequest:
         return {"model": model.value, "ai_detect": 1, "url": url}
 
 
-_animetrace_request: Optional[AnimeTreceRequest] = None
+_animetrace_request: AnimeTreceRequest | None = None
 
 
 def get_animetrace_request():

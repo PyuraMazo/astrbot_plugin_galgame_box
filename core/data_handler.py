@@ -3,13 +3,11 @@ import base64
 import json
 import os
 import shutil
-from typing import Optional
-
 
 from astrbot.api import AstrBotConfig
 from astrbot.api.star import StarTools
-from .api.exception import HasBoundException, NoBoundException
 
+from .api.exception import HasBoundException, NoBoundException
 from .api.type import SteamData
 from .utils.file import File
 
@@ -61,7 +59,7 @@ class DataHandler:
         os.makedirs(self.data_dir, exist_ok=True)
 
 
-_handler: Optional[DataHandler] = None
+_handler: DataHandler | None = None
 
 
 def get_data_handler():

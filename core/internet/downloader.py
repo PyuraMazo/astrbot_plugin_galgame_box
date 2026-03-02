@@ -1,10 +1,10 @@
 import asyncio
-import aiohttp
-from typing import Optional, Any
 from pathlib import Path
+from typing import Any
 
-from astrbot.api import logger
-from astrbot.api import AstrBotConfig
+import aiohttp
+
+from astrbot.api import AstrBotConfig, logger
 
 from ..utils.file import File
 
@@ -23,39 +23,20 @@ class Downloader:
         self.connector = aiohttp.TCPConnector(limit_per_host=2, limit=10)
 
         self.timeout_times = None
-        self.request_time = 30
-        self.session: Optional[aiohttp.ClientSession] = None
-        self.curl_session: Optional[Any] = None
-        self.err_image: Optional[bytes] = None
-        self.browser_impersonate: str = ""
+        self.session: aiohttp.ClientSession | None = None
+        self.err_image: bytes | None = None
 
     async def initialize(self, config: AstrBotConfig):
         self.timeout_times = config.get("basicSetting", {}).get("requestTimeout", 3)
-        self.request_time = config.get("basicSetting", {}).get("requestTime", 30)
-        self.browser_impersonate = (
-            config.get("internetSetting", {}).get("browserImpersonate", "chrome136")
-        ).strip()
-        ua = config.get("internetSetting", {}).get("userAgent", "")
-        if ua:
-            self.headers["user-agent"] = ua
         self.err_image = await File.read_buffer(str(self.err_image_path))
 
         if self.session is None:
             self.session = aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(
-                    total=self.request_time
+                    total=config.get("basicSetting", {}).get("requestTime", 30)
                 ),
                 headers=self.headers,
                 connector=self.connector,
-            )
-        if self._curl_ready() and self.curl_session is None:
-            self.curl_session = CurlAsyncSession(
-                headers=self.headers,
-                timeout=self.request_time,
-            )
-        elif self.browser_impersonate and CurlAsyncSession is None:
-            logger.warning(
-                "未安装curl_cffi，封面图下载回退为aiohttp，可能被Cloudflare拦截"
             )
 
     async def terminate(self):
@@ -146,7 +127,7 @@ class Downloader:
         return self.err_image
 
 
-_downloader: Optional[Downloader] = None
+_downloader: Downloader | None = None
 
 
 def get_downloader():

@@ -1,34 +1,28 @@
 import math
-from typing import Optional
 
 from astrbot.api import AstrBotConfig
 
-from .http import Http, get_http
-from ..api.type import CommandType, CommandBody, AnimeTraceModel
+from ..api.const import id2command, vndb_command_fields
+from ..api.exception import (
+    NoResultException,
+    ResponseException,
+)
 from ..api.model import (
-    VNDBVnResponse,
     VNDBCharacterResponse,
     VNDBProducerResponse,
-    TouchGalResponse,
-    ResourceResponse,
-    AnimeTraceResponse,
     VNDBReleaseResponse,
+    VNDBVnResponse,
 )
-from ..api.exception import (
-    ResponseException,
-    NoResultException,
-    InternetException,
-    CodeException,
-)
-from ..api.const import id2command, vndb_command_fields
+from ..api.type import CommandType
+from .http import Http, get_http
 
 
 class VNDBRequest:
     def __init__(self):
         self.kana_url = "https://api.vndb.org/kana/"
 
-        self.http: Optional[Http] = None
-        self.producer_vns: Optional[int] = None
+        self.http: Http | None = None
+        self.producer_vns: int | None = None
 
     async def initialize(self, config: AstrBotConfig):
         self.http = get_http()
@@ -184,7 +178,7 @@ class VNDBRequest:
         return [VNDBReleaseResponse.model_validate(i) for i in res]
 
 
-_vndb_request: Optional[VNDBRequest] = None
+_vndb_request: VNDBRequest | None = None
 
 
 def get_vndb_request():

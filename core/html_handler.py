@@ -1,5 +1,5 @@
 import asyncio
-from typing import Optional
+
 from bs4 import BeautifulSoup
 
 from .api.type import TouchGalDetails
@@ -63,7 +63,7 @@ class HTMLHandler:
         )
 
 
-_handler: Optional[HTMLHandler] = None
+_handler: HTMLHandler | None = None
 
 
 def get_html_handler():

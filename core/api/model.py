@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import BaseModel
 
 
@@ -8,7 +7,7 @@ class Image(BaseModel):
 
 class Developer(BaseModel):
     id: str
-    original: Optional[str] = None
+    original: str | None = None
     name: str
 
 
@@ -20,10 +19,11 @@ class Title(BaseModel):
 
 class Vn(BaseModel):
     id: str
-    alttitle: Optional[str] = None
-    title: Optional[str] = None
-    image: Optional[Image] = None
-    rating: Optional[float] = None
+    alttitle: str | None = None
+    title: str | None = None
+    image: Image | None = None
+    rating: float | None = None
+
 
 
 class Tag(BaseModel):
@@ -48,44 +48,47 @@ class Extlink(BaseModel):
 
 class VNDBVnResponse(BaseModel):
     id: str
-    rating: Optional[float] = None
-    released: Optional[str] = None
-    alttitle: Optional[str] = None
+    rating: float | None = None
+    released: str | None = None
+    alttitle: str | None = None
     title: str
     image: Image
-    average: Optional[float] = None
-    length_minutes: Optional[int] = None
-    platforms: Optional[list[str]] = None
-    aliases: Optional[list[str]] = None
-    developers: Optional[list[Developer]] = None
-    titles: Optional[list[Title]] = None
+    average: float | None = None
+    length_minutes: int | None = None
+    platforms: list[str] | None = None
+    aliases: list[str] | None = None
+    developers: list[Developer] | None = None
+    titles: list[Title] | None = None
+
 
 
 class VNDBCharacterResponse(BaseModel):
     id: str
     name: str
-    original: Optional[str] = None
-    birthday: Optional[list[int]] = None
-    image: Optional[Image] = None
-    vns: Optional[list[Vn]] = None
-    aliases: Optional[list[str]] = None
-    sex: Optional[list[str]] = None
-    waist: Optional[int] = None
-    hips: Optional[int] = None
-    bust: Optional[int] = None
-    blood_type: Optional[str] = None
-    weight: Optional[int] = None
-    height: Optional[int] = None
-    cup: Optional[str] = None
+    original: str | None = None
+    birthday: list[int] | None = None
+    image: Image | None = None
+    vns: list[Vn] | None = None
+    aliases: list[str] | None = None
+    sex: list[str] | None = None
+    waist: int | None = None
+    hips: int | None = None
+    bust: int | None = None
+    blood_type: str | None = None
+    weight: int | None = None
+    height: int | None = None
+    cup: str | None = None
+
 
 
 class VNDBProducerResponse(BaseModel):
     id: str
     name: str
-    original: Optional[str] = None
-    aliases: Optional[list[str]] = None
-    lang: Optional[str] = None
-    type: Optional[str] = None
+    original: str | None = None
+    aliases: list[str] | None = None
+    lang: str | None = None
+    type: str | None = None
+
 
 
 class TouchGalResponse(BaseModel):
@@ -130,7 +133,8 @@ class SteamGameResponse(BaseModel):
     appid: int
     name: str
     playtime_forever: int
-    rtime_last_played: Optional[int] = 0
+    rtime_last_played: int | None = 0
+
 
 
 class SteamOwnerResponse(BaseModel):

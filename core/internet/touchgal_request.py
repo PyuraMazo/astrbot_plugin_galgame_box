@@ -1,10 +1,9 @@
 import json
-from typing import Optional
 
 from astrbot.core import AstrBotConfig
 
+from ..api.model import ResourceResponse, TouchGalResponse
 from .http import Http, get_http
-from ..api.model import TouchGalResponse, ResourceResponse
 
 
 class TouchGalRequest:
@@ -12,8 +11,8 @@ class TouchGalRequest:
         self.base_url = "https://www.touchgal.top/"
         self.search_api = self.base_url + "api/search/"
 
-        self.http: Optional[Http] = None
-        self.cookies: Optional[dict] = None
+        self.http: Http | None = None
+        self.cookies: dict | None = None
 
     async def initialize(self, config: AstrBotConfig):
         self.http = get_http()
@@ -27,8 +26,10 @@ class TouchGalRequest:
         )
         token = config.get("internetSetting", {}).get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0b3VjaGdhbCIsImF1ZCI6InRvdWNoZ2FsX2FkbWluIiwidWlkIjozOTY2NDEsIm5hbWUiOiJQeXVyYSIsInJvbGUiOjEsImlhdCI6MTc3MTM5NDg1OSwiZXhwIjoxNzczOTg2ODU5fQ.BihJjjqjoeHIX1IjgEQrzlTwu520YInfvUOrjnvG1iI")
         self.cookies = {
-            "kun-galgame-patch-moe-token": token,
-            "kun-patch-setting-store|state|data|kunNsfwEnable": nsfw
+            "kun-patch-setting-store|state|data|kunNsfwEnable": "all"
+            if config.get("searchSetting", {}).get("enableNSFW", "False")
+            else "sfw",
+            "kun-galgame-patch-moe-token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0b3VjaGdhbCIsImF1ZCI6InRvdWNoZ2FsX2FkbWluIiwidWlkIjozOTY2NDEsIm5hbWUiOiJQeXVyYSIsInJvbGUiOjEsImlhdCI6MTc3MTM5NDg1OSwiZXhwIjoxNzczOTg2ODU5fQ.BihJjjqjoeHIX1IjgEQrzlTwu520YInfvUOrjnvG1iI",
         }
         cf_clearance = config.get("internetSetting", {}).get("clearanceCookie", "")
         if cf_clearance:
@@ -82,7 +83,7 @@ class TouchGalRequest:
         return [ResourceResponse.model_validate(i) for i in res]
 
 
-_touchgal_request: Optional[TouchGalRequest] = None
+_touchgal_request: TouchGalRequest | None = None
 
 
 def get_touchgal_request():

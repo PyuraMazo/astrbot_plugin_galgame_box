@@ -1,7 +1,7 @@
 import asyncio
-from PIL import Image as PILImage
 from io import BytesIO
 
+from PIL import Image as PILImage
 
 class Image:
     @staticmethod

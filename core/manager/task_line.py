@@ -1,44 +1,44 @@
 import asyncio
-from typing import Optional, Callable
-from pathlib import Path
+from collections.abc import Callable
 from datetime import datetime
+from pathlib import Path
 
 from astrbot.api import AstrBotConfig, html_renderer
 from astrbot.api import message_components as comp
 from astrbot.api.event import AstrMessageEvent
 from astrbot.core.utils.session_waiter import (
-    session_waiter,
-    SessionFilter,
     SessionController,
+    SessionFilter,
+    session_waiter,
 )
 
 from ..api.const import html_list, id2command
 from ..api.exception import (
-    InvalidArgsException,
+    ArgsOrNullException,
     CodeException,
+    HasBoundException,
+    InvalidArgsException,
     NoResultException,
     SessionTimeoutException,
-    HasBoundException,
-    ArgsOrNullException,
 )
 from ..api.model import AnimeTraceResponse, TouchGalResponse
 from ..api.type import (
+    AnimeTraceModel,
     CommandBody,
     CommandType,
-    AnimeTraceModel,
     SelectInfo,
     SteamData,
     SteamVnsInfo,
 )
 from ..builder import Builder, get_builder
 from ..cache import Cache, get_cache
+from ..data_handler import DataHandler, get_data_handler
 from ..html_handler import HTMLHandler, get_html_handler
-from ..internet.downloader import get_downloader, Downloader
-from ..internet.vndb_request import get_vndb_request, VNDBRequest
-from ..internet.touchgal_request import get_touchgal_request, TouchGalRequest
-from ..internet.animetrace_request import get_animetrace_request, AnimeTreceRequest
-from ..internet.steam_request import get_steam_request, SteamRequest
-from ..data_handler import get_data_handler, DataHandler
+from ..internet.animetrace_request import AnimeTreceRequest, get_animetrace_request
+from ..internet.downloader import Downloader, get_downloader
+from ..internet.steam_request import SteamRequest, get_steam_request
+from ..internet.touchgal_request import TouchGalRequest, get_touchgal_request
+from ..internet.vndb_request import VNDBRequest, get_vndb_request
 from ..utils.file import File
 
 
@@ -54,21 +54,21 @@ class TaskLine:
         self.session_data_storage = {}
         self.render_options = {"type": "jpeg", "quality": 100}
 
-        self.vndb_request: Optional[VNDBRequest] = None
-        self.touchgal_request: Optional[TouchGalRequest] = None
-        self.animetrace_request: Optional[AnimeTreceRequest] = None
-        self.steam_request: Optional[SteamRequest] = None
-        self.builder: Optional[Builder] = None
-        self.html_handler: Optional[HTMLHandler] = None
-        self.cache: Optional[Cache] = None
-        self.downloader: Optional[Downloader] = None
-        self.data_handler: Optional[DataHandler] = None
+        self.vndb_request: VNDBRequest | None = None
+        self.touchgal_request: TouchGalRequest | None = None
+        self.animetrace_request: AnimeTreceRequest | None = None
+        self.steam_request: SteamRequest | None = None
+        self.builder: Builder | None = None
+        self.html_handler: HTMLHandler | None = None
+        self.cache: Cache | None = None
+        self.downloader: Downloader | None = None
+        self.data_handler: DataHandler | None = None
 
-        self.task_map: Optional[dict[CommandType, Callable]] = None
-        self.find_results: Optional[int] = None
-        self.session_timeout: Optional[int] = None
-        self.recommend_cache: Optional[int] = None
-        self.update_interval: Optional[float] = None
+        self.task_map: dict[CommandType, Callable] | None = None
+        self.find_results: int | None = None
+        self.session_timeout: int | None = None
+        self.recommend_cache: int | None = None
+        self.update_interval: float | None = None
 
     async def initialize(self, config: AstrBotConfig):
         self.vndb_request = get_vndb_request()
@@ -538,7 +538,7 @@ class TaskLine:
             if steam_owner.game_count != len(own_before):
                 id_set = {game.appid for game in steam_owner.games}
                 extra_id_list = list(
-                    (id_set - (set(saved.others) | set(saved.vns.keys())))
+                    id_set - (set(saved.others) | set(saved.vns.keys()))
                 )
                 vndb_vns_list = await self.vndb_request.request_by_release(
                     extra_id_list, steam_owner.game_count
@@ -649,7 +649,7 @@ class TaskLine:
         return default_return
 
 
-_task_line: Optional[TaskLine] = None
+_task_line: TaskLine | None = None
 
 
 def get_task_line():

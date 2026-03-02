@@ -1,8 +1,8 @@
-from typing import Optional
-from pydantic import BaseModel, ConfigDict
 from enum import Enum
 
-from astrbot.api.event import AstrMessageEvent, MessageEventResult
+from pydantic import BaseModel, ConfigDict
+
+from astrbot.api.event import AstrMessageEvent
 
 
 class RenderedItem(BaseModel):
@@ -62,7 +62,8 @@ class UnrenderedData(BaseModel):
     items: list[RenderedItem | RenderedBlock | RenderedRandom | RenderedPuzzle]
     bg_image: str
     font: str
-    main_image: Optional[str] = None
+    main_image: str | None = None
+
 
 
 class TouchGalDetails(BaseModel):
@@ -83,7 +84,8 @@ class SelectInfo(BaseModel):
     current: int
     total: int
     tmpl: str
-    ready: Optional[str] = None
+    ready: str | None = None
+
 
 
 class SteamVnsInfo(BaseModel):
@@ -94,9 +96,9 @@ class SteamVnsInfo(BaseModel):
 
 class SteamData(BaseModel):
     platform_id: str
-    steam_id: Optional[str] = None
-    key: Optional[str] = None
+    steam_id: str | None = None
+    key: str | None = None
     record: bool
-    write_time: Optional[float] = None
-    others_id: Optional[list[int]] = None
-    vns: Optional[dict[int, SteamVnsInfo]] = None
+    write_time: float | None = None
+    others_id: list[int] | None = None
+    vns: dict[int, SteamVnsInfo] | None = None

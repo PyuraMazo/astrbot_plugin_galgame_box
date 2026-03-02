@@ -1,40 +1,39 @@
 import asyncio
 import math
-from typing import Any, Callable, Dict, Optional, Coroutine
-from pathlib import Path
-from PIL import Image as PILImage
+from collections.abc import Callable
 from io import BytesIO
-from datetime import date
+from pathlib import Path
+from typing import Any
+
+from PIL import Image as PILImage
 
 from astrbot.api import AstrBotConfig
 
-
-from .internet.downloader import get_downloader, Downloader
-from .api.type import (
-    CommandType,
-    CommandBody,
-    UnrenderedData,
-    TouchGalDetails,
-    AnimeTraceModel,
-    RenderedItem,
-    ColumnStyle,
-    RenderedBlock,
-    RenderedRandom,
-    SteamVnsInfo,
-    RenderedPuzzle,
-)
+from .api.const import develop_type, gender, id2command, lang
 from .api.model import (
-    VNDBVnResponse,
+    AnimeTraceData,
+    AnimeTraceResponse,
+    ResourceResponse,
+    SteamProfileResponse,
+    TouchGalResponse,
     VNDBCharacterResponse,
     VNDBProducerResponse,
-    TouchGalResponse,
-    ResourceResponse,
-    AnimeTraceResponse,
-    AnimeTraceData,
-    SteamProfileResponse,
-    VNDBReleaseResponse,
+    VNDBVnResponse,
 )
-from .api.const import id2command, lang, develop_type, gender
+from .api.type import (
+    AnimeTraceModel,
+    ColumnStyle,
+    CommandBody,
+    CommandType,
+    RenderedBlock,
+    RenderedItem,
+    RenderedPuzzle,
+    RenderedRandom,
+    SteamVnsInfo,
+    TouchGalDetails,
+    UnrenderedData,
+)
+from .internet.downloader import Downloader, get_downloader
 from .utils.file import File
 from .utils.image import Image
 
@@ -45,7 +44,7 @@ class Builder:
         self.bg_path = self.resources_dir / "image" / "pixiv139681518.jpg"
         self.err_path = self.resources_dir / "image" / "error.jpg"
         self.font_path = self.resources_dir / "font" / "hpsimplifiedhans-regular.ttf"
-        self._handlers: Dict[CommandType, Callable] = {
+        self._handlers: dict[CommandType, Callable] = {
             CommandType.VN: self._handle_vn,
             CommandType.CHARACTER: self._handle_character,
             CommandType.PRODUCER: self._handle_producer,
@@ -57,12 +56,12 @@ class Builder:
             CommandType.PUZZLE: self._handle_schedule,
         }
 
-        self.downloader: Optional[Downloader] = None
-        self.bg: Optional[str] = None
-        self.err: Optional[str] = None
-        self.font: Optional[str] = None
-        self.character_options: Optional[list[str]] = None
-        self.finish_consuming: Optional[int] = None
+        self.downloader: Downloader | None = None
+        self.bg: str | None = None
+        self.err: str | None = None
+        self.font: str | None = None
+        self.character_options: list[str] | None = None
+        self.finish_consuming: int | None = None
 
     async def initialize(self, config: AstrBotConfig):
         self.downloader = get_downloader()
@@ -402,17 +401,16 @@ class Builder:
                     if i
                 ]
             )
-            file_path = self.err
-            if response.banner:
-                try:
-                    file_path = await File.buffer2base64(
-                        await Image.image2jpg_async(
-                            await self.downloader.download_once(cover)
-                        ),
-                        False,
-                    )
-                except Exception:
-                    file_path = self.err
+            file_path = (
+                await File.buffer2base64(
+                    await Image.image2jpg_async(
+                        await self.downloader.download_once(cover)
+                    ),
+                    False,
+                )
+                if response.banner
+                else self.err
+            )
             return file_path, text
 
         third = details.third_info or ""
@@ -526,7 +524,7 @@ class Builder:
         )
 
 
-_builder: Optional[Builder] = None
+_builder: Builder | None = None
 
 
 def get_builder():

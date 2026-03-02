@@ -1,16 +1,13 @@
-from typing import Optional
-
 from astrbot.api import AstrBotConfig
 
-from .http import Http, get_http
 from ..api.exception import ArgsOrNullException
 from ..api.model import (
+    SteamGameResponse,
     SteamOwnerResponse,
     SteamProfileResponse,
-    SteamAchievementsResponse,
-    SteamGameResponse,
 )
 from ..api.type import SteamData
+from .http import Http, get_http
 
 
 class SteamRequest:
@@ -76,7 +73,7 @@ class SteamRequest:
         return [SteamGameResponse.model_validate(i) for i in res["response"]["games"]]
 
 
-_steam_request: Optional[SteamRequest] = None
+_steam_request: SteamRequest | None = None
 
 
 def get_steam_request():

@@ -1,15 +1,13 @@
+import asyncio
 import os
 import shutil
-import asyncio
-from typing import Optional
 
 from astrbot.api import AstrBotConfig
 from astrbot.api.star import StarTools
 
+from .api.type import CommandBody
 from .utils.file import File
 from .utils.image import Image
-from .api.type import CommandBody
-
 
 class Cache:
     def __init__(self):
@@ -68,7 +66,7 @@ class Cache:
         os.makedirs(self.cache_dir, exist_ok=True)
 
 
-_cache: Optional[Cache] = None
+_cache: Cache | None = None
 
 
 def get_cache():

@@ -1,8 +1,8 @@
 import asyncio
 import base64
 import os
-import aiofiles
 
+import aiofiles
 
 from ..api import const
 
@@ -22,7 +22,7 @@ class File:
         if not os.path.exists(path):
             raise FileNotFoundError(path)
 
-        async with aiofiles.open(path, "r", encoding="utf-8") as f:
+        async with aiofiles.open(path, encoding="utf-8") as f:
             return await f.read()
 
     @staticmethod

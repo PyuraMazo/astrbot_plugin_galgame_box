@@ -1,15 +1,13 @@
-from typing import Optional, Any
-
-from astrbot.api.event import filter, AstrMessageEvent
-from astrbot.api.star import Context, Star
-from astrbot.api.message_components import Reply, Plain
 from astrbot.api import AstrBotConfig, logger
+from astrbot.api.event import AstrMessageEvent, filter
+from astrbot.api.message_components import Plain, Reply
 from astrbot.api.platform import MessageType
+from astrbot.api.star import Context, Star
 from astrbot.core.star.filter.command import GreedyStr
 
 from .core.api.const import id2command
-from .core.api.exception import Tips, InvalidArgsException
-from .core.api.type import CommandType, CommandBody
+from .core.api.exception import InvalidArgsException, Tips
+from .core.api.type import CommandBody, CommandType
 from .core.manager.task_line import TaskLine, get_task_line
 
 
@@ -17,7 +15,7 @@ class GalgameBoxPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         self.config = config
-        self.task_line: Optional[TaskLine] = None
+        self.task_line: TaskLine | None = None
 
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
@@ -132,7 +130,7 @@ class GalgameBoxPlugin(Star):
         elif cmd_type == CommandType.FIND:
             cmd.value = keyword if keyword.startswith("http") else ""
         elif cmd_type == CommandType.RECOMMEND:
-            if not isinstance(keyword, str) or not keyword.strip():
+            if not keyword or not isinstance(keyword, str) or not keyword.strip():
                 valid = False
 
         if valid:
