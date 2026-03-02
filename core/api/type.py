@@ -1,8 +1,8 @@
-from typing import Optional
-from pydantic import BaseModel, ConfigDict
 from enum import Enum
 
-from astrbot.api.event import AstrMessageEvent, MessageEventResult
+from pydantic import BaseModel, ConfigDict
+
+from astrbot.api.event import AstrMessageEvent
 
 
 class RenderedItem(BaseModel):
@@ -15,9 +15,11 @@ class ColumnStyle(BaseModel):
     image: str
     title: str
 
+
 class RenderedBlock(BaseModel):
     column_info: str | ColumnStyle
     vns: list[RenderedItem]
+
 
 class RenderedRandom(BaseModel):
     sub_title: str
@@ -26,6 +28,7 @@ class RenderedRandom(BaseModel):
     description: str
     text: str
 
+
 class RenderedPuzzle(BaseModel):
     game: str
     span: int
@@ -33,33 +36,34 @@ class RenderedPuzzle(BaseModel):
 
 
 class CommandType(Enum):
-    VN = 'vn'
-    CHARACTER = 'character'
-    PRODUCER = 'producer'
-    ID = 'id'
-    RANDOM = 'random'
-    DOWNLOAD = 'download'
-    SELECT = 'select'
-    FIND = 'find'
-    RECOMMEND = 'recommend'
-    BIND = 'bind'
-    PUZZLE = 'puzzle'
+    VN = "vn"
+    CHARACTER = "character"
+    PRODUCER = "producer"
+    ID = "id"
+    RANDOM = "random"
+    DOWNLOAD = "download"
+    SELECT = "select"
+    FIND = "find"
+    RECOMMEND = "recommend"
+    BIND = "bind"
+    PUZZLE = "puzzle"
+
 
 class CommandBody(BaseModel):
     type: CommandType
     value: str | list[str]
     event: AstrMessageEvent
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True
-    )
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 class UnrenderedData(BaseModel):
     title: str
     items: list[RenderedItem | RenderedBlock | RenderedRandom | RenderedPuzzle]
     bg_image: str
     font: str
-    main_image: Optional[str] = None
+    main_image: str | None = None
+
 
 class TouchGalDetails(BaseModel):
     third_info: list[str]
@@ -69,8 +73,9 @@ class TouchGalDetails(BaseModel):
 
 
 class AnimeTraceModel(Enum):
-    Profession = 'full_game_model_kira'
-    Common = 'animetrace_high_beta'
+    Profession = "full_game_model_kira"
+    Common = "animetrace_high_beta"
+
 
 class SelectInfo(BaseModel):
     cmd_body: CommandBody
@@ -78,18 +83,20 @@ class SelectInfo(BaseModel):
     current: int
     total: int
     tmpl: str
-    ready: Optional[str] = None
+    ready: str | None = None
+
 
 class SteamVnsInfo(BaseModel):
     name: str
     play_time: int
     vndb_img: str
 
+
 class SteamData(BaseModel):
     platform_id: str
-    steam_id: Optional[str] = None
-    key: Optional[str] = None
+    steam_id: str | None = None
+    key: str | None = None
     record: bool
-    write_time: Optional[float] = None
-    others_id: Optional[list[int]] = None
-    vns: Optional[dict[int, SteamVnsInfo]] = None
+    write_time: float | None = None
+    others_id: list[int] | None = None
+    vns: dict[int, SteamVnsInfo] | None = None
