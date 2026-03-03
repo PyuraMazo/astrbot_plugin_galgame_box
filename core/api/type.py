@@ -65,7 +65,6 @@ class UnrenderedData(BaseModel):
     main_image: str | None = None
 
 
-
 class TouchGalDetails(BaseModel):
     third_info: list[str]
     images: list[str]
@@ -85,7 +84,6 @@ class SelectInfo(BaseModel):
     total: int
     tmpl: str
     ready: str | None = None
-
 
 
 class SteamVnsInfo(BaseModel):

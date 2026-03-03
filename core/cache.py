@@ -9,6 +9,7 @@ from .api.type import CommandBody
 from .utils.file import File
 from .utils.image import Image
 
+
 class Cache:
     def __init__(self):
         data_path = StarTools.get_data_dir("astrbot_plugin_galgame_box")
