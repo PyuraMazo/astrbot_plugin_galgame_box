@@ -11,28 +11,26 @@ class TouchGalRequest:
         self.base_url = "https://www.touchgal.top/"
         self.search_api = self.base_url + "api/search/"
 
+        self.dev_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0b3VjaGdhbCIsImF1ZCI6InRvdWNoZ2FsX2FkbWluIiwidWlkIjozOTY2NDEsIm5hbWUiOiJQeXVyYSIsInJvbGUiOjEsImlhdCI6MTc3MTM5NDg1OSwiZXhwIjoxNzczOTg2ODU5fQ.BihJjjqjoeHIX1IjgEQrzlTwu520YInfvUOrjnvG1iI"
+
         self.http: Http | None = None
         self.cookies: dict | None = None
 
     async def initialize(self, config: AstrBotConfig):
         self.http = get_http()
 
-        await self.http.initialize(config)
-
         nsfw = (
-            "all"
-            if config.get("searchSetting", {}).get("enableNSFW", "False")
-            else "sfw"
+            "all" if config.get("searchSetting", {}).get("enableNSFW", False) else "sfw"
         )
-        token = config.get("safetySetting", {}).get(
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0b3VjaGdhbCIsImF1ZCI6InRvdWNoZ2FsX2FkbWluIiwidWlkIjozOTY2NDEsIm5hbWUiOiJQeXVyYSIsInJvbGUiOjEsImlhdCI6MTc3MTM5NDg1OSwiZXhwIjoxNzczOTg2ODU5fQ.BihJjjqjoeHIX1IjgEQrzlTwu520YInfvUOrjnvG1iI"
+        token = (
+            config.get("safetySetting", {}).get("touchgalToken", "") or self.dev_token
         )
         self.cookies = {
-            "kun-patch-setting-store|state|data|kunNsfwEnable": "all"
-            if nsfw
-            else "sfw",
+            "kun-patch-setting-store|state|data|kunNsfwEnable": nsfw,
             "kun-galgame-patch-moe-token": token,
         }
+
+        await self.http.initialize(config)
 
     async def terminate(self):
         await self.http.terminate()
