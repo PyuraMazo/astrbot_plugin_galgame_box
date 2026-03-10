@@ -69,6 +69,7 @@ class TaskLine:
         self.session_timeout: int | None = None
         self.recommend_cache: int | None = None
         self.update_interval: float | None = None
+        self.forward_limit: int | None = None
 
     async def initialize(self, config: AstrBotConfig):
         self.vndb_request = get_vndb_request()
@@ -108,6 +109,7 @@ class TaskLine:
         self.session_timeout = search_setting.get("sessionTimeout", 30)
         self.recommend_cache = search_setting.get("recommendCache", 3)
         self.update_interval = search_setting.get("updateInterval", 24)
+        self.forward_limit = search_setting.get("forwardLimit", 10)
 
     async def terminate(self):
         await self.vndb_request.terminate()
@@ -280,11 +282,22 @@ class TaskLine:
         msg_arr: list[tuple[str, str]] = await self.builder.build_options(
             cmd_body, resp
         )
-        nodes = [
-            comp.Node(uin=event.get_self_id(), content=[comp.Plain(msg[1])])
-            for msg in msg_arr
-        ]
-        yield event.chain_result([comp.Nodes(nodes)])
+        if event.get_platform_name() == "aiocqhttp":
+            nodes = []
+            for idx, msg in enumerate(msg_arr, start=1):
+                if idx % self.forward_limit == 0:
+                    yield event.chain_result([comp.Nodes(nodes)])
+                    nodes = []
+                nodes.append(
+                    comp.Node(uin=event.get_self_id(), content=[comp.Plain(msg[1])])
+                )
+            if nodes:
+                yield event.chain_result([comp.Nodes(nodes)])
+        else:
+            res = [
+                msg[1] for idx, msg in enumerate(msg_arr) if idx < self.forward_limit
+            ]
+            yield event.plain_result("\n----------\n".join(res))
 
     async def _find_task(self, cmd_body: CommandBody):
         event = cmd_body.event
