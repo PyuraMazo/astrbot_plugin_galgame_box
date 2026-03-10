@@ -14,9 +14,9 @@ from astrbot.core.utils.session_waiter import (
 
 from ..api.const import html_list, id2command
 from ..api.exception import (
-    ArgsOrNullException,
     CodeException,
     HasBoundException,
+    InternetException,
     InvalidArgsException,
     NoResultException,
     SessionTimeoutException,
@@ -467,6 +467,8 @@ class TaskLine:
             yield resp
 
     async def _bind_task(self, cmd_body: CommandBody):
+        DEFAULT_TIMEOUT = 300
+
         event = cmd_body.event
         channel_id = event.get_sender_id()
         if self.data_handler.check_data(channel_id):
@@ -480,7 +482,7 @@ class TaskLine:
                 SteamData(platform_id=event.get_sender_id(), record=False)
             )
 
-            @session_waiter(timeout=300)
+            @session_waiter(timeout=DEFAULT_TIMEOUT)
             async def bind_waiter(
                 controller: SessionController, sess_event: AstrMessageEvent
             ):
@@ -492,7 +494,7 @@ class TaskLine:
                 if not data.steam_id:
                     data.steam_id = sess_event.message_str
                     await sess_event.send(sess_event.plain_result(tips2))
-                    controller.keep(300, True)
+                    controller.keep(DEFAULT_TIMEOUT, True)
                 elif not data.key:
                     data.key = sess_event.message_str
                     try:
@@ -500,7 +502,7 @@ class TaskLine:
                         await self.data_handler.store(data)
                         tips3 = f"-绑定成功\n-绑定用户名：{resp.personaname}"
                         await sess_event.send(sess_event.plain_result(tips3))
-                    except ArgsOrNullException:
+                    except InternetException:
                         await sess_event.send(sess_event.plain_result(tips4))
 
                     controller.stop()
