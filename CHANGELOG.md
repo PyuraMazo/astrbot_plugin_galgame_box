@@ -1,5 +1,13 @@
 # ChangeLog
 
+# 2026/03/11 v1.7.4
+
+## 修复
+- 修复绑定Steam时的不合适的提示信息。
+- 修复转发内容过多导致的发送内容失败（[#13](https://github.com/PyuraMazo/astrbot_plugin_galgame_box/issues/13)）。
+
+---
+
 # 2026/03/05 v1.7.3
 
 ## 修复
