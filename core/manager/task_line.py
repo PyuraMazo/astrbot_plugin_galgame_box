@@ -285,12 +285,12 @@ class TaskLine:
         if event.get_platform_name() == "aiocqhttp":
             nodes = []
             for idx, msg in enumerate(msg_arr, start=1):
-                if idx % self.forward_limit == 0:
-                    yield event.chain_result([comp.Nodes(nodes)])
-                    nodes = []
                 nodes.append(
                     comp.Node(uin=event.get_self_id(), content=[comp.Plain(msg[1])])
                 )
+                if idx % self.forward_limit == 0:
+                    yield event.chain_result([comp.Nodes(nodes)])
+                    nodes = []
             if nodes:
                 yield event.chain_result([comp.Nodes(nodes)])
         else:
