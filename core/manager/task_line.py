@@ -413,12 +413,14 @@ class TaskLine:
             async def select_waiter(
                 controller: SessionController, sess_event: AstrMessageEvent
             ):
-                controller.keep(self.session_timeout, True)
+                # controller.keep(self.session_timeout, True)
                 alter = "换一个"
                 end = "结束"
                 _id = sess_event.get_group_id() + sess_event.get_sender_id()
                 message = sess_event.message_str
                 if message == alter:
+                    # 接收到正确消息留出5分钟处理并发送
+                    controller.keep(300, True)
                     body: SelectInfo = self.session_data_storage[_id]
 
                     if not (body.cache or body.ready):
@@ -439,7 +441,6 @@ class TaskLine:
 
                     _image = sess_event.image_result(_url)
                     await sess_event.send(_image)
-                    controller.keep(self.session_timeout, True)
 
                     # 提前准备
                     if body.cache:
@@ -464,6 +465,7 @@ class TaskLine:
                                 body.cache = (
                                     await self._recommend_subtask(cmd_body, new_resp)
                                 )[1]
+                    controller.keep(self.session_timeout, True)
 
                 elif message == end:
                     await sess_event.send(sess_event.plain_result("成功关闭此次会话"))
