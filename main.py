@@ -40,7 +40,7 @@ class GalgameBoxPlugin(Star):
 
     @gal_box.command("角色", alias={"人物"})
     async def character(self, event: AstrMessageEvent, keyword: str):
-        """通过关键词查询作品"""
+        """通过关键词查询角色"""
         async for res in self._common_command(event, CommandType.CHARACTER, keyword):
             yield res
 
