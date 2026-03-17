@@ -44,7 +44,7 @@ from ..utils.file import File
 
 class OnlySenderFilter(SessionFilter):
     def filter(self, event: AstrMessageEvent) -> str:
-        return event.get_sender_id()
+        return f"{event.get_group_id()}:{event.get_sender_id()}"
 
 
 class TaskLine:
