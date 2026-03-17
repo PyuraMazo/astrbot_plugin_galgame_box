@@ -109,7 +109,7 @@ class TaskLine:
         self.recommend_cache = search_setting.get("recommendCache", 3)
         self.update_interval = search_setting.get("updateInterval", 24)
         self.forward_limit = search_setting.get("forwardLimit", 10)
-        self.session_timeout = config.get('basicSetting', {}).get("sessionTimeout", 30)
+        self.session_timeout = config.get("basicSetting", {}).get("sessionTimeout", 30)
 
     async def terminate(self):
         await self.vndb_request.terminate()
@@ -406,14 +406,14 @@ class TaskLine:
             yield event.image_result(url)
             self.session_data_storage[id] = cache_body
 
-            tips = "-如果需要以同样要求继续获取作品，请输入文本【换一个】\n-如果不再需要，请输入文本【结束】以结束此次会话\n-后续同理\n-默认等待时间：2分钟"
+            tips = f"-如果需要以同样要求继续获取作品，请输入文本【换一个】\n-如果不再需要，请输入文本【结束】以结束此次会话\n-后续同理\n-默认等待时间：{self.session_timeout}s"
             yield event.plain_result(tips)
 
-            @session_waiter(timeout=120)
+            @session_waiter(timeout=self.session_timeout)
             async def select_waiter(
                 controller: SessionController, sess_event: AstrMessageEvent
             ):
-                controller.keep(120, True)
+                controller.keep(self.session_timeout, True)
                 alter = "换一个"
                 end = "结束"
                 _id = sess_event.get_group_id() + sess_event.get_sender_id()
@@ -439,7 +439,7 @@ class TaskLine:
 
                     _image = sess_event.image_result(_url)
                     await sess_event.send(_image)
-                    controller.keep(120, True)
+                    controller.keep(self.session_timeout, True)
 
                     # 提前准备
                     if body.cache:
