@@ -524,7 +524,7 @@ class TaskLine:
                     raise NotImplementedError
 
             try:
-                await bind_waiter(event, session_filter=OnlySenderFilter())
+                await bind_waiter(event)
             except TimeoutError:
                 raise SessionTimeoutException(cmd_body)
 
