@@ -106,10 +106,10 @@ class TaskLine:
         }
         search_setting = config.get("searchSetting", {})
         self.find_results = search_setting.get("findResults", 3)
-        self.session_timeout = search_setting.get("sessionTimeout", 30)
         self.recommend_cache = search_setting.get("recommendCache", 3)
         self.update_interval = search_setting.get("updateInterval", 24)
         self.forward_limit = search_setting.get("forwardLimit", 10)
+        self.session_timeout = config.get('basicSetting', {}).get("sessionTimeout", 30)
 
     async def terminate(self):
         await self.vndb_request.terminate()
@@ -480,7 +480,7 @@ class TaskLine:
             yield resp
 
     async def _bind_task(self, cmd_body: CommandBody):
-        DEFAULT_TIMEOUT = 300
+        fixed_timeout = 300
 
         event = cmd_body.event
         channel_id = event.get_sender_id()
@@ -488,14 +488,14 @@ class TaskLine:
             raise HasBoundException(channel_id)
         else:
             tips0 = "-Steam ID（不是好友ID）获取方法：\nhttps://help.steampowered.com/zh-cn/faqs/view/2816-BE67-5B69-0FEC\n-API获取方法：\nhttps://steamcommunity.com/dev/apikey"
-            tips1 = "-请输入你的Steam ID\n-等待时间5分钟"
+            tips1 = "-请输入你的Steam ID\n-固定等待时间5分钟"
             yield event.plain_result(tips0)
             yield event.plain_result(tips1)
             self.session_data_storage[event.get_group_id() + event.get_sender_id()] = (
                 SteamData(platform_id=event.get_sender_id(), record=False)
             )
 
-            @session_waiter(timeout=DEFAULT_TIMEOUT)
+            @session_waiter(timeout=fixed_timeout)
             async def bind_waiter(
                 controller: SessionController, sess_event: AstrMessageEvent
             ):
@@ -507,7 +507,7 @@ class TaskLine:
                 if not data.steam_id:
                     data.steam_id = sess_event.message_str
                     await sess_event.send(sess_event.plain_result(tips2))
-                    controller.keep(DEFAULT_TIMEOUT, True)
+                    controller.keep(fixed_timeout, True)
                 elif not data.key:
                     data.key = sess_event.message_str
                     try:
