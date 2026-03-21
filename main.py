@@ -5,9 +5,8 @@ from astrbot.api.platform import MessageType
 from astrbot.api.star import Context, Star
 from astrbot.core.star.filter.command import GreedyStr
 
-from .core.api.const import id2command
-from .core.api.exception import InvalidArgsException, Tips
-from .core.api.type import CommandBody, CommandType
+from .core.api.exception import Tips
+from .core.api.type import CommandType
 from .core.manager.task_line import TaskLine, get_task_line
 
 
@@ -56,6 +55,12 @@ class GalgameBoxPlugin(Star):
         async for res in self._common_command(event, CommandType.ID, keyword):
             yield res
 
+    @gal_box.command("简讯", alias={"游讯"})
+    async def gal_event(self, event: AstrMessageEvent):
+        """了解今日旮旯讯息，包括今天发售游戏与生日角色"""
+        async for res in self._common_command(event, CommandType.EVENT):
+            yield res
+
     @gal_box.command("随机")
     async def random(self, event: AstrMessageEvent):
         """通过TouchGal随机获取一部作品"""
@@ -102,8 +107,7 @@ class GalgameBoxPlugin(Star):
             ):
                 yield event.plain_result("为保护你的隐私，请通过私聊频道进行绑定")
                 return
-            cmd = self._check_keyword_validity(event, cmd_type, keyword)
-            async for res in self.task_line.run(cmd):
+            async for res in self.task_line.run(event, cmd_type, keyword):
                 yield res
         except Exception as e:
             yield next(self._handle_command_exception(event, e))
@@ -118,22 +122,3 @@ class GalgameBoxPlugin(Star):
             yield event.chain_result(
                 [Reply(id=event.message_obj.message_id), Plain("发生非预期异常！")]
             )
-
-    def _check_keyword_validity(
-        self, event: AstrMessageEvent, cmd_type: CommandType, keyword: str | list[str]
-    ):
-        valid = True
-        cmd = CommandBody(type=cmd_type, value=keyword, event=event)
-        if cmd_type == CommandType.ID:
-            if keyword[0] not in id2command.keys():
-                valid = False
-        elif cmd_type == CommandType.FIND:
-            cmd.value = keyword if keyword.startswith("http") else ""
-        elif cmd_type == CommandType.RECOMMEND:
-            if not keyword or not isinstance(keyword, str) or not keyword.strip():
-                valid = False
-
-        if valid:
-            return cmd
-        else:
-            raise InvalidArgsException(cmd)

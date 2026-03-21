@@ -97,6 +97,7 @@ class TaskLine:
             CommandType.CHARACTER: self._cha_task,
             CommandType.PRODUCER: self._pro_task,
             CommandType.ID: self._id_task,
+            CommandType.EVENT: self._event_task,
             CommandType.RANDOM: self._random_task,
             CommandType.DOWNLOAD: self._download_task,
             CommandType.FIND: self._find_task,
@@ -122,7 +123,11 @@ class TaskLine:
         await self.downloader.terminate()
         await self.data_handler.terminate()
 
-    async def run(self, cmd_body: CommandBody):
+    async def run(
+        self, event: AstrMessageEvent, cmd_type: CommandType, keyword: str | list[str]
+    ):
+        cmd_body = self._check_keyword_validity(event, cmd_type, keyword)
+
         cache = await self.cache.get_cache(cmd_body)
         if cache is not None:
             yield cmd_body.event.chain_result([comp.Image.fromBytes(cache)])
@@ -131,6 +136,29 @@ class TaskLine:
         task = self.task_map[cmd_body.type]
         async for result in task(cmd_body):
             yield result
+
+    @staticmethod
+    def _check_keyword_validity(
+        event: AstrMessageEvent, cmd_type: CommandType, keyword: str | list[str]
+    ):
+        valid = True
+        cmd = CommandBody(type=cmd_type, value=keyword, event=event)
+        if cmd_type == CommandType.ID:
+            if keyword[0] not in id2command.keys():
+                valid = False
+        elif cmd_type == CommandType.EVENT:
+            now = datetime.now().strftime("%Y-%m-%d")
+            cmd.value = now.split("-")
+        elif cmd_type == CommandType.FIND:
+            cmd.value = keyword if keyword.startswith("http") else ""
+        elif cmd_type == CommandType.RECOMMEND:
+            if not keyword or not isinstance(keyword, str) or not keyword.strip():
+                valid = False
+
+        if valid:
+            return cmd
+        else:
+            raise InvalidArgsException(cmd)
 
     async def _vn_task(self, cmd_body: CommandBody):
         rendered_html = self.template_dir / html_list[cmd_body.type.value]
@@ -185,6 +213,20 @@ class TaskLine:
             else self.builder.build_options(cmd_body, res)
         )
 
+        tmpl = File.read_text(rendered_html)
+
+        res = await asyncio.gather(tmpl, data)
+        url = await html_renderer.render_custom_template(
+            res[0], res[1].model_dump(), True, self.render_options
+        )
+        await self.cache.store_image(cmd_body, await self.downloader.download_once(url))
+        yield cmd_body.event.image_result(url)
+
+    async def _event_task(self, cmd_body: CommandBody):
+        rendered_html = self.template_dir / html_list[cmd_body.type.value]
+
+        vn, cha = await self.vndb_request.request_by_event(cmd_body.value)
+        data = self.builder.build_options(cmd_body, vn, cha=cha)
         tmpl = File.read_text(rendered_html)
 
         res = await asyncio.gather(tmpl, data)

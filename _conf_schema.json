@@ -79,6 +79,17 @@
           "c-性别（不剧透）"
         ]
       },
+      "eventRating": {
+        "description": "今日简讯作品质量",
+        "hint": "今日简讯过滤低于此rating的作品及其登场角色。",
+        "type": "int",
+        "slider": {
+          "min": 0,
+          "max": 100,
+          "step": 5
+        },
+        "default": 75
+      },
       "enableNSFW": {
         "description": "NSFW内容",
         "hint": "开启时，随机作品可能出现NSFW内容。",

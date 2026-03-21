@@ -1,3 +1,4 @@
+import asyncio
 import math
 
 from astrbot.api import AstrBotConfig
@@ -23,22 +24,25 @@ class VNDBRequest:
 
         self.http: Http | None = None
         self.producer_vns: int | None = None
+        self.event_rating: int | None = None
 
     async def initialize(self, config: AstrBotConfig):
         self.http = get_http()
 
         await self.http.initialize(config)
+        search_setting = config.get("searchSetting", {})
         self.producer_vns = (
-            config.get("searchSetting", {}).get("producerVns", 10)
+            search_setting.get("producerVns", 10)
             if config.get("searchSetting", {}).get("producerVns", 10) != 0
             else 0
         )
+        self.event_rating = search_setting.get("eventRating", 75)
 
     async def terminate(self):
         await self.http.terminate()
 
-    def _build_self_payload(
-        self, cmd_type: CommandType, keyword: str
+    def _build_query_payload(
+        self, cmd_type: CommandType, keyword: str | list[str]
     ) -> dict[str, object]:
         if cmd_type == CommandType.ID:
             fields = vndb_command_fields[id2command[keyword[0]]]
@@ -56,7 +60,7 @@ class VNDBRequest:
     async def request_by_vn(self, keyword: str, payload=None) -> list[VNDBVnResponse]:
         url = self.kana_url + CommandType.VN.value
         payload = (
-            self._build_self_payload(CommandType.VN, keyword)
+            self._build_query_payload(CommandType.VN, keyword)
             if payload is None
             else payload
         )
@@ -73,7 +77,7 @@ class VNDBRequest:
     ) -> list[VNDBCharacterResponse]:
         url = self.kana_url + CommandType.CHARACTER.value
         payload = (
-            self._build_self_payload(CommandType.CHARACTER, keyword)
+            self._build_query_payload(CommandType.CHARACTER, keyword)
             if payload is None
             else payload
         )
@@ -90,7 +94,7 @@ class VNDBRequest:
     ) -> tuple[list[VNDBProducerResponse], list[list[VNDBVnResponse]]]:
         url = self.kana_url + CommandType.PRODUCER.value
         pro_payload = (
-            self._build_self_payload(CommandType.PRODUCER, keyword)
+            self._build_query_payload(CommandType.PRODUCER, keyword)
             if payload is None
             else payload
         )
@@ -129,7 +133,7 @@ class VNDBRequest:
         | tuple[list[VNDBProducerResponse], list[list[VNDBVnResponse]]]
     ):
         handle_type_value = id2command[keyword[0]]
-        payload = self._build_self_payload(cmd_type, keyword)
+        payload = self._build_query_payload(cmd_type, keyword)
         try:
             if handle_type_value == CommandType.VN.value:
                 return await self.request_by_vn(keyword, payload)
@@ -141,6 +145,34 @@ class VNDBRequest:
                 raise NotImplementedError
         except NoResultException:
             raise NoResultException(f"{cmd_type}-{keyword}")
+
+    async def request_by_event(
+        self, date: list[str]
+    ) -> tuple[list[VNDBVnResponse], list[VNDBCharacterResponse]]:
+        vn_url = self.kana_url + CommandType.VN.value
+        cha_url = self.kana_url + CommandType.CHARACTER.value
+        released = [
+            ["released", "=", f"{year}-{date[1]}-{date[2]}"]
+            for year in range(1990, int(date[0]))
+        ]
+        vn_payload = {
+            "filters": ["and", ["or", *released], ["rating", ">=", self.event_rating]],
+            "fields": vndb_command_fields["vn_short"],
+        }
+        cha_payload = {
+            "filters": [
+                "and",
+                ["birthday", "=", [int(date[1]), int(date[2])]],
+                ["vn", "=", ["rating", ">=", self.event_rating]],
+            ],
+            "fields": vndb_command_fields["character_short"],
+        }
+        res = await asyncio.gather(
+            self.http.post(vn_url, vn_payload), self.http.post(cha_url, cha_payload)
+        )
+        _vn = [VNDBVnResponse.model_validate(i) for i in res[0]["results"]]
+        _cha = [VNDBCharacterResponse.model_validate(j) for j in res[1]["results"]]
+        return _vn, _cha
 
     async def request_by_find(
         self, character: str, vn: str

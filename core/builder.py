@@ -48,6 +48,7 @@ class Builder:
             CommandType.VN: self._handle_vn,
             CommandType.CHARACTER: self._handle_character,
             CommandType.PRODUCER: self._handle_producer,
+            CommandType.EVENT: self._handle_event,
             CommandType.RANDOM: self._handle_random,
             CommandType.DOWNLOAD: self._handle_download,
             CommandType.SELECT: self._handle_select,
@@ -85,7 +86,6 @@ class Builder:
         title = self._build_title(command_body, count)
 
         handler_type = self._determine_handler_type(command_body)
-
         handler = self._handlers[handler_type]
 
         result = await handler(response, title=title, **kwargs)
@@ -137,6 +137,17 @@ class Builder:
         return UnrenderedData(
             title="<br>".join(kwargs.get("title", "标题出错")),
             items=pros,
+            bg_image=self.bg,
+            font=self.font,
+        )
+
+    async def _handle_event(self, response, **kwargs):
+        vn: list[VNDBVnResponse] = response
+        cha: list[VNDBCharacterResponse] = kwargs["cha"]
+        res = await self._build_event(vn, cha)
+        return UnrenderedData(
+            title="<br>".join(kwargs.get("title", "标题出错")),
+            items=res,
             bg_image=self.bg,
             font=self.font,
         )
@@ -215,15 +226,23 @@ class Builder:
     def _build_title(self, command_body: CommandBody, count: int) -> list[str]:
         run_type = f"指令「{command_body.type.value}」"
         value = (
-            f"参数「{command_body.value if not command_body.value.startswith('http') else '网络链接'}」"
-            if command_body.value and command_body.type != CommandType.PUZZLE
-            else ""
+            (
+                f"参数「{command_body.value if not command_body.value.startswith('http') else '网络链接'}」"
+                if command_body.value and command_body.type != CommandType.PUZZLE
+                else ""
+            )
+            if isinstance(command_body.value, str)
+            else "-".join(command_body.value)
         )
         count = (
             f"结果「{count}」条"
-            if command_body.type != CommandType.RANDOM
-            and command_body.type != CommandType.RECOMMEND
-            and command_body.type != CommandType.PUZZLE
+            if command_body.type
+            not in [
+                CommandType.RANDOM,
+                CommandType.RECOMMEND,
+                CommandType.PUZZLE,
+                CommandType.EVENT,
+            ]
             else ""
         )
         return [i for i in [run_type, value, count] if i]
@@ -293,11 +312,10 @@ class Builder:
             else ""
         )
 
-        vn_list = []
-        for vn in response.vns:
-            vn_list.append(
-                f"出场作品（VNDB ID）：「{vn.alttitle or vn.title}」（{vn.id}）"
-            )
+        vn_list = [
+            f"出场作品（VNDB ID）：「{vn.alttitle or vn.title}」（{vn.id}）"
+            for vn in response.vns
+        ]
         vns = "、".join(vn_list)
 
         option: list[str] = self.character_options
@@ -375,6 +393,74 @@ class Builder:
             column_info=info,
             vns=vns,
         )
+
+    async def _build_event(
+        self,
+        vn_response: list[VNDBVnResponse],
+        cha_response: list[VNDBCharacterResponse],
+    ) -> list[RenderedBlock]:
+        vns: list[RenderedItem] = []
+        chas: list[RenderedItem] = []
+        v = []
+        for vn in vn_response:
+            v.append(vn.image.url if vn.image else "")
+
+            vn_id = f"VNDB ID：{vn.id}"
+            vn_released = f"发布日期：{vn.released}" if vn.released else ""
+            vn_rating = f"贝叶斯评分：{vn.rating}" if vn.rating else ""
+            vn_list = [i for i in [vn_id, vn_released, vn_rating] if i]
+            vns.append(
+                RenderedItem(
+                    image="",
+                    text="<br>".join(vn_list),
+                    sub_title=vn.alttitle or vn.title,
+                )
+            )
+        c = []
+        for cha in cha_response:
+            c.append(cha.image.url if cha.image else "")
+
+            cha_id = f"VNDB ID：{cha.id}"
+            cha_aliases = f"别名：{'、'.join(cha.aliases)}" if cha.aliases else ""
+            cha_birthday = (
+                f"生日：{cha.birthday[0]}月{cha.birthday[1]}日" if cha.birthday else ""
+            )
+            cha_vn_list = [
+                f"出场作品（VNDB ID）：「{vn.alttitle or vn.title}」（{vn.id}）"
+                for vn in cha.vns
+            ]
+            cha_vns = "、".join(cha_vn_list)
+            cha_list = [i for i in [cha_id, cha_aliases, cha_birthday, cha_vns] if i]
+            chas.append(
+                RenderedItem(
+                    image="",
+                    text="<br>".join(cha_list),
+                    sub_title=cha.original or cha.name,
+                )
+            )
+
+        vn_imgs = [
+            File.buffer2base64(img) for img in await self.downloader.download_more(v)
+        ]
+        cha_imgs = [
+            File.buffer2base64(img) for img in await self.downloader.download_more(c)
+        ]
+        imgs = await asyncio.gather(asyncio.gather(*vn_imgs), asyncio.gather(*cha_imgs))
+        for _a, _w in zip(vns, imgs[0]):
+            _a.image = _w
+        for _s, _l in zip(chas, imgs[1]):
+            _s.image = _l
+
+        return [
+            RenderedBlock(
+                column_info="今天是这些作品的发布纪念日",
+                vns=vns,
+            ),
+            RenderedBlock(
+                column_info="今天是这些角色的生日",
+                vns=chas,
+            ),
+        ]
 
     async def _build_select(
         self, response: TouchGalResponse, details: TouchGalDetails = None

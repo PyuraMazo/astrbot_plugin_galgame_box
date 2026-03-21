@@ -25,6 +25,7 @@ html_list = {
     "vn": "template1.html",
     "character": "template1.html",
     "producer": "template2.html",
+    "galgame_event": "template2.html",
     "random": "template3.html",
     "find": "template4.html",
     "recommend": "template3.html",

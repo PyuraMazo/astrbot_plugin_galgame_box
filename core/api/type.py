@@ -40,6 +40,7 @@ class CommandType(Enum):
     CHARACTER = "character"
     PRODUCER = "producer"
     ID = "id"
+    EVENT = "galgame_event"
     RANDOM = "random"
     DOWNLOAD = "download"
     SELECT = "select"
