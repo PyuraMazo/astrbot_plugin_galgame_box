@@ -15,7 +15,7 @@ class Downloader:
             Path(__file__).parent / ".." / ".." / "resources" / "image" / "error.jpg"
         )
         self.headers = {"Content-Type": "application/json"}
-        self.connector = aiohttp.TCPConnector(limit_per_host=2, limit=10)
+        self.connector = aiohttp.TCPConnector(limit_per_host=10, limit=50)
 
         self.timeout_times = None
         self.session: aiohttp.ClientSession | None = None
