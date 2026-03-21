@@ -664,7 +664,7 @@ class TaskLine:
                 )
 
         await self.data_handler.store(saved, True)
-        rendered_html = self.template_dir / html_list[cmd_body.type.value + "2"]
+        rendered_html = self.template_dir / html_list[cmd_body.type.value]
         data = self.builder.build_options(
             cmd_body,
             [profile],

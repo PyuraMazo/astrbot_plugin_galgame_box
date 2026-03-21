@@ -54,7 +54,7 @@ class Builder:
             CommandType.SELECT: self._handle_select,
             CommandType.FIND: self._handle_find,
             CommandType.RECOMMEND: self._handle_random,
-            CommandType.PUZZLE: self._handle_schedule,
+            CommandType.PUZZLE: self._handle_puzzle,
         }
 
         self.downloader: Downloader | None = None
@@ -149,7 +149,7 @@ class Builder:
             title="<br>".join(kwargs.get("title", "标题出错")),
             items=res,
             bg_image=self.bg,
-            font=self.font,
+            font=self.font
         )
 
     async def _handle_random(self, response, **kwargs):
@@ -198,10 +198,10 @@ class Builder:
             main_image=await File.buffer2base64(buffer) if buffer else self.err,
         )
 
-    async def _handle_schedule(self, response, **kwargs):
+    async def _handle_puzzle(self, response, **kwargs):
         vns: dict[int, SteamVnsInfo] = kwargs["vns"]
         sorted_list = sorted(vns.values(), key=lambda j: j.play_time, reverse=True)
-        co = [self._build_schedule(info) for info in sorted_list]
+        co = [self._build_puzzle(info) for info in sorted_list]
         _items: list[RenderedPuzzle] = await asyncio.gather(*co)
         buffer = await self.downloader.download_more([url.img for url in _items])
         bs = [File.buffer2base64(buf) for buf in buffer]
@@ -379,11 +379,10 @@ class Builder:
             wait.append(vn.image.url if vn.image else "")
 
             vn_id = f"VNDB ID：{vn.id}"
-            vn_title = f"名称：{vn.alttitle or vn.title}"
             vn_released = f"发布日期：{vn.released}" if vn.released else ""
             vn_rating = f"贝叶斯评分：{vn.rating}" if vn.rating else ""
-            vn_list = [i for i in [vn_id, vn_title, vn_released, vn_rating] if i]
-            vns.append(RenderedItem(image="", text="<br>".join(vn_list), sub_title=""))
+            vn_list = [i for i in [vn_id, vn_released, vn_rating] if i]
+            vns.append(RenderedItem(image="", text="<br>".join(vn_list), sub_title=vn.alttitle or vn.title))
         done = [
             File.buffer2base64(img) for img in await self.downloader.download_more(wait)
         ]
@@ -600,7 +599,7 @@ class Builder:
             vns=cha_list,
         )
 
-    async def _build_schedule(self, info: SteamVnsInfo):
+    async def _build_puzzle(self, info: SteamVnsInfo):
         rate = (
             info.play_time / self.finish_consuming / 60
             if info.play_time < self.finish_consuming * 60

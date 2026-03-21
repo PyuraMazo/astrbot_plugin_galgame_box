@@ -29,8 +29,7 @@ html_list = {
     "random": "template3.html",
     "find": "template4.html",
     "recommend": "template3.html",
-    "puzzle1": "template5.html",
-    "puzzle2": "template5.html",
+    "puzzle": "template5.html"
 }
 
 gender = {"m": "男性", "f": "女性", "b": "双性", "n": "无性"}

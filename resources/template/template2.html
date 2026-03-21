@@ -49,7 +49,7 @@
             margin: 1em auto;
             display: flex;
             flex-direction: column;
-            width: 15vw;
+            width: 25vw;
             color: #ffffff;
             font-size: 20px;
         }
@@ -70,6 +70,11 @@
             display: flex;
             flex-wrap: wrap;
         }
+
+        .subtitle {
+            font-size: 25px;
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -85,6 +90,7 @@
             {% for vn in pro.vns %}
             <div class="block">
                 <img src="{{ vn.image }}" alt="图片失效">
+                <div class="subtitle">{{ vn.sub_title }}</div>
                 <div class="text">
                     {{ vn.text }}
                 </div>
