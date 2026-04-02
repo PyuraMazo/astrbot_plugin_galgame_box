@@ -60,3 +60,7 @@ class HasBoundException(Tips):
 class NoBoundException(Tips):
     def __init__(self, channel_id: str):
         super().__init__(f"你还未绑定Steam账号：{channel_id}")
+
+class SettingException(Tips):
+    def __init__(self, setting: str):
+        super().__init__(f"插件配置项错误：{setting}")
