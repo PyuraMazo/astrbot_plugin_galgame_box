@@ -57,6 +57,56 @@
       }
     }
   },
+  "returnSetting": {
+    "description": "发送设置",
+    "type": "object",
+    "items": {
+      "enableNSFW": {
+        "description": "NSFW内容",
+        "hint": "开启时，随机、推荐指令可能出现NSFW内容。",
+        "type": "bool",
+        "default": false
+      },
+      "withdrawMiddle": {
+        "description": "撤回中间消息",
+        "hint": "撤回发送最终结果之前的这次指令导致发送的其它辅助消息。",
+        "type": "bool",
+        "default": true
+      },
+      "withdrawLast": {
+        "description": "撤回白名单",
+        "hint": "在一段时间后自动撤回选中的指令发送的结果（如果可以）。",
+        "type": "list",
+        "options": [
+          "a-旮旯 作品/角色/厂商/ID",
+          "b-旮旯 简讯",
+          "c-旮旯 随机",
+          "d-旮旯 下载",
+          "e-旮旯 出处",
+          "f-旮旯 拼图"
+        ],
+        "default": [
+          "d-旮旯 下载"
+        ]
+      },
+      "forwardLimit": {
+        "description": "转发包含消息数",
+        "hint": "转发时每个转发消息最多包含的消息条数，过多的内容可能导致转发失败。如果平台不支持转发，则视为只发送指定数量的结果，其余的会被抛弃（0表示不限制）。",
+        "type": "int",
+        "slider": {
+          "min": 0,
+          "step": 5
+        },
+        "default": 10
+      },
+      "resultsLimit": {
+        "description": "强制截断多发",
+        "hint": "一次被动触发的最终返回结果只返回一条转发内容、一条消息或一张图片，以防止刷屏。",
+        "type": "bool",
+        "default": false
+      }
+    }
+  },
   "searchSetting": {
     "description": "搜索设置",
     "type": "object",
@@ -90,12 +140,6 @@
         },
         "default": 75
       },
-      "enableNSFW": {
-        "description": "NSFW内容",
-        "hint": "开启时，随机作品可能出现NSFW内容。",
-        "type": "bool",
-        "default": false
-      },
       "producerVns": {
         "description": "显示厂商的作品数量",
         "hint": "当使用VNDB搜索制作者信息的时候，选择展示其至多多少个作品（0表示展示所有作品），建议默认值，过多可能导致等待时间过长或者渲染图片失败，作品默认按贝叶斯评分降序排序。",
@@ -106,16 +150,6 @@
           "step": 3
         },
         "default": 9
-      },
-      "forwardLimit": {
-        "description": "转发包含消息数",
-        "hint": "转发时每个转发消息最多包含的消息条数，过多的内容可能导致转发失败。如果平台不支持转发，则视为只发送指定数量的结果，其余的会被抛弃（0表示不限制）。",
-        "type": "int",
-        "slider": {
-          "min": 0,
-          "step": 5
-        },
-        "default": 10
       },
       "recommendCache": {
         "description": "推荐时缓存数量",

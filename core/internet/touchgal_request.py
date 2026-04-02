@@ -20,7 +20,7 @@ class TouchGalRequest:
         self.http = get_http()
 
         nsfw = (
-            "all" if config.get("searchSetting", {}).get("enableNSFW", False) else "sfw"
+            "all" if config.get("returnSetting", {}).get("enableNSFW", False) else "sfw"
         )
         token = (
             config.get("safetySetting", {}).get("touchgalToken", "") or self.dev_token

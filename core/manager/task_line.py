@@ -51,8 +51,10 @@ class TaskLine:
     def __init__(self):
         self.resources_dir = Path(__file__).parent / ".." / ".." / "resources"
         self.template_dir = self.resources_dir / "template"
-        self.session_data_storage = {}
         self.render_options = {"type": "jpeg", "quality": 100}
+        self.support_forward = ["aiocqhttp", "qq", "qq_official", "onebot"]
+        self.session_data_storage = {}
+        self.send_message_id = []
 
         self.vndb_request: VNDBRequest | None = None
         self.touchgal_request: TouchGalRequest | None = None
@@ -70,6 +72,8 @@ class TaskLine:
         self.recommend_cache: int | None = None
         self.update_interval: float | None = None
         self.forward_limit: int | None = None
+        self.results_limit: bool | None = None
+        self.withdraw_middle: bool | None = None
 
     async def initialize(self, config: AstrBotConfig):
         self.vndb_request = get_vndb_request()
@@ -109,7 +113,10 @@ class TaskLine:
         self.find_results = search_setting.get("findResults", 3)
         self.recommend_cache = search_setting.get("recommendCache", 3)
         self.update_interval = search_setting.get("updateInterval", 24)
-        self.forward_limit = search_setting.get("forwardLimit", 10)
+        return_setting = config.get("returnSetting", {})
+        self.forward_limit = return_setting.get("forwardLimit", 10)
+        self.results_limit = return_setting.get("resultsLimit", False)
+        self.withdraw_middle = return_setting.get("withdrawMiddle", True)
         self.session_timeout = config.get("basicSetting", {}).get("sessionTimeout", 30)
 
     async def terminate(self):
@@ -136,6 +143,7 @@ class TaskLine:
         task = self.task_map[cmd_body.type]
         async for result in task(cmd_body):
             yield result
+
 
     @staticmethod
     def _check_keyword_validity(
@@ -277,21 +285,29 @@ class TaskLine:
             else:
                 cmd_body.type = CommandType.SELECT
                 msgs = await self.builder.build_options(cmd_body, res)
-                content = []
-                for idx, msg in enumerate(msgs, start=1):
-                    node = comp.Node(
-                        uin=event.get_self_id(),
-                        content=[
-                            comp.Plain(f"【{idx}】"),
-                            comp.Image.fromBase64(msg[0]),
-                            comp.Plain(msg[1]),
-                        ],
-                    )
-                    content.append(node)
-
                 tips = f"-未识别到ID，改为关键词搜索\n-从以下内容中选择一项\n-请在{self.session_timeout}s内回复输入对应编号"
                 yield event.plain_result(tips)
-                yield event.chain_result([comp.Nodes(content)])
+
+                if event.get_platform_name() in self.support_forward:
+                    content = []
+                    for idx, msg in enumerate(msgs, start=1):
+                        node = comp.Node(
+                            uin=event.get_self_id(),
+                            content=[
+                                comp.Plain(f"【{idx}】"),
+                                comp.Image.fromBase64(msg[0]),
+                                comp.Plain(msg[1]),
+                            ],
+                        )
+                        content.append(node)
+                    yield event.chain_result([comp.Nodes(content)])
+                else:
+                    content = []
+                    for idx, msg in enumerate(msgs, start=1):
+                        content.append(comp.Image.fromBase64(msg[0]))
+                        content.append(comp.Plain(f"【{idx}】"))
+                        content.append(comp.Plain(msg[1]))
+                    yield event.chain_result(content)
 
                 @session_waiter(timeout=self.session_timeout)
                 async def index_waiter(
@@ -324,7 +340,7 @@ class TaskLine:
         msg_arr: list[tuple[str, str]] = await self.builder.build_options(
             cmd_body, resp
         )
-        if event.get_platform_name() == "aiocqhttp":
+        if event.get_platform_name() in self.support_forward:
             nodes = []
             for idx, msg in enumerate(msg_arr, start=1):
                 nodes.append(
@@ -333,13 +349,18 @@ class TaskLine:
                 if idx % self.forward_limit == 0:
                     yield event.chain_result([comp.Nodes(nodes)])
                     nodes = []
+                if idx == self.forward_limit and self.results_limit:
+                    break
             if nodes:
                 yield event.chain_result([comp.Nodes(nodes)])
         else:
-            res = [
-                msg[1] for idx, msg in enumerate(msg_arr) if idx < self.forward_limit
-            ]
-            yield event.plain_result("\n----------\n".join(res))
+            if self.results_limit:
+                yield msg_arr[0][1]
+            else:
+                res = [
+                    msg[1] for idx, msg in enumerate(msg_arr) if idx < self.forward_limit
+                ]
+                yield event.plain_result("\n----------\n".join(res))
 
     async def _find_task(self, cmd_body: CommandBody):
         event = cmd_body.event
