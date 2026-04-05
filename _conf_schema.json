@@ -71,7 +71,8 @@
         "description": "撤回中间消息",
         "hint": "撤回发送最终结果之前的这次指令导致发送的其它辅助消息。",
         "type": "bool",
-        "default": true
+        "default": true,
+        "invisible": true
       },
       "withdrawLast": {
         "description": "撤回白名单",
@@ -87,7 +88,8 @@
         ],
         "default": [
           "d-旮旯 下载"
-        ]
+        ],
+        "invisible": true
       },
       "forwardLimit": {
         "description": "转发包含消息数",
