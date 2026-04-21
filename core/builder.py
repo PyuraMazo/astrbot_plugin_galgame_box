@@ -527,11 +527,9 @@ class Builder:
     def _build_download(self, response: ResourceResponse) -> str:
         title = f"标题：{response.name}" if response.name else ""
         kind = f"类型：{response.section}" if response.section else ""
-        storage = f"资源平台：{response.storage}" if response.storage else ""
         platform = (
             f"支持平台：{'、'.join(response.platform)}" if response.platform else ""
         )
-        size = f"文件大小：{response.size}" if response.size else ""
         source_type = f"标签：{'、'.join(response.type)}" if response.type else ""
 
         lang_list = []
@@ -540,24 +538,28 @@ class Builder:
                 lang_list.append(lang[i])
         language = f"资源语言：{'、'.join(lang_list)}" if lang else ""
         note = f"备注：{response.note}" if response.note else ""
-        content = f"链接：{response.content}" if response.content else ""
-        code = f"提取码：{response.code}" if response.code else ""
-        password = f"解压码：{response.password}" if response.password else ""
+
+        links = []
+        for j in response.links:
+            gap = "-" * 10
+            storage = f"资源平台：{j.storage}" if j.storage else ""
+            size = f"文件大小：{j.size}" if j.size else ""
+            content = f"链接：{j.content}" if j.content else ""
+            code = f"提取码：{j.code}" if j.code else ""
+            password = f"解压码：{j.password}" if j.password else ""
+            links.append("\n".join([gap, storage, size, content, code, password]))
+
 
         data = [
             i
             for i in [
                 title,
                 kind,
-                storage,
                 platform,
-                size,
                 source_type,
                 language,
-                content,
-                code,
-                password,
                 note,
+                "\n".join(links),
             ]
             if i
         ]

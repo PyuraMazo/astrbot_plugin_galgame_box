@@ -44,6 +44,13 @@ class Extlink(BaseModel):
     id: str
     label: str
 
+class Link(BaseModel):
+    storage: str
+    size: str
+    content: str
+    code: str
+    password: str
+
 
 class VNDBVnResponse(BaseModel):
     id: str
@@ -108,15 +115,11 @@ class ResourceResponse(BaseModel):
     id: int
     name: str
     section: str
-    storage: str
-    size: str
     type: list[str]
     language: list[str]
     note: str
-    content: str
-    code: str
-    password: str
     platform: list[str]
+    links: list[Link]
 
 
 class AnimeTraceResponse(BaseModel):
