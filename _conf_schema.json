@@ -48,12 +48,29 @@
   },
   "safetySetting": {
     "description": "安全设置",
+    "hint": "除了目标网站、自身网络原因外，本板块内容设置错误也会导致网络/连接问题。",
     "type": "object",
     "items": {
+      "proxy": {
+        "description": "代理地址",
+        "hint": "只作用于本插件，格式如http://127.0.0.1:7897。",
+        "type": "string"
+      },
       "touchgalToken": {
         "description": "TouchGal登录账号Token",
-        "hint": "这是开启NSFW的前置条件，需要手动访问https://www.touchgal.top/并获取Cookie的kun-galgame-patch-moe-token值。不填则默认使用开发者的测试Token，有不稳定风险。",
+        "hint": "这是开启NSFW的前置条件，需要手动访问https://www.touchgal.top/并获取Cookie的kun-galgame-patch-moe-token值。",
         "type": "string"
+      },
+      "cfClearance": {
+        "description": "CF Clearance（建议）",
+        "hint": "Cloudflare Clearance Cookie，用于绕过反爬虫验证。需要手动访问https://www.touchgal.top/并获取Cookie的cf_clearance值。",
+        "type": "string"
+      },
+      "tls": {
+        "description": "TLS浏览器指纹",
+        "hint": "伪造目标浏览器的指纹。",
+        "type": "string",
+        "default": "chrome136"
       }
     }
   },

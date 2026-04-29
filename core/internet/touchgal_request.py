@@ -10,25 +10,41 @@ class TouchGalRequest:
     def __init__(self):
         self.base_url = "https://www.touchgal.top/"
         self.search_api = self.base_url + "api/search/"
-
-        self.dev_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0b3VjaGdhbCIsImF1ZCI6InRvdWNoZ2FsX2FkbWluIiwidWlkIjozOTY2NDEsIm5hbWUiOiJQeXVyYSIsInJvbGUiOjEsImlhdCI6MTc3MTM5NDg1OSwiZXhwIjoxNzczOTg2ODU5fQ.BihJjjqjoeHIX1IjgEQrzlTwu520YInfvUOrjnvG1iI"
+        self.proxies = {}
+        self.headers = {
+            "Content-Type": "application/json",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+            "origin": "https://www.touchgal.top",
+            "referer": "https://www.touchgal.top/search",
+            "x-requested-with": "kun-fetch",
+        }
 
         self.http: Http | None = None
         self.cookies: dict | None = None
 
     async def initialize(self, config: AstrBotConfig):
         self.http = get_http()
+        safety_setting = config.get("safetySetting", {})
 
-        nsfw = (
+        proxy = safety_setting.get("proxy", "")
+        if proxy:
+            self.proxies = {
+                "http": proxy,
+                "https": proxy,
+            }
+
+        kunNsfwEnable = (
             "all" if config.get("returnSetting", {}).get("enableNSFW", False) else "sfw"
         )
-        token = (
-            config.get("safetySetting", {}).get("touchgalToken", "") or self.dev_token
-        )
+        token = safety_setting.get("touchgalToken", "")
+        cf = safety_setting.get("cfClearance", "")
         self.cookies = {
-            "kun-patch-setting-store|state|data|kunNsfwEnable": nsfw,
-            "kun-galgame-patch-moe-token": token,
+            "kun-patch-setting-store|state|data|kunNsfwEnable": kunNsfwEnable
         }
+        if token:
+            self.cookies["kun-galgame-patch-moe-token"] = token
+        if cf:
+            self.cookies["cf_clearance"] = cf
 
         await self.http.initialize(config)
 
@@ -58,7 +74,13 @@ class TouchGalRequest:
             "selectedYears": ["all"],
             "selectedMonths": ["all"],
         }
-        res = await self.http.post(self.search_api, payload, cookies=self.cookies)
+        res = await self.http.post(
+            self.search_api,
+            payload,
+            cookies=self.cookies,
+            headers=self.headers,
+            proxies=self.proxies,
+        )
         return [TouchGalResponse.model_validate(i) for i in res["galgames"]], res[
             "total"
         ]
@@ -66,16 +88,23 @@ class TouchGalRequest:
     async def request_random(self) -> str:
         return (
             await self.http.get(
-                self.base_url + "api/home/random", "json", cookies=self.cookies
+                self.base_url + "api/home/random",
+                "json",
+                cookies=self.cookies,
+                proxies=self.proxies,
             )
         )["uniqueId"]
 
     async def request_html(self, unique_id: str) -> str:
-        return await self.http.get(self.base_url + unique_id, cookies=self.cookies)
+        return await self.http.get(
+            self.base_url + unique_id, cookies=self.cookies, proxies=self.proxies
+        )
 
     async def request_download(self, touchgal_id: int) -> list[ResourceResponse]:
         resource_url = f"{self.base_url}api/patch/resource?patchId={touchgal_id}"
-        res = await self.http.get(resource_url, "json", cookies=self.cookies)
+        res = await self.http.get(
+            resource_url, "json", cookies=self.cookies, proxies=self.proxies
+        )
         return [ResourceResponse.model_validate(i) for i in res]
 
 

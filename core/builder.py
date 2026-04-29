@@ -149,7 +149,7 @@ class Builder:
             title="<br>".join(kwargs.get("title", "标题出错")),
             items=res,
             bg_image=self.bg,
-            font=self.font
+            font=self.font,
         )
 
     async def _handle_random(self, response, **kwargs):
@@ -382,7 +382,13 @@ class Builder:
             vn_released = f"发布日期：{vn.released}" if vn.released else ""
             vn_rating = f"贝叶斯评分：{vn.rating}" if vn.rating else ""
             vn_list = [i for i in [vn_id, vn_released, vn_rating] if i]
-            vns.append(RenderedItem(image="", text="<br>".join(vn_list), sub_title=vn.alttitle or vn.title))
+            vns.append(
+                RenderedItem(
+                    image="",
+                    text="<br>".join(vn_list),
+                    sub_title=vn.alttitle or vn.title,
+                )
+            )
         done = [
             File.buffer2base64(img) for img in await self.downloader.download_more(wait)
         ]
@@ -548,7 +554,6 @@ class Builder:
             code = f"提取码：{j.code}" if j.code else ""
             password = f"解压码：{j.password}" if j.password else ""
             links.append("\n".join([gap, storage, size, content, code, password]))
-
 
         data = [
             i

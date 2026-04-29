@@ -13,15 +13,16 @@ class Http:
 
         self.timeout_times = None
         self.session: aiohttp.ClientSession | None = None
+        self.tls: str | None = None
 
     async def initialize(self, config: AstrBotConfig):
         self.timeout_times = config.get("basicSetting", {}).get("requestTimeout", 3)
+        self.tls = config.get("safetySetting", {}).get("tls", "chrome136")
         if self.session is None:
             self.session = aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(
                     total=config.get("basicSetting", {}).get("requestTime", 30)
-                ),
-                headers=self.headers,
+                )
             )
 
     async def terminate(self):
@@ -48,16 +49,16 @@ class Http:
                 else:
                     async with self.session.get(url, **kwargs) as response:
                         return await response.text()
-            except Exception as e:
+            except Exception:
                 count += 1
                 await asyncio.sleep(0.5)
-                logger.info(f"网络请求失败一次...{str(e)}")
+                # logger.info(f"网络请求失败一次...{str(e)}")
         if res_type == "bytes" and err_handle:
             return err_handle
-        raise InternetException(url)
+        return await self._cf_curl(method="get", res_type=res_type, url=url, **kwargs)
 
     async def post(self, url: str, data: dict, **kwargs) -> str | dict | bytes:
-        headers = self.headers | kwargs.pop("headers", {})
+        headers = kwargs.pop("headers", self.headers)
         count = 0
         while count < self.timeout_times:
             try:
@@ -65,11 +66,39 @@ class Http:
                     url, headers=headers, json=data, **kwargs
                 ) as response:
                     return await response.json()
-            except Exception as e:
+            except Exception:
                 count += 1
                 await asyncio.sleep(0.5)
-                logger.info(f"网络请求失败一次...{str(e)}")
-        raise InternetException(url)
+                # logger.info(f"网络请求失败一次...{str(e)}")
+        return await self._cf_curl(
+            method="post", url=url, json=data, headers=headers, **kwargs
+        )
+
+    async def _cf_curl(self, **kwargs) -> str | dict | bytes:
+        try:
+            from curl_cffi.requests import AsyncSession
+
+            async with AsyncSession() as session:
+                t = kwargs.pop("res_type", None)
+                m = kwargs.pop("method")
+                if m == "get":
+                    response = await session.get(impersonate=self.tls, **kwargs)
+                    if t == "json":
+                        return response.json()
+                    elif t == "bytes":
+                        return response.read()
+                    else:
+                        return response.text
+                else:
+                    response = await session.post(impersonate=self.tls, **kwargs)
+                    return response.json()
+        except ImportError:
+            logger.warn(
+                "网络请求失败。目前未安装curl_cffi模块，可能解决问题通过：pip install curl_cffi"
+            )
+            raise InternetException(kwargs["url"])
+        except Exception:
+            raise InternetException(kwargs["url"])
 
 
 _http: Http | None = None

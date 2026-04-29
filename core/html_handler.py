@@ -2,8 +2,8 @@ import asyncio
 
 from bs4 import BeautifulSoup
 
-from .api.type import TouchGalDetails
 from .api.exception import SettingException
+from .api.type import TouchGalDetails
 
 
 class HTMLHandler:
@@ -52,9 +52,9 @@ class HTMLHandler:
             images = (
                 [
                     img.get("src")
-                    for img in info.find("div", class_="data-kun-img-container").find_all(
-                        "img"
-                    )
+                    for img in info.find(
+                        "div", class_="data-kun-img-container"
+                    ).find_all("img")
                 ]
                 if info.find("div", class_="data-kun-img-container")
                 else []
@@ -64,8 +64,7 @@ class HTMLHandler:
                 third_info=third, images=images, description=entro_text, title=title
             )
         except AttributeError:
-            raise SettingException('TouchGal登录账号Token')
-
+            raise SettingException("TouchGal登录账号Token")
 
 
 _handler: HTMLHandler | None = None

@@ -144,7 +144,6 @@ class TaskLine:
         async for result in task(cmd_body):
             yield result
 
-
     @staticmethod
     def _check_keyword_validity(
         event: AstrMessageEvent, cmd_type: CommandType, keyword: str | list[str]
@@ -358,7 +357,9 @@ class TaskLine:
                 yield msg_arr[0][1]
             else:
                 res = [
-                    msg[1] for idx, msg in enumerate(msg_arr) if idx < self.forward_limit
+                    msg[1]
+                    for idx, msg in enumerate(msg_arr)
+                    if idx < self.forward_limit
                 ]
                 yield event.plain_result("\n----------\n".join(res))
 
