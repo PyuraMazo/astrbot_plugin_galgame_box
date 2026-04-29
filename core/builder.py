@@ -553,7 +553,11 @@ class Builder:
             content = f"链接：{j.content}" if j.content else ""
             code = f"提取码：{j.code}" if j.code else ""
             password = f"解压码：{j.password}" if j.password else ""
-            links.append("\n".join([gap, storage, size, content, code, password]))
+            links.append(
+                "\n".join(
+                    [k for k in [gap, storage, size, content, code, password] if k]
+                )
+            )
 
         data = [
             i
