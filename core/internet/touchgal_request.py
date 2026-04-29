@@ -80,6 +80,7 @@ class TouchGalRequest:
             cookies=self.cookies,
             headers=self.headers,
             proxies=self.proxies,
+            handle_cf=True
         )
         return [TouchGalResponse.model_validate(i) for i in res["galgames"]], res[
             "total"
@@ -92,18 +93,19 @@ class TouchGalRequest:
                 "json",
                 cookies=self.cookies,
                 proxies=self.proxies,
+                handle_cf=True
             )
         )["uniqueId"]
 
     async def request_html(self, unique_id: str) -> str:
         return await self.http.get(
-            self.base_url + unique_id, cookies=self.cookies, proxies=self.proxies
+            self.base_url + unique_id, cookies=self.cookies, proxies=self.proxies, handle_cf=True
         )
 
     async def request_download(self, touchgal_id: int) -> list[ResourceResponse]:
         resource_url = f"{self.base_url}api/patch/resource?patchId={touchgal_id}"
         res = await self.http.get(
-            resource_url, "json", cookies=self.cookies, proxies=self.proxies
+            resource_url, "json", cookies=self.cookies, proxies=self.proxies, handle_cf=True
         )
         return [ResourceResponse.model_validate(i) for i in res]
 

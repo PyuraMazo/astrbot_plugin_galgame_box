@@ -30,7 +30,7 @@ class Http:
             await self.session.close()
 
     async def get(
-        self, url: str, res_type: str = "text", err_handle=None, **kwargs
+        self, url: str, res_type: str = "text", err_handle=None, handle_cf=False, **kwargs
     ) -> str | dict | bytes:
         if res_type == "bytes" and not url.startswith("http"):
             if err_handle:
@@ -55,9 +55,12 @@ class Http:
                 # logger.info(f"网络请求失败一次...{str(e)}")
         if res_type == "bytes" and err_handle:
             return err_handle
-        return await self._cf_curl(method="get", res_type=res_type, url=url, **kwargs)
+        if handle_cf:
+            return await self._cf_curl(method="get", res_type=res_type, url=url, **kwargs)
+        else:
+            raise InternetException(url)
 
-    async def post(self, url: str, data: dict, **kwargs) -> str | dict | bytes:
+    async def post(self, url: str, data: dict, handle_cf=False, **kwargs) -> str | dict | bytes:
         headers = kwargs.pop("headers", self.headers)
         count = 0
         while count < self.timeout_times:
@@ -70,9 +73,12 @@ class Http:
                 count += 1
                 await asyncio.sleep(0.5)
                 # logger.info(f"网络请求失败一次...{str(e)}")
-        return await self._cf_curl(
-            method="post", url=url, json=data, headers=headers, **kwargs
-        )
+        if handle_cf:
+            return await self._cf_curl(
+                method="post", url=url, json=data, headers=headers, **kwargs
+            )
+        else:
+            raise InternetException(url)
 
     async def _cf_curl(self, **kwargs) -> str | dict | bytes:
         try:

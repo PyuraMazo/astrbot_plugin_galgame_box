@@ -1,5 +1,20 @@
 # ChangeLog
 
+# 2026/04/29 v1.11.0
+
+## 新增
+- 新增多个配置项，以应对复杂的网络问题。
+- 新增依赖包`curl_cffi`以应对反爬问题。
+
+## 修复
+- 修复因TouchGal反爬导致的网络错误（[#16](https://github.com/PyuraMazo/astrbot_plugin_galgame_box/issues/16)）。
+- 修复`下载`内容有空白行的问题。
+
+## 删减
+- 删除配置项`TouchGal登录账号Token`的默认token，现在需要手动获取。
+
+---
+
 # 2026/04/21 v1.10.2
 
 ## 修复
