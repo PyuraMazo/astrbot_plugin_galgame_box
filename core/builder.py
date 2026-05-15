@@ -9,7 +9,7 @@ from PIL import Image as PILImage
 
 from astrbot.api import AstrBotConfig
 
-from .api.const import develop_type, gender, id2command, lang
+from .api.const import id2command
 from .api.model import (
     AnimeTraceData,
     AnimeTraceResponse,
@@ -36,6 +36,7 @@ from .api.type import (
 from .internet.downloader import Downloader, get_downloader
 from .utils.file import File
 from .utils.image import Image
+from .utils.splicer import Splicer
 
 
 class Builder:
@@ -109,8 +110,12 @@ class Builder:
 
     async def _handle_vn(self, response, **kwargs):
         resp: list[VNDBVnResponse] = response
-        co_items = [self._build_vn(res) for res in resp]
-        items = await asyncio.gather(*co_items)
+        items = [
+            RenderedItem(
+                image=img, text="<br>".join(self._build_vn(info)), sub_title=""
+            )
+            for img, info in zip(await self._build_images(resp), resp)
+        ]
         return UnrenderedData(
             title="<br>".join(kwargs.get("title", "标题出错")),
             items=items,
@@ -120,8 +125,14 @@ class Builder:
 
     async def _handle_character(self, response, **kwargs):
         resp: list[VNDBCharacterResponse] = response
-        co_items = [self._build_character(res) for res in resp]
-        items = await asyncio.gather(*co_items)
+        items = [
+            RenderedItem(
+                image=img,
+                text="<br>".join(self._build_character(info, ignore_name=True)),
+                sub_title=info.original or info.name,
+            )
+            for img, info in zip(await self._build_images(resp), resp)
+        ]
         return UnrenderedData(
             title="<br>".join(kwargs.get("title", "标题出错")),
             items=items,
@@ -132,11 +143,30 @@ class Builder:
     async def _handle_producer(self, response, **kwargs):
         resp: list[VNDBProducerResponse] = response
         vns: list[list[VNDBVnResponse]] = kwargs["vns"]
-        co_pros = [self._build_producer(pro, vn) for pro, vn in zip(resp, vns)]
-        pros = await asyncio.gather(*co_pros)
+
+        items: list[RenderedItem] = []
+        works: list[RenderedBlock] = []
+        for producer, per_vns in zip(resp, vns):
+            for vn, vn_image in zip(per_vns, await self._build_images(per_vns)):
+                items.append(
+                    RenderedItem(
+                        image=vn_image,
+                        text="<br>".join(self._build_vn(vn)),
+                        sub_title=vn.alttitle or vn.title,
+                    )
+                )
+            works.append(
+                RenderedBlock(
+                    column_info="<br>".join(
+                        self._build_producer(producer, ignore_name=True)
+                    ),
+                    vns=items,
+                )
+            )
+
         return UnrenderedData(
             title="<br>".join(kwargs.get("title", "标题出错")),
-            items=pros,
+            items=works,
             bg_image=self.bg,
             font=self.font,
         )
@@ -167,7 +197,7 @@ class Builder:
 
     async def _handle_download(self, response, **kwargs):
         resp: list[ResourceResponse] = response
-        return [("", self._build_download(i)) for i in resp]
+        return [("", "\n".join(self._build_download(i))) for i in resp]
 
     async def _handle_select(self, response, **kwargs):
         resp: list[TouchGalResponse] = response
@@ -247,214 +277,102 @@ class Builder:
         )
         return [i for i in [run_type, value, count] if i]
 
-    async def _build_vn(self, response: VNDBVnResponse) -> RenderedItem:
-        id = f"VNDB ID：{response.id}"
-        img = (
-            await File.buffer2base64(
-                await self.downloader.download_once(response.image.url)
-            )
-            if response.image
+    async def _build_images(
+        self, response: list[VNDBVnResponse | VNDBCharacterResponse]
+    ) -> list[str]:
+        co_str = [
+            File.buffer2base64(await self.downloader.download_once(i.image.url))
+            if i.image
             else self.err
-        )
-        avg = f"平均分：{response.average}" if response.average else ""
-        rating = f"贝叶斯评分：{response.rating}" if response.rating else ""
-        release = f"发布日期：{response.released}" if response.released else ""
-        length = (
-            f"游玩时间：{round(response.length_minutes / 60, 1)}小时"
-            if response.length_minutes
-            else ""
-        )
-
-        platform = (
-            f"支持平台：{'、'.join(response.platforms)}" if response.platforms else ""
-        )
-        alias = f"别称：{'、'.join(response.aliases)}" if response.aliases else ""
-
-        pro = (
-            [f"{p.original or p.name}（{p.id}）" for p in response.developers]
-            if response.developers
-            else []
-        )
-        dev = f"制作者（VNDB ID）：{'、'.join(pro)}" if pro else ""
-
-        lang_list = []
-        if response.titles:
-            for title in response.titles:
-                if title.lang in lang.keys():
-                    lang_list.append(
-                        f"{lang[title.lang]}标题（{'官方' if title.official else '非官方'}）：{title.title}"
-                    )
-        titles = "<br>".join(lang_list)
-
-        data_list = [
-            i
-            for i in [id, titles, alias, rating, avg, length, dev, release, platform]
-            if i
+            for i in response
         ]
-        return RenderedItem(image=img, text="<br>".join(data_list), sub_title="")
+        return await asyncio.gather(*co_str)
 
-    async def _build_character(
-        self, response: VNDBCharacterResponse, ignore_extra=False
-    ) -> RenderedItem:
-        id = f"VNDB ID：{response.id}"
-        img = (
-            await File.buffer2base64(
-                await self.downloader.download_once(response.image.url)
-            )
-            if response.image
-            else self.err
-        )
-        name = response.original or response.name
-        aliases = f"别名：{'、'.join(response.aliases)}" if response.aliases else ""
-        birthday = (
-            f"生日：{response.birthday[0]}月{response.birthday[1]}日"
-            if response.birthday
-            else ""
-        )
+    def _build_vn(self, response: VNDBVnResponse) -> list[str]:
+        return (
+            Splicer.from_vndb_vn()
+            .vndb_id(response.id)
+            .average(response.average)
+            .rating(response.rating)
+            .release(response.released)
+            .length(response.length_minutes)
+            .platform(response.platforms)
+            .alias(response.aliases)
+            .producer(response.developers)
+            .titles(response.titles)
+        ).do()
 
-        vn_list = [
-            f"出场作品（VNDB ID）：「{vn.alttitle or vn.title}」（{vn.id}）"
-            for vn in response.vns
-        ]
-        vns = "、".join(vn_list)
+    def _build_character(
+        self, response: VNDBCharacterResponse, ignore_name=False, ignore_extra=False
+    ) -> list[str]:
+        base = (
+            Splicer.from_vndb_character()
+            .vndb_id(response.id)
+            .alias(response.aliases)
+            .birthday(response.birthday)
+            .vns(response.vns)
+        )
+        if not ignore_name:
+            base.name(response.original, response.name)
 
         option: list[str] = self.character_options
-        extra: list = []
         if option and not ignore_extra:
             extra = [i.split("-")[0] for i in option]
+            if "a" in extra:
+                base.blood(response.blood_type)
+            if "b" in extra:
+                base.wh(response.weight, response.height)
+            if "c" in extra:
+                base.gender_o(response.sex)
+            if "d" in extra:
+                base.gender_i(response.sex)
+            if "e" in extra:
+                base.bwh(response.bust, response.waist, response.hips)
+            if "f" in extra:
+                base.cup(response.cup)
 
-        blood = (
-            f"血型：{response.blood_type}"
-            if "a" in extra and response.blood_type
-            else ""
-        )
-        wh = (
-            f"身高/体重（cm/kg）：{response.height or '??'}/{response.weight or '??'}"
-            if "b" in extra and (response.weight or response.height)
-            else ""
-        )
-        gender_outer = f"性别：{gender[response.sex[0]]}" if "c" in extra else ""
-        gender_inner = f"真实性别：{gender[response.sex[1]]}" if "d" in extra else ""
-        bwh = (
-            f"三围：{response.bust or '??'}-{response.waist or '??'}-{response.hips or '??'}"
-            if "e" in extra and (response.bust or response.waist or response.hips)
-            else ""
-        )
-        cup = f"罩杯：{response.cup}" if "f" in extra and response.cup else ""
+        return base.do()
 
-        data_list = [
-            i
-            for i in [
-                id,
-                aliases,
-                birthday,
-                vns,
-                blood,
-                wh,
-                gender_outer,
-                gender_inner,
-                bwh,
-                cup,
-            ]
-            if i
-        ]
-        return RenderedItem(image=img, text="<br>".join(data_list), sub_title=name)
-
-    async def _build_producer(
-        self, response: VNDBProducerResponse, vn_response: list[VNDBVnResponse]
-    ) -> RenderedBlock:
-        id = f"VNDB ID：{response.id}"
-        name = f"名称：{response.original or response.name}"
-        aliases = f"别称：{'、'.join(response.aliases)}" if response.aliases else ""
-        language = (
-            f"文本语言：{lang[response.lang]}" if response.lang in lang.keys() else ""
+    def _build_producer(
+        self, response: VNDBProducerResponse, ignore_name=False
+    ) -> list[str]:
+        base = (
+            Splicer.from_vndb_producer()
+            .vndb_id(response.id)
+            .alias(response.aliases)
+            .text_lang(response.lang)
+            .co_type(response.type)
         )
-        type = f"类型：{develop_type[response.type]}"
-        info_list = [i for i in [id, name, aliases, language, type] if i]
-        info = "<br>".join(info_list)
-
-        vns: list[RenderedItem] = []
-        wait = []
-        for vn in vn_response:
-            wait.append(vn.image.url if vn.image else "")
-
-            vn_id = f"VNDB ID：{vn.id}"
-            vn_released = f"发布日期：{vn.released}" if vn.released else ""
-            vn_rating = f"贝叶斯评分：{vn.rating}" if vn.rating else ""
-            vn_list = [i for i in [vn_id, vn_released, vn_rating] if i]
-            vns.append(
-                RenderedItem(
-                    image="",
-                    text="<br>".join(vn_list),
-                    sub_title=vn.alttitle or vn.title,
-                )
-            )
-        done = [
-            File.buffer2base64(img) for img in await self.downloader.download_more(wait)
-        ]
-        for bs, vn in zip(await asyncio.gather(*done), vns):
-            vn.image = bs
-        return RenderedBlock(
-            column_info=info,
-            vns=vns,
-        )
+        if not ignore_name:
+            base.name(response.original, response.name)
+        return base.do()
 
     async def _build_event(
         self,
         vn_response: list[VNDBVnResponse],
         cha_response: list[VNDBCharacterResponse],
     ) -> list[RenderedBlock]:
-        vns: list[RenderedItem] = []
-        chas: list[RenderedItem] = []
-        v = []
-        for vn in vn_response:
-            v.append(vn.image.url if vn.image else "")
 
-            vn_id = f"VNDB ID：{vn.id}"
-            vn_released = f"发布日期：{vn.released}" if vn.released else ""
-            vn_rating = f"贝叶斯评分：{vn.rating}" if vn.rating else ""
-            vn_list = [i for i in [vn_id, vn_released, vn_rating] if i]
-            vns.append(
-                RenderedItem(
-                    image="",
-                    text="<br>".join(vn_list),
-                    sub_title=vn.alttitle or vn.title,
-                )
-            )
-        c = []
-        for cha in cha_response:
-            c.append(cha.image.url if cha.image else "")
+        co_vn_images = self._build_images(vn_response)
+        co_cha_images = self._build_images(cha_response)
+        vn_images, cha_images = await asyncio.gather(co_vn_images, co_cha_images)
 
-            cha_id = f"VNDB ID：{cha.id}"
-            cha_aliases = f"别名：{'、'.join(cha.aliases)}" if cha.aliases else ""
-            cha_birthday = (
-                f"生日：{cha.birthday[0]}月{cha.birthday[1]}日" if cha.birthday else ""
+        vns = [
+            RenderedItem(
+                image=img,
+                text="<br>".join(self._build_vn(vn)),
+                sub_title=vn.alttitle or vn.title,
             )
-            cha_vn_list = [
-                f"出场作品（VNDB ID）：「{vn.alttitle or vn.title}」（{vn.id}）"
-                for vn in cha.vns
-            ]
-            cha_vns = "、".join(cha_vn_list)
-            cha_list = [i for i in [cha_id, cha_aliases, cha_birthday, cha_vns] if i]
-            chas.append(
-                RenderedItem(
-                    image="",
-                    text="<br>".join(cha_list),
-                    sub_title=cha.original or cha.name,
-                )
-            )
-
-        vn_imgs = [
-            File.buffer2base64(img) for img in await self.downloader.download_more(v)
+            for vn, img in zip(vn_response, vn_images)
         ]
-        cha_imgs = [
-            File.buffer2base64(img) for img in await self.downloader.download_more(c)
+        chas = [
+            RenderedItem(
+                image=img,
+                text="<br>".join(self._build_character(cha)),
+                sub_title=cha.original or cha.name,
+            )
+            for cha, img in zip(cha_response, cha_images)
         ]
-        imgs = await asyncio.gather(asyncio.gather(*vn_imgs), asyncio.gather(*cha_imgs))
-        for _a, _w in zip(vns, imgs[0]):
-            _a.image = _w
-        for _s, _l in zip(chas, imgs[1]):
-            _s.image = _l
 
         return [
             RenderedBlock(
@@ -470,28 +388,19 @@ class Builder:
     async def _build_select(
         self, response: TouchGalResponse, details: TouchGalDetails = None
     ) -> RenderedRandom | tuple[Any, str]:
-        touchgal_id = f"TouchGal ID：{response.id}"
         cover = response.banner
-        title = response.name
-        avg = f"站内评分：{response.averageRating}"
-        source_type = f"站内资源：{'、'.join(response.type)}"
-        platform = f"资源平台：{'、'.join(response.platform)}"
-        tags = f"标签：{'、'.join([i.tag['name'] for i in response.tag])}"
-
-        lang_list = []
-        for i in response.language:
-            if i in lang.keys():
-                lang_list.append(lang[i])
-        language = f"资源语言：{'、'.join(lang_list)}"
+        desc = (
+            Splicer.from_touchgal_desc()
+            .touchgal_id(response.id)
+            .touchgal_score(response.averageRating)
+            .touchgal_type(response.type)
+            .touchgal_tags(response.tag)
+            .touchgal_platforms(response.platform)
+            .touchgal_lang(response.language)
+        ).do()
 
         if not details:
-            text = "\n".join(
-                [
-                    i
-                    for i in [title, touchgal_id, avg, source_type, platform, language]
-                    if i
-                ]
-            )
+            text = "\n".join(desc)
             file_path = self.err
             if response.banner:
                 try:
@@ -513,14 +422,10 @@ class Builder:
             File.buffer2base64(img, suffix="avif") or self.err for img in img_buf
         ]
         imgs = await asyncio.gather(*co_imgs)
-        data_list = [
-            i
-            for i in [third_id, touchgal_id, tags, avg, source_type, language, platform]
-            if i
-        ]
+        desc.insert(0, third_id)
         return RenderedRandom(
-            text="<br>".join(data_list),
-            sub_title=title,
+            text="<br>".join(desc),
+            sub_title=response.name,
             main_image=await File.buffer2base64(
                 await self.downloader.download_once(cover), suffix="avif"
             )
@@ -530,49 +435,17 @@ class Builder:
             description=description,
         )
 
-    def _build_download(self, response: ResourceResponse) -> str:
-        title = f"标题：{response.name}" if response.name else ""
-        kind = f"类型：{response.section}" if response.section else ""
-        platform = (
-            f"支持平台：{'、'.join(response.platform)}" if response.platform else ""
-        )
-        source_type = f"标签：{'、'.join(response.type)}" if response.type else ""
-
-        lang_list = []
-        for i in response.language:
-            if i in lang.keys():
-                lang_list.append(lang[i])
-        language = f"资源语言：{'、'.join(lang_list)}" if lang else ""
-        note = f"备注：{response.note}" if response.note else ""
-
-        links = []
-        for j in response.links:
-            gap = "-" * 10
-            storage = f"资源平台：{j.storage}" if j.storage else ""
-            size = f"文件大小：{j.size}" if j.size else ""
-            content = f"链接：{j.content}" if j.content else ""
-            code = f"提取码：{j.code}" if j.code else ""
-            password = f"解压码：{j.password}" if j.password else ""
-            links.append(
-                "\n".join(
-                    [k for k in [gap, storage, size, content, code, password] if k]
-                )
-            )
-
-        data = [
-            i
-            for i in [
-                title,
-                kind,
-                platform,
-                source_type,
-                language,
-                note,
-                "\n".join(links),
-            ]
-            if i
-        ]
-        return "\n".join(data)
+    def _build_download(self, response: ResourceResponse) -> list[str]:
+        return (
+            Splicer.from_touchgal_resource()
+            .resource_title(response.name)
+            .resource_category(response.section)
+            .resource_tags(response.type)
+            .resource_note(response.note)
+            .resource_links(response.links)
+            .touchgal_platforms(response.platform)
+            .touchgal_lang(response.language)
+        ).do()
 
     async def _build_find(
         self, response: AnimeTraceData, character_response, buffer: bytes
@@ -591,7 +464,26 @@ class Builder:
         cha_list = []
         for cha, err_if in zip(character_response, response.character):
             if cha:
-                cha_list.append(await self._build_character(cha[0], True))
+                character: VNDBCharacterResponse = cha[0]
+                text = "<br>".join(
+                    self._build_character(
+                        character, ignore_name=True, ignore_extra=True
+                    )
+                )
+                img = (
+                    await File.buffer2base64(
+                        await self.downloader.download_once(character.image.url)
+                    )
+                    if character.image
+                    else self.err
+                )
+                cha_list.append(
+                    RenderedItem(
+                        image=img,
+                        text=text,
+                        sub_title=character.original or character.name,
+                    )
+                )
             else:
                 cha_list.append(
                     RenderedItem(
