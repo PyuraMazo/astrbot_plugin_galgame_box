@@ -8,14 +8,13 @@ from .http import Http, get_http
 
 class TouchGalRequest:
     def __init__(self):
-        self.base_url = "https://www.touchgal.top/"
+        self.base_url = "https://www.touchgal.ink/"
         self.search_api = self.base_url + "api/search/"
         self.proxies = {}
         self.headers = {
             "Content-Type": "application/json",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
-            "origin": "https://www.touchgal.top",
-            "referer": "https://www.touchgal.top/search",
+            "referer": self.base_url,
             "x-requested-with": "kun-fetch",
         }
 
@@ -80,7 +79,7 @@ class TouchGalRequest:
             cookies=self.cookies,
             headers=self.headers,
             proxies=self.proxies,
-            handle_cf=True
+            handle_cf=True,
         )
         return [TouchGalResponse.model_validate(i) for i in res["galgames"]], res[
             "total"
@@ -93,19 +92,26 @@ class TouchGalRequest:
                 "json",
                 cookies=self.cookies,
                 proxies=self.proxies,
-                handle_cf=True
+                handle_cf=True,
             )
         )["uniqueId"]
 
     async def request_html(self, unique_id: str) -> str:
         return await self.http.get(
-            self.base_url + unique_id, cookies=self.cookies, proxies=self.proxies, handle_cf=True
+            self.base_url + unique_id,
+            cookies=self.cookies,
+            proxies=self.proxies,
+            handle_cf=True,
         )
 
     async def request_download(self, touchgal_id: int) -> list[ResourceResponse]:
         resource_url = f"{self.base_url}api/patch/resource?patchId={touchgal_id}"
         res = await self.http.get(
-            resource_url, "json", cookies=self.cookies, proxies=self.proxies, handle_cf=True
+            resource_url,
+            "json",
+            cookies=self.cookies,
+            proxies=self.proxies,
+            handle_cf=True,
         )
         return [ResourceResponse.model_validate(i) for i in res]
 

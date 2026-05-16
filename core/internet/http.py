@@ -30,7 +30,12 @@ class Http:
             await self.session.close()
 
     async def get(
-        self, url: str, res_type: str = "text", err_handle=None, handle_cf=False, **kwargs
+        self,
+        url: str,
+        res_type: str = "text",
+        err_handle=None,
+        handle_cf=False,
+        **kwargs,
     ) -> str | dict | bytes:
         if res_type == "bytes" and not url.startswith("http"):
             if err_handle:
@@ -56,11 +61,15 @@ class Http:
         if res_type == "bytes" and err_handle:
             return err_handle
         if handle_cf:
-            return await self._cf_curl(method="get", res_type=res_type, url=url, **kwargs)
+            return await self._cf_curl(
+                method="get", res_type=res_type, url=url, **kwargs
+            )
         else:
             raise InternetException(url)
 
-    async def post(self, url: str, data: dict, handle_cf=False, **kwargs) -> str | dict | bytes:
+    async def post(
+        self, url: str, data: dict, handle_cf=False, **kwargs
+    ) -> str | dict | bytes:
         headers = kwargs.pop("headers", self.headers)
         count = 0
         while count < self.timeout_times:
