@@ -1,6 +1,7 @@
 import json
 
 from astrbot.core import AstrBotConfig
+from ..api.exception import AuthorityException
 
 from ..api.model import ResourceResponse, TouchGalResponse
 from .http import Http, get_http
@@ -81,12 +82,15 @@ class TouchGalRequest:
             proxies=self.proxies,
             handle_cf=True,
         )
-        return [TouchGalResponse.model_validate(i) for i in res["galgames"]], res[
-            "total"
-        ]
+        if isinstance(res, dict):
+            return [TouchGalResponse.model_validate(i) for i in res["galgames"]], res[
+                "total"
+            ]
+        else:
+            raise AuthorityException(str(res))
 
     async def request_random(self) -> str:
-        return (
+        resp = (
             await self.http.get(
                 self.base_url + "api/home/random",
                 "json",
@@ -94,7 +98,11 @@ class TouchGalRequest:
                 proxies=self.proxies,
                 handle_cf=True,
             )
-        )["uniqueId"]
+        )
+        if isinstance(resp, dict):
+            return resp["uniqueId"]
+        else:
+            raise AuthorityException(str(resp))
 
     async def request_html(self, unique_id: str) -> str:
         return await self.http.get(
