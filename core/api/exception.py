@@ -30,9 +30,12 @@ class InternetException(Tips):
     def __init__(self, url: str):
         super().__init__(f"请求网络失败：{url}，请检查【安全配置】是否错误")
 
+
 class AuthorityException(Tips):
     def __init__(self, msg: str):
-        super().__init__(f"网络配置错误：网站返回信息为【{msg}】，这通常由【安全配置】配置错误导致")
+        super().__init__(
+            f"网络配置错误：网站返回信息为【{msg}】，这通常由【安全配置】配置错误导致"
+        )
 
 
 class ResponseException(Tips):

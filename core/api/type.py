@@ -48,12 +48,13 @@ class CommandType(Enum):
     RECOMMEND = "recommend"
     BIND = "bind"
     PUZZLE = "puzzle"
+    GAL_EVENT = "galgame_event_pro"
 
 
 class CommandBody(BaseModel):
     type: CommandType
     value: str | list[str]
-    event: AstrMessageEvent
+    event: AstrMessageEvent | None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -64,6 +65,8 @@ class UnrenderedData(BaseModel):
     bg_image: str
     font: str
     main_image: str | None = None
+    main_desc: str | None = None
+    extra_info: str | None = None
 
 
 class TouchGalDetails(BaseModel):

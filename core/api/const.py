@@ -13,6 +13,7 @@ vndb_command_fields = {
     "vn_short": "id,alttitle,title,released,rating,image{url}",
     "character_short": "id,name,original,aliases,image{url},vns{id,alttitle,title}",
     "release": "id,alttitle,title,extlinks{id,label},vns{id,image{url}}",
+    "character_event": "id,name,aliases,birthday,original,image{url}",
 }
 
 id2command = {"v": "vn", "c": "character", "p": "producer"}
@@ -30,6 +31,7 @@ html_list = {
     "find": "template4.html",
     "recommend": "template3.html",
     "puzzle": "template5.html",
+    "galgame_event_pro": "template6.html",
 }
 
 gender = {"m": "男性", "f": "女性", "b": "双性", "n": "无性"}

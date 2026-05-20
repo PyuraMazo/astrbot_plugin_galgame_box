@@ -108,6 +108,7 @@ class TaskLine:
             CommandType.RECOMMEND: self._recommend_task,
             CommandType.BIND: self._bind_task,
             CommandType.PUZZLE: self._puzzle_task,
+            CommandType.GAL_EVENT: self._gal_event_task,
         }
         search_setting = config.get("searchSetting", {})
         self.find_results = search_setting.get("findResults", 3)
@@ -146,14 +147,14 @@ class TaskLine:
 
     @staticmethod
     def _check_keyword_validity(
-        event: AstrMessageEvent, cmd_type: CommandType, keyword: str | list[str]
+        event: AstrMessageEvent | None, cmd_type: CommandType, keyword: str | list[str]
     ):
         valid = True
         cmd = CommandBody(type=cmd_type, value=keyword, event=event)
         if cmd_type == CommandType.ID:
             if keyword[0] not in id2command.keys():
                 valid = False
-        elif cmd_type == CommandType.EVENT:
+        elif cmd_type == CommandType.EVENT or cmd_type == CommandType.GAL_EVENT:
             now = datetime.now().strftime("%Y-%m-%d")
             cmd.value = now.split("-")
         elif cmd_type == CommandType.FIND:
@@ -704,6 +705,37 @@ class TaskLine:
             await self.downloader.download_once(url),
         )
         yield cmd_body.event.image_result(url)
+
+    async def _gal_event_task(self, cmd_body: CommandBody):
+        rendered_html = self.template_dir / html_list[cmd_body.type.value]
+
+        vn = await self.vndb_request.request_by_event_vn(cmd_body.value)
+        cha = await self.vndb_request.request_by_event_cha(cmd_body.value)
+
+        vn_data = self.builder.build_options(cmd_body, vn, for_vn=True)
+        cha_data = self.builder.build_options(cmd_body, cha)
+        tmpl = File.read_text(rendered_html)
+
+        the_tmpl, the_vn, the_cha = await asyncio.gather(tmpl, vn_data, cha_data)
+
+        vn_url = await html_renderer.render_custom_template(
+            the_tmpl, the_vn.model_dump(), True, self.render_options
+        )
+        cha_url = await html_renderer.render_custom_template(
+            the_tmpl, the_cha.model_dump(), True, self.render_options
+        )
+        await asyncio.gather(
+            self.cache.store_image(
+                cmd_body, await self.downloader.download_once(vn_url)
+            ),
+            self.cache.store_image(
+                cmd_body, await self.downloader.download_once(cha_url)
+            ),
+        )
+        yield vn_url
+        yield cha_url
+        # yield comp.Image.fromURL(vn_url)
+        # yield comp.Image.fromURL(cha_url)
 
     async def _recommend_subtask(
         self, cmd_body: CommandBody, responses: list[TouchGalResponse]

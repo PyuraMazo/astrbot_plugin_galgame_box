@@ -56,6 +56,7 @@ class Builder:
             CommandType.FIND: self._handle_find,
             CommandType.RECOMMEND: self._handle_random,
             CommandType.PUZZLE: self._handle_puzzle,
+            CommandType.GAL_EVENT: self._handle_gal_event,
         }
 
         self.downloader: Downloader | None = None
@@ -182,6 +183,17 @@ class Builder:
             font=self.font,
         )
 
+    async def _handle_gal_event(self, response, **kwargs):
+        for_vn: bool = kwargs.get("for_vn", False)
+        res: UnrenderedData
+        if for_vn:
+            resp: tuple[VNDBVnResponse, list[VNDBCharacterResponse]] = response
+            res = await self._build_event_vn(resp[0], resp[1])
+        else:
+            resp: tuple[VNDBCharacterResponse, list[VNDBVnResponse]] = response
+            res = await self._build_event_cha(resp[0], resp[1])
+        return res
+
     async def _handle_random(self, response, **kwargs):
         resp: list[TouchGalResponse] = response
         details: list[TouchGalDetails] = kwargs["details"]
@@ -283,7 +295,7 @@ class Builder:
         co_str = [
             File.buffer2base64(await self.downloader.download_once(i.image.url))
             if i.image
-            else self.err
+            else asyncio.sleep(0, result=self.err)
             for i in response
         ]
         return await asyncio.gather(*co_str)
@@ -385,6 +397,63 @@ class Builder:
             ),
         ]
 
+    async def _build_event_vn(
+        self, vn: VNDBVnResponse, chas: list[VNDBCharacterResponse]
+    ) -> UnrenderedData:
+
+        items: list[RenderedItem] = [
+            RenderedItem(
+                sub_title=cha.original or cha.name,
+                image=img,
+                text="<br>".join(self._build_character(cha)),
+            )
+            for cha, img in zip(chas, await self._build_images(chas))
+        ]
+
+        character = RenderedBlock(column_info="主要角色", vns=items)
+        main_image = await File.buffer2base64(
+            await self.downloader.download_once(vn.image.url) if vn.image else self.err
+        )
+
+        return UnrenderedData(
+            title=vn.alttitle or vn.title,
+            items=[character],
+            bg_image=self.bg,
+            font=self.font,
+            main_image=main_image,
+            main_desc="<br>".join(self._build_vn(vn)),
+            extra_info="作品信息",
+        )
+
+    async def _build_event_cha(
+        self, cha: VNDBCharacterResponse, vns: list[VNDBVnResponse]
+    ):
+        items: list[RenderedItem] = [
+            RenderedItem(
+                sub_title=vn.alttitle or vn.title,
+                image=img,
+                text="<br>".join(self._build_vn(vn)),
+            )
+            for vn, img in zip(vns, await self._build_images(vns))
+        ]
+
+        vn_ = RenderedBlock(column_info="登场作品", vns=items)
+        main_image = await File.buffer2base64(
+            await self.downloader.download_once(cha.image.url)
+            if cha.image
+            else self.err
+        )
+
+        return UnrenderedData(
+            title=cha.original or cha.name,
+            items=[vn_],
+            bg_image=self.bg,
+            font=self.font,
+            main_image=main_image,
+            main_desc="<br>".join(self._build_character(cha)),
+            extra_info="角色信息",
+        )
+
     async def _build_select(
         self, response: TouchGalResponse, details: TouchGalDetails = None
     ) -> RenderedRandom | tuple[Any, str]:
@@ -440,7 +509,6 @@ class Builder:
             Splicer.from_touchgal_resource()
             .resource_title(response.name)
             .resource_category(response.section)
-            .resource_tags(response.type)
             .resource_note(response.note)
             .resource_links(response.links)
             .touchgal_platforms(response.platform)

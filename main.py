@@ -1,8 +1,13 @@
+from apscheduler.triggers.cron import CronTrigger
+from flask import session
+
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.message_components import Plain, Reply
 from astrbot.api.platform import MessageType
 from astrbot.api.star import Context, Star
+from astrbot.core.message.message_event_result import MessageChain
+from astrbot.core.platform.message_session import MessageSession
 from astrbot.core.star.filter.command import GreedyStr
 
 from .core.api.exception import Tips
@@ -14,6 +19,7 @@ class GalgameBoxPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         self.config = config
+        self.ctx = context
         self.task_line: TaskLine | None = None
 
     async def initialize(self):
@@ -21,9 +27,11 @@ class GalgameBoxPlugin(Star):
         self.task_line = get_task_line()
 
         await self.task_line.initialize(self.config)
+        await self._register_gal_event()
 
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
+        await self._cancel_gal_event()
         await self.task_line.terminate()
 
     @filter.command_group("旮旯", alias={"gal", "GAL"})
@@ -97,8 +105,34 @@ class GalgameBoxPlugin(Star):
         async for res in self._common_command(event, CommandType.PUZZLE):
             yield res
 
+    async def _gal_event(self):
+        ss = MessageSession.from_str("qq:GroupMessage:687917167")
+        async for res in self._common_command(None, CommandType.GAL_EVENT):
+            await self.ctx.send_message(ss, MessageChain().url_image(res))
+
+    async def _register_gal_event(self):
+        schedule_id = "gal_event"
+        schedule_time = self.config.get("scheduleSetting", {}).get("galEvent", "07:00")
+        hour, minute = map(int, schedule_time.split(":"))
+        scheduler = self.ctx.cron_manager.scheduler
+
+
+        scheduler.add_job(
+            self._gal_event,
+            trigger=CronTrigger(hour=hour, minute=minute),
+            id=schedule_id,
+            replace_existing=True,
+            misfire_grace_time=120,
+        )
+
+    async def _cancel_gal_event(self):
+        schedule_id = "gal_event"
+        scheduler = self.ctx.cron_manager.scheduler
+        if scheduler.get_job(schedule_id):
+            scheduler.remove_job(schedule_id)
+
     async def _common_command(
-        self, event: AstrMessageEvent, cmd_type: CommandType, keyword: str = ""
+        self, event: AstrMessageEvent | None, cmd_type: CommandType, keyword: str = ""
     ):
         try:
             if (
@@ -110,15 +144,25 @@ class GalgameBoxPlugin(Star):
             async for res in self.task_line.run(event, cmd_type, keyword):
                 yield res
         except Exception as e:
-            yield next(self._handle_command_exception(event, e))
+            yield await anext(self._handle_command_exception(event, e))
 
-    def _handle_command_exception(self, event: AstrMessageEvent, e: Exception):
+    async def _handle_command_exception(self, event: AstrMessageEvent | None, e: Exception):
         logger.error(str(e), exc_info=True)
         if isinstance(e, Tips):
-            yield event.chain_result(
-                [Reply(id=event.message_obj.message_id), Plain(str(e).split("：")[0])]
-            )
+            tips = str(e).split("：")[0]
+            if event is not None:
+                yield event.chain_result(
+                    [Reply(id=event.message_obj.message_id), Plain(tips)]
+                )
+            else:
+                await self.ctx.send_message(MessageSession.from_str("qq:GroupMessage:687917167"), MessageChain().message(tips))
         else:
-            yield event.chain_result(
-                [Reply(id=event.message_obj.message_id), Plain("发生非预期异常！")]
-            )
+            msg = "发生非预期异常！"
+            if event is not None:
+                yield event.chain_result(
+                    [Reply(id=event.message_obj.message_id), Plain(msg)]
+                )
+            else:
+                await self.ctx.send_message(MessageSession.from_str("qq:GroupMessage:687917167"),
+                                            MessageChain().message(msg))
+

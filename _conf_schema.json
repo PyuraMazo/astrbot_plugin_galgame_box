@@ -215,5 +215,17 @@
         "default": 20
       }
     }
+  },
+  "scheduleSetting": {
+    "description": "定时任务设置",
+    "type": "object",
+    "items": {
+      "galEvent": {
+        "description": "今日Gal事件发送时间",
+        "hint": "每日定时发布历史上今天发布的作品和角色生日，格式：HH:MM",
+        "type": "string",
+        "default": "07:00"
+      }
+    }
   }
 }

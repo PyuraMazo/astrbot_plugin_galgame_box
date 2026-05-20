@@ -165,7 +165,7 @@ class VNDBRequest:
                 ["birthday", "=", [int(date[1]), int(date[2])]],
                 ["vn", "=", ["rating", ">=", self.event_rating]],
             ],
-            "fields": vndb_command_fields["character_short"],
+            "fields": vndb_command_fields["character_event"],
         }
         res = await asyncio.gather(
             self.http.post(vn_url, vn_payload), self.http.post(cha_url, cha_payload)
@@ -173,6 +173,83 @@ class VNDBRequest:
         _vn = [VNDBVnResponse.model_validate(i) for i in res[0]["results"]]
         _cha = [VNDBCharacterResponse.model_validate(j) for j in res[1]["results"]]
         return _vn, _cha
+
+    async def request_by_event_vn(
+        self, date: list[str]
+    ) -> tuple[VNDBVnResponse, list[VNDBCharacterResponse]]:
+        vn_url = self.kana_url + CommandType.VN.value
+        cha_url = self.kana_url + CommandType.CHARACTER.value
+        released = [
+            ["released", "=", f"{year}-{date[1]}-{date[2]}"]
+            for year in range(1990, int(date[0]))
+        ]
+        vn_payload = {
+            "filters": ["and", ["or", *released], ["rating", ">=", self.event_rating]],
+            "fields": vndb_command_fields["vn"],
+            "results": 1,
+            "sort": "rating",
+            "reverse": True,
+        }
+        res = await self.http.post(vn_url, vn_payload)
+        the_vn = VNDBVnResponse.model_validate(res["results"][0])
+
+        cha_payload = {
+            "filters": [
+                "and",
+                ["vn", "=", ["id", "=", the_vn.id]],
+                ["or", ["role", "=", "main"], ["role", "=", "primary"]],
+            ],
+            "fields": vndb_command_fields["character_event"],
+        }
+        cha_res = await self.http.post(cha_url, cha_payload)
+        the_cha = [VNDBCharacterResponse.model_validate(j) for j in cha_res["results"]]
+        return the_vn, the_cha
+
+    async def request_by_event_cha(
+        self, date: list[str]
+    ) -> tuple[VNDBCharacterResponse, list[VNDBVnResponse]]:
+        cha_url = self.kana_url + CommandType.CHARACTER.value
+        vn_url = self.kana_url + CommandType.VN.value
+        cha_payload = {
+            "filters": [
+                "and",
+                ["birthday", "=", [int(date[1]), int(date[2])]],
+                ["vn", "=", ["rating", ">=", self.event_rating]],
+                ["or", ["role", "=", "main"], ["role", "=", "primary"]],
+            ],
+            "fields": vndb_command_fields["character"],
+        }
+        res = await self.http.post(cha_url, cha_payload)
+        cha = [VNDBCharacterResponse.model_validate(j) for j in res["results"]]
+
+        vn_cha_map = {n.id: m.id for m in cha for n in m.vns}
+        filters = [["id", "=", i] for i in vn_cha_map]
+        search_best_vn_payload = {
+            "filters": ["or", *filters],
+            "fields": "id",
+            "results": 1,
+            "sort": "rating",
+            "reverse": True,
+        }
+        best: dict[str, list[dict]] = await self.http.post(
+            vn_url, search_best_vn_payload
+        )
+        the_cha_id = vn_cha_map[best["results"][0]["id"]]
+        for i in cha:
+            if i.id == the_cha_id:
+                best_vn_ids = [
+                    ["id", "=", k] for k, v in vn_cha_map.items() if v == the_cha_id
+                ]
+
+                vn_payload = {
+                    "filters": ["or", *best_vn_ids],
+                    "fields": vndb_command_fields["vn_short"],
+                }
+                vns = await self.http.post(vn_url, vn_payload)
+                vn = [VNDBVnResponse.model_validate(i) for i in vns["results"]]
+                return i, vn
+        else:
+            raise Exception("从已知cha列表中检索失败")
 
     async def request_by_find(
         self, character: str, vn: str

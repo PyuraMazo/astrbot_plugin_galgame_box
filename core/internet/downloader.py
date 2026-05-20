@@ -4,7 +4,7 @@ from typing import Any
 
 import aiohttp
 
-from astrbot.api import AstrBotConfig, logger
+from astrbot.api import AstrBotConfig
 
 from ..utils.file import File
 
@@ -53,10 +53,10 @@ class Downloader:
                 async with self.session.get(url, **kwargs) as response:
                     return await response.read()
 
-            except Exception as e:
+            except Exception:
                 count += 1
                 await asyncio.sleep(0.5)
-                logger.info(f"网络请求失败一次...{str(e)}")
+                # logger.info(f"网络请求失败一次...{str(e)}")
         return self.err_image
 
 
