@@ -5,13 +5,14 @@
     "items": {
       "requestTimeout": {
         "description": "网络请求超时次数",
+        "hint": "如果图片大量出现下载失败的情况，请尝试增多超时次数。",
         "type": "int",
         "slider": {
           "min": 1,
           "max": 10,
           "step": 1
         },
-        "default": 3
+        "default": 5
       },
       "requestTime": {
         "description": "网络请求超时时间（秒）",

@@ -15,7 +15,12 @@ class Downloader:
             Path(__file__).parent / ".." / ".." / "resources" / "image" / "error.jpg"
         )
         self.headers = {"Content-Type": "application/json"}
-        self.connector = aiohttp.TCPConnector(limit_per_host=10, limit=50)
+        self.connector = aiohttp.TCPConnector(
+            limit_per_host=5,
+            limit=20,
+            ttl_dns_cache=300,
+            keepalive_timeout=10
+        )
 
         self.timeout_times = None
         self.session: aiohttp.ClientSession | None = None
@@ -55,7 +60,7 @@ class Downloader:
 
             except Exception:
                 count += 1
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(2 ** count)
                 # logger.info(f"网络请求失败一次...{str(e)}")
         return self.err_image
 
