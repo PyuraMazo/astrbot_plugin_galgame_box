@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @font-face {
+            font-family: 'default';
+            src: url('{{ font }}');
+        }
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            font-family: 'default';
+        }
+        body {
+            background-image: url("{{ bg_image }}");
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
+            padding: 2.5em;
+        }
+
+        .poster {
+            width: 82vw;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.52);
+            border-radius: 1.8em;
+            overflow: hidden;
+            color: #1a2030;
+            box-shadow: 0 8px 60px rgba(30, 60, 120, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+        }
+
+        .celebration-badge {
+            text-align: center;
+            padding: 1.6em 0 0.2em;
+        }
+        .celebration-badge span {
+            display: inline-block;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #ffffff;
+            background: linear-gradient(135deg, #f0a040, #e87850);
+            padding: 0.45em 2em;
+            border-radius: 2em;
+            letter-spacing: 0.08em;
+            box-shadow: 0 3px 16px rgba(230, 130, 60, 0.3);
+        }
+
+        .hero {
+            display: flex;
+            padding: 2em 2.5em;
+            gap: 2.5em;
+            align-items: center;
+        }
+        .hero-image {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .hero-image img {
+            width: 100%;
+            max-height: 42vh;
+            object-fit: contain;
+            border-radius: 1em;
+            box-shadow: 0 6px 28px rgba(40, 80, 140, 0.14);
+        }
+        .hero-text {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            gap: 1em;
+        }
+        .hero-text h1 {
+            font-size: 2.8em;
+            color: #1a2a40;
+            line-height: 1.3;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+        }
+        .hero-text .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6em;
+        }
+        .hero-text .tag {
+            display: inline-flex;
+            align-items: center;
+            font-size: 1em;
+            font-weight: bold;
+            color: #ffffff;
+            background: linear-gradient(135deg, #5b9bd5, #3a7cc3);
+            padding: 0.35em 1em;
+            border-radius: 1.5em;
+            letter-spacing: 0.04em;
+            box-shadow: 0 2px 8px rgba(50, 110, 180, 0.2);
+        }
+        .hero-text .tag.gold {
+            background: linear-gradient(135deg, #f0a040, #e88840);
+            box-shadow: 0 2px 8px rgba(210, 120, 40, 0.25);
+        }
+        .hero-text .tag.coral {
+            background: linear-gradient(135deg, #e87870, #d06060);
+            box-shadow: 0 2px 8px rgba(200, 90, 70, 0.25);
+        }
+
+        .divider {
+            height: 2px;
+            margin: 0 3em;
+            background: linear-gradient(90deg, transparent, #e0a860, #d08080, #e0a860, transparent);
+            opacity: 0.6;
+        }
+
+        .section {
+            padding: 2em 2.5em;
+        }
+        .section h2 {
+            font-size: 1.4em;
+            color: #3a6aaa;
+            margin-bottom: 0.7em;
+            letter-spacing: 0.04em;
+            padding-left: 0.6em;
+            border-left: 3px solid #f0a040;
+        }
+        .section .desc-text {
+            font-size: 1.1em;
+            line-height: 2;
+            color: #3a4050;
+        }
+
+        .card-section {
+            padding: 1em 2.5em 2.8em;
+        }
+        .card-section h2 {
+            font-size: 1.4em;
+            color: #3a6aaa;
+            margin-bottom: 1.2em;
+            text-align: center;
+            letter-spacing: 0.04em;
+        }
+        .card-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.5em;
+        }
+        .card {
+            width: 15vw;
+            min-width: 140px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 1em;
+            overflow: hidden;
+            border: 1px solid rgba(180, 200, 230, 0.35);
+            box-shadow: 0 3px 14px rgba(40, 80, 140, 0.08);
+        }
+        .card img {
+            width: 100%;
+            height: 18vw;
+            min-height: 180px;
+            object-fit: cover;
+            display: block;
+        }
+        .card-body {
+            padding: 0.8em;
+            text-align: center;
+        }
+        .card-body .card-name {
+            font-size: 1.05em;
+            font-weight: bold;
+            color: #2a3a50;
+            margin-bottom: 0.35em;
+        }
+        .card-body .card-desc {
+            font-size: 0.85em;
+            color: #5a6070;
+            line-height: 1.5;
+        }
+
+        .confetti-dot {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            opacity: 0.55;
+        }
+    </style>
+</head>
+<body>
+    <div class="poster">
+        <!-- <div class="celebration-badge">
+            <span>{{ celebration_label }}</span>
+        </div> -->
+        <div class="hero">
+            <div class="hero-image">
+                <img src="{{ main_image }}" alt="图片失效">
+            </div>
+            <div class="hero-text">
+                <h1>{{ title }}</h1>
+                <!-- <div class="tag-row">
+                    {% for tag in tags %}
+                    <span class="tag {{ tag.style }}">{{ tag.text }}</span>
+                    {% endfor %}
+                </div> -->
+            </div>
+        </div>
+        <div class="divider"></div>
+        <div class="section">
+            <h2>{{ extra_info }}</h2>
+            <div class="desc-text">{{ main_desc }}</div>
+        </div>
+        <div class="divider"></div>
+        <div class="card-section">
+            {% for son in items %}
+            <h2>{{ son.column_info }}</h2>
+            <div class="card-grid">
+                {% for item in son.vns %}
+                <div class="card">
+                    <img src="{{ item.image }}" alt="图片失效">
+                    <div class="card-body">
+                        <div class="card-name">{{ item.sub_title }}</div>
+                        <div class="card-desc">{{ item.text }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
