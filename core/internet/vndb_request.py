@@ -215,7 +215,7 @@ class VNDBRequest:
                 "and",
                 ["birthday", "=", [int(date[1]), int(date[2])]],
                 ["vn", "=", ["rating", ">=", self.event_rating]],
-                ["or", ["role", "=", "main"], ["role", "=", "primary"]],
+                ["role", "=", "main"],
             ],
             "fields": vndb_command_fields["character"],
         }
