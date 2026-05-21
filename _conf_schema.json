@@ -54,7 +54,7 @@
     "items": {
       "proxy": {
         "description": "代理地址",
-        "hint": "只作用于本插件，格式如http://127.0.0.1:7897。",
+        "hint": "只作用于本插件，格式如 http://127.0.0.1:7897。",
         "type": "string"
       },
       "touchgalToken": {
@@ -214,6 +214,18 @@
           "step": 1
         },
         "default": 20
+      },
+      "collectAutomatically": {
+        "description": "自动收集群聊id",
+        "hint": "开启后，自动收集今日Gal事件需要推送的群聊id。",
+        "type": "bool",
+        "default": false,
+        "invisible": true
+      },
+      "eventList": {
+        "description": "群发白名单",
+        "hint": "需要推送的群聊id。格式字符串：「平台id-群聊id」，平台id为适配器机器人名称，表示该机器人所在的平台。",
+        "type": "list"
       }
     }
   },
@@ -222,8 +234,8 @@
     "type": "object",
     "items": {
       "galEvent": {
-        "description": "今日Gal事件发送时间",
-        "hint": "每日定时发布历史上今天发布的作品和角色生日，格式：HH:MM",
+        "description": "今日Gal事件推送时间",
+        "hint": "每日定时发布历史上今天发布的作品和角色生日，格式：「HH:MM」",
         "type": "string",
         "default": "07:00"
       }

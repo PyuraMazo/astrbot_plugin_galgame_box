@@ -1,5 +1,4 @@
 from apscheduler.triggers.cron import CronTrigger
-from flask import session
 
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
@@ -21,11 +20,13 @@ class GalgameBoxPlugin(Star):
         self.config = config
         self.ctx = context
         self.task_line: TaskLine | None = None
+        self.event_list: list[str] = []
 
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
         self.task_line = get_task_line()
 
+        self._init_ids()
         await self.task_line.initialize(self.config)
         await self._register_gal_event()
 
@@ -106,30 +107,53 @@ class GalgameBoxPlugin(Star):
             yield res
 
     async def _gal_event(self):
-        ss = MessageSession.from_str("qq:GroupMessage:687917167")
+        # white_list = self.config.get("searchSetting", {}).get("collectAutomatically", False)
         async for res in self._common_command(None, CommandType.GAL_EVENT):
-            await self.ctx.send_message(ss, MessageChain().url_image(res))
+            for group in self.event_list:
+                await self.ctx.send_message(group, MessageChain().url_image(res))
 
     async def _register_gal_event(self):
-        schedule_id = "gal_event"
+        if not self.event_list:
+            logger.warning("推送白名单为空，定时任务不会执行！")
+            return
+
         schedule_time = self.config.get("scheduleSetting", {}).get("galEvent", "07:00")
-        hour, minute = map(int, schedule_time.split(":"))
-        scheduler = self.ctx.cron_manager.scheduler
+        if ":" in schedule_time:
+            hour, minute = map(int, schedule_time.split(":", 1))
+        elif "：" in schedule_time:
+            hour, minute = map(int, schedule_time.split("：", 1))
+        else:
+            logger.error("时间格式错误，定时任务不会执行！")
+            return
+        if 0 <= hour <= 23 and 0 <= minute <= 59:
+            schedule_id = "gal_event"
+            scheduler = self.ctx.cron_manager.scheduler
 
-
-        scheduler.add_job(
-            self._gal_event,
-            trigger=CronTrigger(hour=hour, minute=minute),
-            id=schedule_id,
-            replace_existing=True,
-            misfire_grace_time=120,
-        )
+            scheduler.add_job(
+                self._gal_event,
+                trigger=CronTrigger(hour=hour, minute=minute),
+                id=schedule_id,
+                replace_existing=True,
+                misfire_grace_time=120,
+            )
+        else:
+            logger.error("时间格式错误，定时任务不会执行！")
+            return
 
     async def _cancel_gal_event(self):
         schedule_id = "gal_event"
         scheduler = self.ctx.cron_manager.scheduler
         if scheduler.get_job(schedule_id):
             scheduler.remove_job(schedule_id)
+
+    def _init_ids(self):
+        ids = self.config.get("searchSetting", {}).get("eventList", [])
+
+        def func(_: str):
+            platform, group = _.split("-", 1)
+            return MessageSession.from_str(f"{platform}:GroupMessage:{group}")
+
+        self.event_list = list(map(func, ids))
 
     async def _common_command(
         self, event: AstrMessageEvent | None, cmd_type: CommandType, keyword: str = ""
@@ -146,23 +170,18 @@ class GalgameBoxPlugin(Star):
         except Exception as e:
             yield await anext(self._handle_command_exception(event, e))
 
-    async def _handle_command_exception(self, event: AstrMessageEvent | None, e: Exception):
+    async def _handle_command_exception(
+        self, event: AstrMessageEvent | None, e: Exception
+    ):
         logger.error(str(e), exc_info=True)
+        msg = "发生非预期异常！"
         if isinstance(e, Tips):
-            tips = str(e).split("：")[0]
-            if event is not None:
-                yield event.chain_result(
-                    [Reply(id=event.message_obj.message_id), Plain(tips)]
-                )
-            else:
-                await self.ctx.send_message(MessageSession.from_str("qq:GroupMessage:687917167"), MessageChain().message(tips))
-        else:
-            msg = "发生非预期异常！"
-            if event is not None:
-                yield event.chain_result(
-                    [Reply(id=event.message_obj.message_id), Plain(msg)]
-                )
-            else:
-                await self.ctx.send_message(MessageSession.from_str("qq:GroupMessage:687917167"),
-                                            MessageChain().message(msg))
+            msg = str(e).split("：")[0]
 
+        if event is not None:
+            yield event.chain_result(
+                [Reply(id=event.message_obj.message_id), Plain(msg)]
+            )
+        else:
+            for group in self.event_list:
+                await self.ctx.send_message(group, MessageChain().message(msg))
