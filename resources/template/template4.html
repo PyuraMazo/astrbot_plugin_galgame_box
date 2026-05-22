@@ -138,24 +138,24 @@
 <body>
     <div class="content">
         <div class="main_title">
-            <img src="{{ main_image }}" alt="图片加载失败">
+            <img src="{{ current_image }}" alt="图片加载失败">
             <div class="title">
-                <h1>{{ title }}</h1>
+                <h1>{{ current_title }}</h1>
             </div>
         </div>
         <div class="gap"></div>
         {% for item in items %}
         <div class="column">
             <div class="column_info">
-                <div class="column_image"><img src="{{ item.column_info.image }}" alt="图片加载失败"></div>
-                <div class="info">{{ item.column_info.title }}</div>
+                <div class="column_image"><img src="{{ item.extra_info.current_image }}" alt="图片加载失败"></div>
+                <div class="info">{{ item.extra_info.current_title }}</div>
             </div>
-            {% for cha in item.vns %}
+            {% for cha in item.items %}
             <div class="block">
-                <img src="{{ cha.image }}" alt="图片加载失败">
-                <div class="subtitle">{{ cha.sub_title }}</div>
+                <img src="{{ cha.current_image }}" alt="图片加载失败">
+                <div class="subtitle">{{ cha.current_subtitle }}</div>
                 <div class="text">
-                    {{ cha.text }}
+                    {{ cha.current_desc }}
                 </div>
             </div>
             {% endfor %}

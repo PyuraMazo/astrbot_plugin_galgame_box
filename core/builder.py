@@ -22,13 +22,8 @@ from .api.model import (
 )
 from .api.type import (
     AnimeTraceModel,
-    ColumnStyle,
     CommandBody,
     CommandType,
-    RenderedBlock,
-    RenderedItem,
-    RenderedPuzzle,
-    RenderedRandom,
     SteamVnsInfo,
     TouchGalDetails,
     UnrenderedData,
@@ -112,13 +107,15 @@ class Builder:
     async def _handle_vn(self, response, **kwargs):
         resp: list[VNDBVnResponse] = response
         items = [
-            RenderedItem(
-                image=img, text="<br>".join(self._build_vn(info)), sub_title=""
+            UnrenderedData(
+                current_image=img,
+                current_desc="<br>".join(self._build_vn(info)),
+                current_subtitle="",
             )
             for img, info in zip(await self._build_images(resp), resp)
         ]
         return UnrenderedData(
-            title="<br>".join(kwargs.get("title", "标题出错")),
+            current_title="<br>".join(kwargs.get("title", "标题出错")),
             items=items,
             bg_image=self.bg,
             font=self.font,
@@ -127,15 +124,15 @@ class Builder:
     async def _handle_character(self, response, **kwargs):
         resp: list[VNDBCharacterResponse] = response
         items = [
-            RenderedItem(
-                image=img,
-                text="<br>".join(self._build_character(info, ignore_name=True)),
-                sub_title=info.original or info.name,
+            UnrenderedData(
+                current_image=img,
+                current_desc="<br>".join(self._build_character(info, ignore_name=True)),
+                current_subtitle=info.original or info.name,
             )
             for img, info in zip(await self._build_images(resp), resp)
         ]
         return UnrenderedData(
-            title="<br>".join(kwargs.get("title", "标题出错")),
+            current_title="<br>".join(kwargs.get("title", "标题出错")),
             items=items,
             bg_image=self.bg,
             font=self.font,
@@ -145,28 +142,27 @@ class Builder:
         resp: list[VNDBProducerResponse] = response
         vns: list[list[VNDBVnResponse]] = kwargs["vns"]
 
-        items: list[RenderedItem] = []
-        works: list[RenderedBlock] = []
+        works: list[UnrenderedData] = []
         for producer, per_vns in zip(resp, vns):
+            items: list[UnrenderedData] = []
             for vn, vn_image in zip(per_vns, await self._build_images(per_vns)):
                 items.append(
-                    RenderedItem(
-                        image=vn_image,
-                        text="<br>".join(self._build_vn(vn)),
-                        sub_title=vn.alttitle or vn.title,
+                    UnrenderedData(
+                        current_image=vn_image,
+                        current_desc="<br>".join(self._build_vn(vn)),
+                        current_subtitle=vn.alttitle or vn.title,
                     )
                 )
             works.append(
-                RenderedBlock(
-                    column_info="<br>".join(
+                UnrenderedData(
+                    current_title="<br>".join(
                         self._build_producer(producer, ignore_name=True)
                     ),
-                    vns=items,
+                    items=items,
                 )
             )
-
         return UnrenderedData(
-            title="<br>".join(kwargs.get("title", "标题出错")),
+            current_title="<br>".join(kwargs.get("title", "标题出错")),
             items=works,
             bg_image=self.bg,
             font=self.font,
@@ -177,7 +173,7 @@ class Builder:
         cha: list[VNDBCharacterResponse] = kwargs["cha"]
         res = await self._build_event(vn, cha)
         return UnrenderedData(
-            title="<br>".join(kwargs.get("title", "标题出错")),
+            current_title="<br>".join(kwargs.get("title", "标题出错")),
             items=res,
             bg_image=self.bg,
             font=self.font,
@@ -198,10 +194,9 @@ class Builder:
         resp: list[TouchGalResponse] = response
         details: list[TouchGalDetails] = kwargs["details"]
 
-        # res = await self._build_select(resp[0], details) if resp else {}
         co = [self._build_select(i, j) for i, j in zip(resp, details)]
         return UnrenderedData(
-            title="<br>".join(kwargs.get("title", "标题出错")),
+            current_title="<br>".join(kwargs.get("title", "标题出错")),
             items=await asyncio.gather(*co),
             bg_image=self.bg,
             font=self.font,
@@ -233,18 +228,18 @@ class Builder:
         )
         title.append(f"是否AI图「{'是' if response.ai else '否'}」")
         return UnrenderedData(
-            title="<br>".join(title) if len(title) > 1 else "标题出错",
+            current_title="<br>".join(title) if len(title) > 1 else "标题出错",
             items=await asyncio.gather(*blocks),
             bg_image=self.bg,
             font=self.font,
-            main_image=await File.buffer2base64(buffer) if buffer else self.err,
+            current_image=await File.buffer2base64(buffer) if buffer else self.err,
         )
 
     async def _handle_puzzle(self, response, **kwargs):
         vns: dict[int, SteamVnsInfo] = kwargs["vns"]
         sorted_list = sorted(vns.values(), key=lambda j: j.play_time, reverse=True)
         co = [self._build_puzzle(info) for info in sorted_list]
-        _items: list[RenderedPuzzle] = await asyncio.gather(*co)
+        _items: list[UnrenderedData] = await asyncio.gather(*co)
         buffer = await self.downloader.download_more([url.img for url in _items])
         bs = [File.buffer2base64(buf) for buf in buffer]
         for item, img in zip(_items, await asyncio.gather(*bs)):
@@ -262,7 +257,10 @@ class Builder:
         title.append(nick)
         title.append(all_play)
         return UnrenderedData(
-            title="<br>".join(title), items=_items, bg_image=self.bg, font=self.font
+            current_title="<br>".join(title),
+            items=_items,
+            bg_image=self.bg,
+            font=self.font,
         )
 
     def _build_title(self, command_body: CommandBody, count: int) -> list[str]:
@@ -363,37 +361,37 @@ class Builder:
         self,
         vn_response: list[VNDBVnResponse],
         cha_response: list[VNDBCharacterResponse],
-    ) -> list[RenderedBlock]:
+    ) -> list[UnrenderedData]:
 
         co_vn_images = self._build_images(vn_response)
         co_cha_images = self._build_images(cha_response)
         vn_images, cha_images = await asyncio.gather(co_vn_images, co_cha_images)
 
         vns = [
-            RenderedItem(
-                image=img,
-                text="<br>".join(self._build_vn(vn)),
-                sub_title=vn.alttitle or vn.title,
+            UnrenderedData(
+                current_image=img,
+                current_desc="<br>".join(self._build_vn(vn)),
+                current_subtitle=vn.alttitle or vn.title,
             )
             for vn, img in zip(vn_response, vn_images)
         ]
         chas = [
-            RenderedItem(
-                image=img,
-                text="<br>".join(self._build_character(cha)),
-                sub_title=cha.original or cha.name,
+            UnrenderedData(
+                current_image=img,
+                current_desc="<br>".join(self._build_character(cha)),
+                current_subtitle=cha.original or cha.name,
             )
             for cha, img in zip(cha_response, cha_images)
         ]
 
         return [
-            RenderedBlock(
-                column_info="今天是这些作品的发布纪念日",
-                vns=vns,
+            UnrenderedData(
+                current_title="今天是这些作品的发布纪念日",
+                items=vns,
             ),
-            RenderedBlock(
-                column_info="今天是这些角色的生日",
-                vns=chas,
+            UnrenderedData(
+                current_title="今天是这些角色的生日",
+                items=chas,
             ),
         ]
 
@@ -401,43 +399,43 @@ class Builder:
         self, vn: VNDBVnResponse, chas: list[VNDBCharacterResponse]
     ) -> UnrenderedData:
 
-        items: list[RenderedItem] = [
-            RenderedItem(
-                sub_title=cha.original or cha.name,
-                image=img,
-                text="<br>".join(self._build_character(cha)),
+        items: list[UnrenderedData] = [
+            UnrenderedData(
+                current_subtitle=cha.original or cha.name,
+                current_image=img,
+                current_desc="<br>".join(self._build_character(cha)),
             )
             for cha, img in zip(chas, await self._build_images(chas))
         ]
 
-        character = RenderedBlock(column_info="主要角色", vns=items)
+        character = UnrenderedData(current_title="主要角色", items=items)
         main_image = await File.buffer2base64(
             await self.downloader.download_once(vn.image.url) if vn.image else self.err
         )
 
         return UnrenderedData(
-            title=vn.alttitle or vn.title,
+            current_title=vn.alttitle or vn.title,
             items=[character],
             bg_image=self.bg,
             font=self.font,
-            main_image=main_image,
-            main_desc="<br>".join(self._build_vn(vn)),
+            current_image=main_image,
+            current_desc="<br>".join(self._build_vn(vn)),
             extra_info="作品信息",
         )
 
     async def _build_event_cha(
         self, cha: VNDBCharacterResponse, vns: list[VNDBVnResponse]
     ):
-        items: list[RenderedItem] = [
-            RenderedItem(
-                sub_title=vn.alttitle or vn.title,
-                image=img,
-                text="<br>".join(self._build_vn(vn)),
+        items: list[UnrenderedData] = [
+            UnrenderedData(
+                current_subtitle=vn.alttitle or vn.title,
+                current_image=img,
+                current_desc="<br>".join(self._build_vn(vn)),
             )
             for vn, img in zip(vns, await self._build_images(vns))
         ]
 
-        vn_ = RenderedBlock(column_info="登场作品", vns=items)
+        vn_ = UnrenderedData(current_title="登场作品", items=items)
         main_image = await File.buffer2base64(
             await self.downloader.download_once(cha.image.url)
             if cha.image
@@ -445,18 +443,18 @@ class Builder:
         )
 
         return UnrenderedData(
-            title=cha.original or cha.name,
+            current_title=cha.original or cha.name,
             items=[vn_],
             bg_image=self.bg,
             font=self.font,
-            main_image=main_image,
-            main_desc="<br>".join(self._build_character(cha)),
+            current_image=main_image,
+            current_desc="<br>".join(self._build_character(cha)),
             extra_info="角色信息",
         )
 
     async def _build_select(
         self, response: TouchGalResponse, details: TouchGalDetails = None
-    ) -> RenderedRandom | tuple[Any, str]:
+    ) -> UnrenderedData | tuple[Any, str]:
         cover = response.banner
         desc = (
             Splicer.from_touchgal_desc()
@@ -492,16 +490,17 @@ class Builder:
         ]
         imgs = await asyncio.gather(*co_imgs)
         desc.insert(0, third_id)
-        return RenderedRandom(
-            text="<br>".join(desc),
-            sub_title=response.name,
-            main_image=await File.buffer2base64(
+        images = [UnrenderedData(current_image=img) for img in imgs]
+        return UnrenderedData(
+            current_desc="<br>".join(desc),
+            current_subtitle=response.name,
+            current_image=await File.buffer2base64(
                 await self.downloader.download_once(cover), suffix="avif"
             )
             if response.banner
             else self.err,
-            images=imgs,
-            description=description,
+            items=images,
+            extra_info=description,
         )
 
     def _build_download(self, response: ResourceResponse) -> list[str]:
@@ -517,7 +516,7 @@ class Builder:
 
     async def _build_find(
         self, response: AnimeTraceData, character_response, buffer: bytes
-    ) -> RenderedBlock:
+    ) -> UnrenderedData:
         image = PILImage.open(BytesIO(buffer))
         width, height = image.size
         left = int(width * response.box[0])
@@ -546,28 +545,28 @@ class Builder:
                     else self.err
                 )
                 cha_list.append(
-                    RenderedItem(
-                        image=img,
-                        text=text,
-                        sub_title=character.original or character.name,
+                    UnrenderedData(
+                        current_image=img,
+                        current_desc=text,
+                        current_subtitle=character.original or character.name,
                     )
                 )
             else:
                 cha_list.append(
-                    RenderedItem(
-                        sub_title=err_if.character,
-                        image=self.err,
-                        text=f"出场作品：{err_if.work}<br>VNDB暂无记录，角色可能并非来自Gal",
+                    UnrenderedData(
+                        current_subtitle=err_if.character,
+                        current_image=self.err,
+                        current_desc=f"出场作品：{err_if.work}<br>VNDB暂无记录，角色可能并非来自Gal",
                     )
                 )
         buf = output.getvalue()
-        column = ColumnStyle(
-            image=await File.buffer2base64(buf) if buf else self.err,
-            title=f"检测区域如左图<br>可信度：{'不' if response.not_confident else ''}可信",
+        column = UnrenderedData(
+            current_image=await File.buffer2base64(buf) if buf else self.err,
+            current_title=f"检测区域如左图<br>可信度：{'不' if response.not_confident else ''}可信",
         )
-        return RenderedBlock(
-            column_info=column,
-            vns=cha_list,
+        return UnrenderedData(
+            extra_info=column,
+            items=cha_list,
         )
 
     async def _build_puzzle(self, info: SteamVnsInfo):
@@ -576,8 +575,10 @@ class Builder:
             if info.play_time < self.finish_consuming * 60
             else 1
         )
-        return RenderedPuzzle(
-            span=math.ceil(4 * rate), game=info.name, img=info.vndb_img
+        return UnrenderedData(
+            extra_info=math.ceil(4 * rate),
+            current_title=info.name,
+            current_image=info.vndb_img,
         )
 
 

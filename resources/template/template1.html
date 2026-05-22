@@ -70,15 +70,15 @@
 <body>
     <div class="content">
         <div class="info">
-            <h1>{{ title }}</h1>
+            <h1>{{ current_title }}</h1>
         </div>
         <div class="gap"></div>
         {% for item in items %}
         <div class="block">
-            <img src="{{ item.image }}" alt="图片失效">
-            <div class="subtitle">{{ item.sub_title }}</div>
+            <img src="{{ item.current_image }}" alt="图片失效">
+            <div class="subtitle">{{ item.current_subtitle }}</div>
             <div class="text">
-                {{ item.text }}
+                {{ item.current_desc }}
             </div>
         </div>
         {% endfor %}

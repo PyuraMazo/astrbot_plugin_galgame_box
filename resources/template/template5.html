@@ -84,14 +84,14 @@
 <body>
     <div class="content">
         <div class="info">
-            <h1>{{ title }}</h1>
+            <h1>{{ current_title }}</h1>
         </div>
         <div class="gap"></div>
         <h2>Galgame拼图</h2>
         <div class="show">
           {% for item in items %}
-           <div class="block" style="grid-row: span {{ item.span }}; grid-column: span {{ item.span }};">
-                <img src="{{ item.img }}" alt="">
+           <div class="block" style="grid-row: span {{ item.extra_info }}; grid-column: span {{ item.extra_info }};">
+                <img src="{{ item.current_image }}" alt="">
            </div>
           {% endfor %}
         </div>

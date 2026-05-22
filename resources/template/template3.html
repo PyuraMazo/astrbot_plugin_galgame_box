@@ -123,26 +123,26 @@
     <div class="content">
         {% for item in items %}
         <div class="info">
-            <h1>{{ title }}</h1>
+            <h1>{{ current_title }}</h1>
         </div>
         <div class="gap"></div>
         <div class="info">
-            <h1>{{ item.sub_title }}</h1>
+            <h1>{{ item.current_subtitle }}</h1>
         </div>
         <div class="main">
-            <div class="main_image"><img src="{{ item.main_image }}" alt="图片失效"></div>
+            <div class="main_image"><img src="{{ item.current_image }}" alt="图片失效"></div>
             <div class="details">
                 <h2>基本信息</h2>
-                <div>{{ item.text }}</div>
+                <div>{{ item.current_desc }}</div>
             </div>
         </div>
         <div class="last">
             <h2>简介</h2>
-            <div class="description">{{ item.description }}</div>
+            <div class="description">{{ item.extra_info }}</div>
             <h2>游戏截图</h2>
             <div class="preview">
-                {% for img in item.images %}
-                <img src="{{ img }}" alt="图片失效">
+                {% for img in item.items %}
+                <img src="{{ img.current_image }}" alt="图片失效">
                 {% endfor %}
             </div>
         </div>

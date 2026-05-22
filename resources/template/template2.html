@@ -81,18 +81,18 @@
 <body>
     <div class="content">
         <div class="info">
-            <h1>{{ title }}</h1>
+            <h1>{{ current_title }}</h1>
         </div>
         <div class="gap"></div>
-        {% for pro in items %}
+        {% for item in items %}
         <div class="column">
-            <div class="info"><h2>{{ pro.column_info }}</h2></div>
-            {% for vn in pro.vns %}
+            <div class="info"><h2>{{ item.current_title }}</h2></div>
+            {% for vn in item.items %}
             <div class="block">
-                <img src="{{ vn.image }}" alt="图片失效">
-                <div class="subtitle">{{ vn.sub_title }}</div>
+                <img src="{{ vn.current_image }}" alt="图片失效">
+                <div class="subtitle">{{ vn.current_subtitle }}</div>
                 <div class="text">
-                    {{ vn.text }}
+                    {{ vn.current_desc }}
                 </div>
             </div>
             {% endfor %}

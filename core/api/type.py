@@ -1,38 +1,9 @@
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
 from astrbot.api.event import AstrMessageEvent
-
-
-class RenderedItem(BaseModel):
-    sub_title: str
-    image: str
-    text: str
-
-
-class ColumnStyle(BaseModel):
-    image: str
-    title: str
-
-
-class RenderedBlock(BaseModel):
-    column_info: str | ColumnStyle
-    vns: list[RenderedItem]
-
-
-class RenderedRandom(BaseModel):
-    sub_title: str
-    main_image: str
-    images: list[str]
-    description: str
-    text: str
-
-
-class RenderedPuzzle(BaseModel):
-    game: str
-    span: int
-    img: str
 
 
 class CommandType(Enum):
@@ -60,13 +31,14 @@ class CommandBody(BaseModel):
 
 
 class UnrenderedData(BaseModel):
-    title: str
-    items: list[RenderedItem | RenderedBlock | RenderedRandom | RenderedPuzzle]
-    bg_image: str
-    font: str
-    main_image: str | None = None
-    main_desc: str | None = None
-    extra_info: str | None = None
+    bg_image: str | None = None
+    font: str | None = None
+    current_title: str | None = None
+    current_subtitle: str | None = None
+    current_image: str | None = None
+    current_desc: str | None = None
+    extra_info: Any | None = None
+    items: list["UnrenderedData"] | None = None
 
 
 class TouchGalDetails(BaseModel):
