@@ -40,6 +40,7 @@ from ..internet.steam_request import SteamRequest, get_steam_request
 from ..internet.touchgal_request import TouchGalRequest, get_touchgal_request
 from ..internet.vndb_request import VNDBRequest, get_vndb_request
 from ..utils.file import File
+from ..utils.renderer import Renderer
 
 
 class OnlySenderFilter(SessionFilter):
@@ -65,6 +66,7 @@ class TaskLine:
         self.cache: Cache | None = None
         self.downloader: Downloader | None = None
         self.data_handler: DataHandler | None = None
+        self.renderer: Renderer = Renderer()
 
         self.task_map: dict[CommandType, Callable] | None = None
         self.find_results: int | None = None
@@ -95,6 +97,7 @@ class TaskLine:
         await self.cache.initialize(config)
         await self.downloader.initialize(config)
         await self.data_handler.initialize(config)
+        await self.renderer.initialize()
 
         self.task_map: dict[CommandType, Callable] = {
             CommandType.VN: self._vn_task,
@@ -174,9 +177,9 @@ class TaskLine:
         data = self.builder.build_options(cmd_body, res)
         tmpl = File.read_text(rendered_html)
 
-        res = await asyncio.gather(tmpl, data)
+        template, render_data = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            template, render_data.model_dump(mode='json', exclude_none=True), True, self.render_options
         )
         await self.cache.store_image(cmd_body, await self.downloader.download_once(url))
         yield cmd_body.event.image_result(url)
@@ -187,9 +190,9 @@ class TaskLine:
         data = self.builder.build_options(cmd_body, res)
         tmpl = File.read_text(rendered_html)
 
-        res = await asyncio.gather(tmpl, data)
+        template, render_data = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            template, render_data.model_dump(mode='json', exclude_none=True), True, self.render_options
         )
         await self.cache.store_image(cmd_body, await self.downloader.download_once(url))
         yield cmd_body.event.image_result(url)
@@ -200,9 +203,9 @@ class TaskLine:
         data = self.builder.build_options(cmd_body, pro, vns=vns)
         tmpl = File.read_text(rendered_html)
 
-        res = await asyncio.gather(tmpl, data)
+        template, render_data = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            template, render_data.model_dump(mode='json', exclude_none=True), True, self.render_options
         )
         await self.cache.store_image(cmd_body, await self.downloader.download_once(url))
         yield cmd_body.event.image_result(url)
@@ -223,9 +226,9 @@ class TaskLine:
 
         tmpl = File.read_text(rendered_html)
 
-        res = await asyncio.gather(tmpl, data)
+        template, render_data = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            template, render_data.model_dump(mode='json', exclude_none=True), True, self.render_options
         )
         await self.cache.store_image(cmd_body, await self.downloader.download_once(url))
         yield cmd_body.event.image_result(url)
@@ -237,9 +240,9 @@ class TaskLine:
         data = self.builder.build_options(cmd_body, vn, cha=cha)
         tmpl = File.read_text(rendered_html)
 
-        res = await asyncio.gather(tmpl, data)
+        template, render_data = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            template, render_data.model_dump(mode='json', exclude_none=True), True, self.render_options
         )
         await self.cache.store_image(cmd_body, await self.downloader.download_once(url))
         yield cmd_body.event.image_result(url)
@@ -259,9 +262,9 @@ class TaskLine:
         data = self.builder.build_options(cmd_body, resp, details=[details])
         tmpl = File.read_text(rendered_html)
 
-        res = await asyncio.gather(tmpl, data)
+        template, render_data = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            template, render_data.model_dump(mode='json', exclude_none=True), True, self.render_options
         )
         yield cmd_body.event.image_result(url)
 
@@ -437,9 +440,9 @@ class TaskLine:
         )
         tmpl = File.read_text(rendered_html)
 
-        res = await asyncio.gather(tmpl, data)
+        template, render_data = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            template, render_data.model_dump(mode='json', exclude_none=True), True, self.render_options
         )
         yield cmd_body.event.image_result(url)
 
@@ -464,7 +467,7 @@ class TaskLine:
             )
             url = await html_renderer.render_custom_template(
                 cache_body.tmpl,
-                cache_body.cache.pop(0).model_dump(),
+                cache_body.cache.pop(0).model_dump(mode='json', exclude_none=True),
                 True,
                 self.render_options,
             )
@@ -496,7 +499,7 @@ class TaskLine:
                         body.current += 1
                         _url = await html_renderer.render_custom_template(
                             body.tmpl,
-                            body.cache.pop(0).model_dump(),
+                            body.cache.pop(0).model_dump(mode='json', exclude_none=True),
                             True,
                             self.render_options,
                         )
@@ -512,7 +515,7 @@ class TaskLine:
                         body.current += 1
                         body.ready = await html_renderer.render_custom_template(
                             body.tmpl,
-                            body.cache.pop(0).model_dump(),
+                            body.cache.pop(0).model_dump(mode='json', exclude_none=True),
                             True,
                             self.render_options,
                         )
@@ -696,9 +699,9 @@ class TaskLine:
         )
         tmpl = File.read_text(rendered_html)
 
-        res = await asyncio.gather(tmpl, data)
+        template, render_data = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            template, render_data.model_dump(mode='json', exclude_none=True), True, self.render_options
         )
         await self.cache.store_image(
             f"{cmd_body.type.value}-{saved.platform_id}",
@@ -719,10 +722,10 @@ class TaskLine:
         the_tmpl, the_vn, the_cha = await asyncio.gather(tmpl, vn_data, cha_data)
 
         vn_url = await html_renderer.render_custom_template(
-            the_tmpl, the_vn.model_dump(), True, self.render_options
+            the_tmpl, the_vn.model_dump(mode='json', exclude_none=True), True, self.render_options
         )
         cha_url = await html_renderer.render_custom_template(
-            the_tmpl, the_cha.model_dump(), True, self.render_options
+            the_tmpl, the_cha.model_dump(mode='json', exclude_none=True), True, self.render_options
         )
         await asyncio.gather(
             self.cache.store_image(
@@ -734,8 +737,6 @@ class TaskLine:
         )
         yield vn_url
         yield cha_url
-        # yield comp.Image.fromURL(vn_url)
-        # yield comp.Image.fromURL(cha_url)
 
     async def _recommend_subtask(
         self, cmd_body: CommandBody, responses: list[TouchGalResponse]

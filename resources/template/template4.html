@@ -147,8 +147,8 @@
         {% for item in items %}
         <div class="column">
             <div class="column_info">
-                <div class="column_image"><img src="{{ item.extra_info.current_image }}" alt="图片加载失败"></div>
-                <div class="info">{{ item.extra_info.current_title }}</div>
+                <div class="column_image"><img src="{{ item.current_image }}" alt="图片加载失败"></div>
+                <div class="info">{{ item.current_title }}</div>
             </div>
             {% for cha in item.items %}
             <div class="block">

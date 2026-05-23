@@ -243,7 +243,7 @@ class Builder:
         buffer = await self.downloader.download_more([url.img for url in _items])
         bs = [File.buffer2base64(buf) for buf in buffer]
         for item, img in zip(_items, await asyncio.gather(*bs)):
-            item.img = img
+            item.current_image = img
 
         profile: SteamProfileResponse = response[0]
         nick = f"用户「{profile.personaname}」"
@@ -420,7 +420,7 @@ class Builder:
             font=self.font,
             current_image=main_image,
             current_desc="<br>".join(self._build_vn(vn)),
-            extra_info="作品信息",
+            extra_desc="作品信息",
         )
 
     async def _build_event_cha(
@@ -449,7 +449,7 @@ class Builder:
             font=self.font,
             current_image=main_image,
             current_desc="<br>".join(self._build_character(cha)),
-            extra_info="角色信息",
+            extra_desc="角色信息",
         )
 
     async def _build_select(
@@ -500,7 +500,7 @@ class Builder:
             if response.banner
             else self.err,
             items=images,
-            extra_info=description,
+            extra_desc=description,
         )
 
     def _build_download(self, response: ResourceResponse) -> list[str]:
@@ -560,12 +560,9 @@ class Builder:
                     )
                 )
         buf = output.getvalue()
-        column = UnrenderedData(
+        return UnrenderedData(
             current_image=await File.buffer2base64(buf) if buf else self.err,
             current_title=f"检测区域如左图<br>可信度：{'不' if response.not_confident else ''}可信",
-        )
-        return UnrenderedData(
-            extra_info=column,
             items=cha_list,
         )
 
@@ -576,7 +573,7 @@ class Builder:
             else 1
         )
         return UnrenderedData(
-            extra_info=math.ceil(4 * rate),
+            extra_desc=str(math.ceil(4 * rate)),
             current_title=info.name,
             current_image=info.vndb_img,
         )

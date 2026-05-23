@@ -193,10 +193,10 @@
         </div> -->
         <div class="hero">
             <div class="hero-image">
-                <img src="{{ main_image }}" alt="图片失效">
+                <img src="{{ current_image }}" alt="图片失效">
             </div>
             <div class="hero-text">
-                <h1>{{ title }}</h1>
+                <h1>{{ current_title }}</h1>
                 <!-- <div class="tag-row">
                     {% for tag in tags %}
                     <span class="tag {{ tag.style }}">{{ tag.text }}</span>
@@ -206,20 +206,20 @@
         </div>
         <div class="divider"></div>
         <div class="section">
-            <h2>{{ extra_info }}</h2>
-            <div class="desc-text">{{ main_desc }}</div>
+            <h2>{{ extra_desc }}</h2>
+            <div class="desc-text">{{ current_desc }}</div>
         </div>
         <div class="divider"></div>
         <div class="card-section">
             {% for son in items %}
-            <h2>{{ son.column_info }}</h2>
+            <h2>{{ son.current_title }}</h2>
             <div class="card-grid">
-                {% for item in son.vns %}
+                {% for item in son.items %}
                 <div class="card">
-                    <img src="{{ item.image }}" alt="图片失效">
+                    <img src="{{ item.current_image }}" alt="图片失效">
                     <div class="card-body">
-                        <div class="card-name">{{ item.sub_title }}</div>
-                        <div class="card-desc">{{ item.text }}</div>
+                        <div class="card-name">{{ item.current_subtitle }}</div>
+                        <div class="card-desc">{{ item.current_desc }}</div>
                     </div>
                 </div>
                 {% endfor %}

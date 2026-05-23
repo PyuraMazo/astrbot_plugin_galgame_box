@@ -37,7 +37,7 @@ class UnrenderedData(BaseModel):
     current_subtitle: str | None = None
     current_image: str | None = None
     current_desc: str | None = None
-    extra_info: Any | None = None
+    extra_desc: str | None = None
     items: list["UnrenderedData"] | None = None
 
 
