@@ -58,6 +58,7 @@ class TaskLine:
         self.support_forward = ["aiocqhttp", "qq", "qq_official", "onebot"]
         self.session_data_storage = {}
         self.send_message_id = []
+        self.templates = {}
 
         self.vndb_request: VNDBRequest | None = None
         self.touchgal_request: TouchGalRequest | None = None
@@ -123,6 +124,8 @@ class TaskLine:
         self.withdraw_middle = return_setting.get("withdrawMiddle", True)
         self.session_timeout = config.get("basicSetting", {}).get("sessionTimeout", 30)
 
+        await self._load_tempaltes()
+
     async def terminate(self):
         await self.vndb_request.terminate()
         await self.touchgal_request.terminate()
@@ -148,6 +151,12 @@ class TaskLine:
         async for result in task(cmd_body):
             yield result
 
+    async def _load_tempaltes(self):
+        for i, j in html_list.items():
+            if j not in self.templates:
+                location = self.template_dir / j
+                self.templates[j] = await File.read_text(location)
+
     @staticmethod
     def _check_keyword_validity(
         event: AstrMessageEvent | None, cmd_type: CommandType, keyword: str | list[str]
@@ -172,40 +181,34 @@ class TaskLine:
             raise InvalidArgsException(cmd)
 
     async def _vn_task(self, cmd_body: CommandBody):
-        rendered_html = self.template_dir / html_list[cmd_body.type.value]
         res = await self.vndb_request.request_by_vn(cmd_body.value)
-        data = self.builder.build_options(cmd_body, res)
-        tmpl = File.read_text(rendered_html)
+        data = await self.builder.build_options(cmd_body, res)
+        tmpl = self.templates[html_list[cmd_body.type.value]]
 
-        res = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            tmpl, data.model_dump(), True, self.render_options
         )
         await self.cache.store_image(cmd_body, await self.downloader.download_once(url))
         yield cmd_body.event.image_result(url)
 
     async def _cha_task(self, cmd_body: CommandBody):
-        rendered_html = self.template_dir / html_list[cmd_body.type.value]
         res = await self.vndb_request.request_by_character(cmd_body.value)
-        data = self.builder.build_options(cmd_body, res)
-        tmpl = File.read_text(rendered_html)
+        data = await self.builder.build_options(cmd_body, res)
+        tmpl = self.templates[html_list[cmd_body.type.value]]
 
-        res = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            tmpl, data.model_dump(), True, self.render_options
         )
         await self.cache.store_image(cmd_body, await self.downloader.download_once(url))
         yield cmd_body.event.image_result(url)
 
     async def _pro_task(self, cmd_body: CommandBody):
-        rendered_html = self.template_dir / html_list[cmd_body.type.value]
         pro, vns = await self.vndb_request.request_by_producer(cmd_body.value)
-        data = self.builder.build_options(cmd_body, pro, vns=vns)
-        tmpl = File.read_text(rendered_html)
+        data = await self.builder.build_options(cmd_body, pro, vns=vns)
+        tmpl = self.templates[html_list[cmd_body.type.value]]
 
-        res = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            tmpl, data.model_dump(), True, self.render_options
         )
         await self.cache.store_image(cmd_body, await self.downloader.download_once(url))
         yield cmd_body.event.image_result(url)
@@ -215,40 +218,33 @@ class TaskLine:
             raise InvalidArgsException(cmd_body)
 
         actual_type_value = id2command[cmd_body.value[0]]
-        rendered_html = self.template_dir / html_list[actual_type_value]
         res = await self.vndb_request.request_by_id(cmd_body.type, cmd_body.value)
 
         data = (
-            self.builder.build_options(cmd_body, res[0], vns=res[1])
+            await self.builder.build_options(cmd_body, res[0], vns=res[1])
             if actual_type_value == CommandType.PRODUCER.value
             else self.builder.build_options(cmd_body, res)
         )
+        tmpl = self.templates[html_list[cmd_body.type.value]]
 
-        tmpl = File.read_text(rendered_html)
-
-        res = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            tmpl, data.model_dump(), True, self.render_options
         )
         await self.cache.store_image(cmd_body, await self.downloader.download_once(url))
         yield cmd_body.event.image_result(url)
 
     async def _event_task(self, cmd_body: CommandBody):
-        rendered_html = self.template_dir / html_list[cmd_body.type.value]
-
         vn, cha = await self.vndb_request.request_by_event(cmd_body.value)
-        data = self.builder.build_options(cmd_body, vn, cha=cha)
-        tmpl = File.read_text(rendered_html)
+        data = await self.builder.build_options(cmd_body, vn, cha=cha)
+        tmpl = self.templates[html_list[cmd_body.type.value]]
 
-        res = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            tmpl, data.model_dump(), True, self.render_options
         )
         await self.cache.store_image(cmd_body, await self.downloader.download_once(url))
         yield cmd_body.event.image_result(url)
 
     async def _random_task(self, cmd_body: CommandBody):
-        rendered_html = self.template_dir / html_list[cmd_body.type.value]
         unique_id = await self.touchgal_request.request_random()
         text = await self.touchgal_request.request_html(unique_id)
         details = await self.html_handler.handle_touchgal_details(text)
@@ -259,12 +255,11 @@ class TaskLine:
             )
         )[0]
 
-        data = self.builder.build_options(cmd_body, resp, details=[details])
-        tmpl = File.read_text(rendered_html)
+        data = await self.builder.build_options(cmd_body, resp, details=[details])
+        tmpl = self.templates[html_list[cmd_body.type.value]]
 
-        res = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            tmpl, data.model_dump(), True, self.render_options
         )
         yield cmd_body.event.image_result(url)
 
@@ -429,8 +424,7 @@ class TaskLine:
                     break
             vndb_resp.append(await asyncio.gather(*block))
 
-        rendered_html = self.template_dir / html_list[cmd_body.type.value]
-        data = self.builder.build_options(
+        data = await self.builder.build_options(
             cmd_body,
             trace_resp,
             vndb_resp=vndb_resp,
@@ -438,11 +432,10 @@ class TaskLine:
             count=len(trace_resp.data),
             model=model,
         )
-        tmpl = File.read_text(rendered_html)
+        tmpl = self.templates[html_list[cmd_body.type.value]]
 
-        res = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            tmpl, data.model_dump(), True, self.render_options
         )
         yield cmd_body.event.image_result(url)
 
@@ -690,18 +683,16 @@ class TaskLine:
                 )
 
         await self.data_handler.store(saved, True)
-        rendered_html = self.template_dir / html_list[cmd_body.type.value]
-        data = self.builder.build_options(
+        data = await self.builder.build_options(
             cmd_body,
             [profile],
             vns=saved.vns,
             update=datetime.fromtimestamp(now).strftime("%Y-%m-%d %H:%M"),
         )
-        tmpl = File.read_text(rendered_html)
+        tmpl = self.templates[html_list[cmd_body.type.value]]
 
-        res = await asyncio.gather(tmpl, data)
         url = await html_renderer.render_custom_template(
-            res[0], res[1].model_dump(), True, self.render_options
+            tmpl, data.model_dump(), True, self.render_options
         )
         await self.cache.store_image(
             f"{cmd_body.type.value}-{saved.platform_id}",
@@ -710,22 +701,20 @@ class TaskLine:
         yield cmd_body.event.image_result(url)
 
     async def _gal_event_task(self, cmd_body: CommandBody):
-        rendered_html = self.template_dir / html_list[cmd_body.type.value]
-
         vn = await self.vndb_request.request_by_event_vn(cmd_body.value)
         cha = await self.vndb_request.request_by_event_cha(cmd_body.value)
 
         vn_data = self.builder.build_options(cmd_body, vn, for_vn=True)
         cha_data = self.builder.build_options(cmd_body, cha)
-        tmpl = File.read_text(rendered_html)
+        tmpl = self.templates[html_list[cmd_body.type.value]]
 
-        the_tmpl, the_vn, the_cha = await asyncio.gather(tmpl, vn_data, cha_data)
+        the_vn, the_cha = await asyncio.gather(vn_data, cha_data)
 
         vn_url = await html_renderer.render_custom_template(
-            the_tmpl, the_vn.model_dump(), True, self.render_options
+            tmpl, the_vn.model_dump(), True, self.render_options
         )
         cha_url = await html_renderer.render_custom_template(
-            the_tmpl, the_cha.model_dump(), True, self.render_options
+            tmpl, the_cha.model_dump(), True, self.render_options
         )
         await asyncio.gather(
             self.cache.store_image(
@@ -737,14 +726,11 @@ class TaskLine:
         )
         yield vn_url
         yield cha_url
-        # yield comp.Image.fromURL(vn_url)
-        # yield comp.Image.fromURL(cha_url)
 
     async def _recommend_subtask(
         self, cmd_body: CommandBody, responses: list[TouchGalResponse]
     ):
-        rendered_html = self.template_dir / html_list[cmd_body.type.value]
-        tmpl = File.read_text(rendered_html)
+        tmpl = self.templates[html_list[cmd_body.type.value]]
         data_co = []
         for _resp in responses:
             text = await self.touchgal_request.request_html(_resp.unique_id)
@@ -754,7 +740,7 @@ class TaskLine:
                 self.builder.build_options(cmd_body, [_resp], details=[details])
             )
 
-        return await asyncio.gather(tmpl, asyncio.gather(*data_co))
+        return tmpl, await asyncio.gather(*data_co)
 
     def _get_chain_image(
         self, chain: list[comp.BaseMessageComponent], default_return=""
