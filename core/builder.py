@@ -145,9 +145,9 @@ class Builder:
         resp: list[VNDBProducerResponse] = response
         vns: list[list[VNDBVnResponse]] = kwargs["vns"]
 
-        items: list[RenderedItem] = []
         works: list[RenderedBlock] = []
         for producer, per_vns in zip(resp, vns):
+            items: list[RenderedItem] = []
             for vn, vn_image in zip(per_vns, await self._build_images(per_vns)):
                 items.append(
                     RenderedItem(
