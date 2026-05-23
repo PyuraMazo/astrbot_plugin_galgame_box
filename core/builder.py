@@ -71,11 +71,14 @@ class Builder:
         search_setting = config.get("searchSetting", {})
         self.character_options = search_setting.get("characterOptions", [])
         self.finish_consuming = search_setting.get("finishConsuming", 20)
+        enable_font = config.get("returnSetting", {}).get("enableFont", True)
 
         await self.downloader.initialize(config)
         self.bg = await File.read_buffer2base64(str(self.bg_path))
         self.err = await File.read_buffer2base64(str(self.err_path))
-        self.font = await File.read_buffer2base64(str(self.font_path))
+        self.font = (
+            await File.read_buffer2base64(str(self.font_path)) if enable_font else ""
+        )
 
     async def terminate(self):
         await self.downloader.terminate()
@@ -102,11 +105,11 @@ class Builder:
         return run_type
 
     async def _init_resources(self):
-        if not self.bg:
+        if self.bg is None:
             self.bg = await File.read_buffer2base64(str(self.bg_path))
-        if not self.font:
+        if self.font is None:
             self.font = await File.read_buffer2base64(str(self.font_path))
-        if not self.err:
+        if self.err is None:
             self.err = await File.read_buffer2base64(str(self.err_path))
 
     async def _handle_vn(self, response, **kwargs):
@@ -117,6 +120,7 @@ class Builder:
             )
             for img, info in zip(await self._build_images(resp), resp)
         ]
+        print(self.font)
         return UnrenderedData(
             title="<br>".join(kwargs.get("title", "标题出错")),
             items=items,

@@ -56,7 +56,7 @@ class Downloader:
                     return await response.read()
 
             except Exception:
-                await asyncio.sleep(0.5*(2**count))
+                await asyncio.sleep(0.5 * (2**count))
                 count += 1
                 # logger.info(f"网络请求失败一次...{str(e)}")
         return self.err_image

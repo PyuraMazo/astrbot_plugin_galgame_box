@@ -79,6 +79,12 @@
     "description": "发送设置",
     "type": "object",
     "items": {
+      "enableFont": {
+        "description": "启用美化字体",
+        "hint": "开启时，图片中的文字字体会得到美化，但会增加图片的渲染时间和负载。",
+        "type": "bool",
+        "default": true
+      },
       "enableNSFW": {
         "description": "NSFW内容",
         "hint": "开启时，随机、推荐指令可能出现NSFW内容。",
