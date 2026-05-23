@@ -33,7 +33,7 @@ from ..api.type import (
 from ..builder import Builder, get_builder
 from ..cache import Cache, get_cache
 from ..data_handler import DataHandler, get_data_handler
-from ..html_handler import HTMLHandler, get_html_handler
+from data.plugins.astrbot_plugin_galgame_box.core.utils.html_handler import HTMLHandler, get_html_handler
 from ..internet.animetrace_request import AnimeTreceRequest, get_animetrace_request
 from ..internet.downloader import Downloader, get_downloader
 from ..internet.steam_request import SteamRequest, get_steam_request
