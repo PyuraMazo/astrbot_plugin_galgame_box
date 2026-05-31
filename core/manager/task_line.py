@@ -214,18 +214,15 @@ class TaskLine:
         yield cmd_body.event.image_result(url)
 
     async def _id_task(self, cmd_body: CommandBody):
-        if cmd_body.value[0] not in id2command.keys():
-            raise InvalidArgsException(cmd_body)
-
         actual_type_value = id2command[cmd_body.value[0]]
         res = await self.vndb_request.request_by_id(cmd_body.type, cmd_body.value)
 
-        data = (
-            await self.builder.build_options(cmd_body, res[0], vns=res[1])
+        data = await (
+            self.builder.build_options(cmd_body, res[0], vns=res[1])
             if actual_type_value == CommandType.PRODUCER.value
             else self.builder.build_options(cmd_body, res)
         )
-        tmpl = self.templates[html_list[cmd_body.type.value]]
+        tmpl = self.templates[html_list[actual_type_value]]
 
         url = await html_renderer.render_custom_template(
             tmpl, data.model_dump(), True, self.render_options

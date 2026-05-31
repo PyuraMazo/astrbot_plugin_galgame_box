@@ -40,19 +40,19 @@ class GalgameBoxPlugin(Star):
         """Galgame百宝盒插件的主指令"""
         pass
 
-    @gal_box.command("作品", alias={"游戏","vn"})
+    @gal_box.command("作品", alias={"游戏", "vn"})
     async def vn(self, event: AstrMessageEvent, keyword: str):
         """通过关键词查询作品"""
         async for res in self._common_command(event, CommandType.VN, keyword):
             yield res
 
-    @gal_box.command("角色", alias={"人物","character"})
+    @gal_box.command("角色", alias={"人物", "character"})
     async def character(self, event: AstrMessageEvent, keyword: str):
         """通过关键词查询角色"""
         async for res in self._common_command(event, CommandType.CHARACTER, keyword):
             yield res
 
-    @gal_box.command("厂商", alias={"作者","producer"})
+    @gal_box.command("厂商", alias={"作者", "producer"})
     async def producer(self, event: AstrMessageEvent, keyword: str):
         """通过关键词查询厂商"""
         async for res in self._common_command(event, CommandType.PRODUCER, keyword):
