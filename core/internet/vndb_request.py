@@ -30,13 +30,12 @@ class VNDBRequest:
         self.http = get_http()
 
         await self.http.initialize(config)
-        search_setting = config.get("searchSetting", {})
         self.producer_vns = (
-            search_setting.get("producerVns", 10)
-            if config.get("searchSetting", {}).get("producerVns", 10) != 0
+            config.get("producerSetting", {}).get("producerVns", 10)
+            if config.get("producerSetting", {}).get("producerVns", 10) != 0
             else 0
         )
-        self.event_rating = search_setting.get("eventRating", 75)
+        self.event_rating = config.get("eventSetting", {}).get("eventRating", 75)
 
     async def terminate(self):
         await self.http.terminate()

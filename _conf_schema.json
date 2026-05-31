@@ -1,6 +1,6 @@
 {
   "basicSetting": {
-    "description": "基础设置",
+    "description": "通用设置",
     "type": "object",
     "items": {
       "requestTimeout": {
@@ -34,6 +34,28 @@
         },
         "default": 60
       },
+      "enableFont": {
+        "description": "启用美化字体",
+        "hint": "开启时，图片中的文字字体会得到美化，但会增加图片的渲染时间和负载。",
+        "type": "bool",
+        "default": true
+      },
+      "forwardLimit": {
+        "description": "转发包含消息数",
+        "hint": "转发时每个转发消息最多包含的消息条数，过多的内容可能导致转发失败。如果平台不支持转发，则视为只发送指定数量的结果，其余的会被抛弃（0表示不限制）。",
+        "type": "int",
+        "slider": {
+          "min": 0,
+          "step": 5
+        },
+        "default": 10
+      },
+      "resultsLimit": {
+        "description": "强制截断多发",
+        "hint": "一次被动触发的最终返回结果只返回一条转发内容、一条消息或一张图片，以防止刷屏。",
+        "type": "bool",
+        "default": false
+      },
       "cleanInterval": {
         "description": "缓存清除间隔（天）",
         "type": "int",
@@ -44,52 +66,6 @@
         },
         "default": 1,
         "invisible": true
-      }
-    }
-  },
-  "safetySetting": {
-    "description": "安全设置",
-    "hint": "除了目标网站、自身网络原因外，本板块内容设置错误也会导致网络/连接问题。",
-    "type": "object",
-    "items": {
-      "proxy": {
-        "description": "代理地址",
-        "hint": "只作用于本插件，格式如 http://127.0.0.1:7897。",
-        "type": "string"
-      },
-      "touchgalToken": {
-        "description": "TouchGal登录账号Token",
-        "hint": "这是开启NSFW的前置条件，需要手动访问https://www.touchgal.top/并获取Cookie的kun-galgame-patch-moe-token值。",
-        "type": "string"
-      },
-      "cfClearance": {
-        "description": "CF Clearance（建议）",
-        "hint": "Cloudflare Clearance Cookie，用于绕过反爬虫验证。需要手动访问https://www.touchgal.top/并获取Cookie的cf_clearance值。",
-        "type": "string"
-      },
-      "tls": {
-        "description": "TLS浏览器指纹",
-        "hint": "伪造目标浏览器的指纹。",
-        "type": "string",
-        "default": "chrome136"
-      }
-    }
-  },
-  "returnSetting": {
-    "description": "发送设置",
-    "type": "object",
-    "items": {
-      "enableFont": {
-        "description": "启用美化字体",
-        "hint": "开启时，图片中的文字字体会得到美化，但会增加图片的渲染时间和负载。",
-        "type": "bool",
-        "default": true
-      },
-      "enableNSFW": {
-        "description": "NSFW内容",
-        "hint": "开启时，随机、推荐指令可能出现NSFW内容。",
-        "type": "bool",
-        "default": false
       },
       "withdrawMiddle": {
         "description": "撤回中间消息",
@@ -114,27 +90,45 @@
           "d-旮旯 下载"
         ],
         "invisible": true
-      },
-      "forwardLimit": {
-        "description": "转发包含消息数",
-        "hint": "转发时每个转发消息最多包含的消息条数，过多的内容可能导致转发失败。如果平台不支持转发，则视为只发送指定数量的结果，其余的会被抛弃（0表示不限制）。",
-        "type": "int",
-        "slider": {
-          "min": 0,
-          "step": 5
-        },
-        "default": 10
-      },
-      "resultsLimit": {
-        "description": "强制截断多发",
-        "hint": "一次被动触发的最终返回结果只返回一条转发内容、一条消息或一张图片，以防止刷屏。",
-        "type": "bool",
-        "default": false
       }
     }
   },
-  "searchSetting": {
-    "description": "搜索设置",
+  "safetySetting": {
+    "description": "安全设置",
+    "hint": "除了目标网站、自身网络原因外，本板块内容设置错误也会导致网络/连接问题。",
+    "type": "object",
+    "items": {
+      "enableNSFW": {
+        "description": "NSFW内容",
+        "hint": "开启时，随机、推荐指令可能出现NSFW内容。",
+        "type": "bool",
+        "default": false
+      },
+      "proxy": {
+        "description": "代理地址",
+        "hint": "只作用于本插件，格式如 http://127.0.0.1:7897。",
+        "type": "string"
+      },
+      "touchgalToken": {
+        "description": "TouchGal登录账号Token",
+        "hint": "这是开启NSFW的前置条件，需要手动访问https://www.touchgal.top/并获取Cookie的kun-galgame-patch-moe-token值。",
+        "type": "string"
+      },
+      "cfClearance": {
+        "description": "CF Clearance（建议）",
+        "hint": "Cloudflare Clearance Cookie，用于绕过反爬虫验证。需要手动访问https://www.touchgal.top/并获取Cookie的cf_clearance值。",
+        "type": "string"
+      },
+      "tls": {
+        "description": "TLS浏览器指纹",
+        "hint": "伪造目标浏览器的指纹。",
+        "type": "string",
+        "default": "chrome136"
+      }
+    }
+  },
+  "characterSetting": {
+    "description": "旮旯-角色设置",
     "type": "object",
     "items": {
       "characterOptions": {
@@ -154,18 +148,13 @@
           "b-身高/体重",
           "c-性别（不剧透）"
         ]
-      },
-      "eventRating": {
-        "description": "今日简讯作品质量",
-        "hint": "今日简讯过滤低于此rating的作品及其登场角色。",
-        "type": "int",
-        "slider": {
-          "min": 0,
-          "max": 100,
-          "step": 5
-        },
-        "default": 75
-      },
+      }
+    }
+  },
+  "producerSetting": {
+    "description": "旮旯-厂商设置",
+    "type": "object",
+    "items": {
       "producerVns": {
         "description": "显示厂商的作品数量",
         "hint": "当使用VNDB搜索制作者信息的时候，选择展示其至多多少个作品（0表示展示所有作品），建议默认值，过多可能导致等待时间过长或者渲染图片失败，作品默认按贝叶斯评分降序排序。",
@@ -176,7 +165,13 @@
           "step": 3
         },
         "default": 9
-      },
+      }
+    }
+  },
+  "recommendSetting": {
+    "description": "旮旯-推荐设置",
+    "type": "object",
+    "items": {
       "recommendCache": {
         "description": "推荐时缓存数量",
         "hint": "使用推荐指令时，一次网络请求缓存的结果数量，缓存的结果提前开启渲染，发送时间更短。",
@@ -187,7 +182,13 @@
           "step": 1
         },
         "default": 5
-      },
+      }
+    }
+  },
+  "findSetting": {
+    "description": "旮旯-出处设置",
+    "type": "object",
+    "items": {
       "findResults": {
         "description": "显示可信结果数量",
         "hint": "识别角色出处时，展示最接近的结果数量。",
@@ -198,7 +199,31 @@
           "step": 1
         },
         "default": 3
-      },
+      }
+    }
+  },
+  "eventSetting": {
+    "description": "旮旯-简讯设置",
+    "type": "object",
+    "items": {
+      "eventRating": {
+        "description": "今日简讯作品质量",
+        "hint": "今日简讯过滤低于此rating的作品及其登场角色。",
+        "type": "int",
+
+        "slider": {
+          "min": 0,
+          "max": 100,
+          "step": 5
+        },
+        "default": 75
+      }
+    }
+  },
+  "puzzleSetting": {
+    "description": "发送设置",
+    "type": "object",
+    "items": {
       "updateInterval": {
         "description": "Steam信息更新时间间隔（小时）",
         "hint": "Steam相关指令调用时，超过此间隔才更新，否则沿用之前的信息。",
@@ -220,8 +245,21 @@
           "step": 1
         },
         "default": 20
-      },
-      "collectAutomatically": {
+      }
+    }
+  },
+  "scheduleSetting": {
+    "description": "每日推送设置",
+    "type": "object",
+    "items": {
+      "galEvent": {
+        "description": "今日Gal事件推送时间",
+        "hint": "每日定时发布历史上今天发布的作品和角色生日，格式：「HH:MM」",
+        "type": "string",
+        "default": "07:00"
+      }
+    },
+    "collectAutomatically": {
         "description": "自动收集群聊id",
         "hint": "开启后，自动收集今日Gal事件需要推送的群聊id。",
         "type": "bool",
@@ -233,18 +271,5 @@
         "hint": "需要推送的群聊id。格式字符串：「平台id-群聊id」，平台id为适配器机器人名称，表示该机器人所在的平台。",
         "type": "list"
       }
-    }
-  },
-  "scheduleSetting": {
-    "description": "定时任务设置",
-    "type": "object",
-    "items": {
-      "galEvent": {
-        "description": "今日Gal事件推送时间",
-        "hint": "每日定时发布历史上今天发布的作品和角色生日，格式：「HH:MM」",
-        "type": "string",
-        "default": "07:00"
-      }
-    }
   }
 }

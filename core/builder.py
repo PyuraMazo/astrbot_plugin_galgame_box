@@ -68,10 +68,13 @@ class Builder:
 
     async def initialize(self, config: AstrBotConfig):
         self.downloader = get_downloader()
-        search_setting = config.get("searchSetting", {})
-        self.character_options = search_setting.get("characterOptions", [])
-        self.finish_consuming = search_setting.get("finishConsuming", 20)
-        enable_font = config.get("returnSetting", {}).get("enableFont", True)
+        self.character_options = config.get("characterSetting", {}).get(
+            "characterOptions", []
+        )
+        self.finish_consuming = config.get("puzzleSetting", {}).get(
+            "finishConsuming", 20
+        )
+        enable_font = config.get("basicSetting", {}).get("enableFont", True)
 
         await self.downloader.initialize(config)
         self.bg = await File.read_buffer2base64(str(self.bg_path))
@@ -120,7 +123,6 @@ class Builder:
             )
             for img, info in zip(await self._build_images(resp), resp)
         ]
-        print(self.font)
         return UnrenderedData(
             title="<br>".join(kwargs.get("title", "标题出错")),
             items=items,

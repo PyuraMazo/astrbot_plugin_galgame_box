@@ -107,7 +107,7 @@ class GalgameBoxPlugin(Star):
             yield res
 
     async def _gal_event(self):
-        # white_list = self.config.get("searchSetting", {}).get("collectAutomatically", False)
+        # white_list = self.config.get("scheduleSetting", {}).get("collectAutomatically", False)
         async for res in self._common_command(None, CommandType.GAL_EVENT):
             for group in self.event_list:
                 await self.ctx.send_message(group, MessageChain().url_image(res))
@@ -147,7 +147,7 @@ class GalgameBoxPlugin(Star):
             scheduler.remove_job(schedule_id)
 
     def _init_ids(self):
-        ids = self.config.get("searchSetting", {}).get("eventList", [])
+        ids = self.config.get("scheduleSetting", {}).get("eventList", [])
 
         def func(_: str):
             platform, group = _.split("-", 1)

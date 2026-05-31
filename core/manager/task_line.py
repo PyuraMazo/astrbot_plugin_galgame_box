@@ -114,14 +114,16 @@ class TaskLine:
             CommandType.PUZZLE: self._puzzle_task,
             CommandType.GAL_EVENT: self._gal_event_task,
         }
-        search_setting = config.get("searchSetting", {})
-        self.find_results = search_setting.get("findResults", 3)
-        self.recommend_cache = search_setting.get("recommendCache", 3)
-        self.update_interval = search_setting.get("updateInterval", 24)
-        return_setting = config.get("returnSetting", {})
-        self.forward_limit = return_setting.get("forwardLimit", 10)
-        self.results_limit = return_setting.get("resultsLimit", False)
-        self.withdraw_middle = return_setting.get("withdrawMiddle", True)
+        self.find_results = config.get("findSetting", {}).get("findResults", 3)
+        self.recommend_cache = config.get("recommendSetting", {}).get(
+            "recommendCache", 3
+        )
+        self.update_interval = config.get("puzzleSetting", {}).get("updateInterval", 24)
+        self.forward_limit = config.get("basicSetting", {}).get("forwardLimit", 10)
+        self.results_limit = config.get("basicSetting", {}).get("resultsLimit", False)
+        self.withdraw_middle = config.get("basicSetting", {}).get(
+            "withdrawMiddle", True
+        )
         self.session_timeout = config.get("basicSetting", {}).get("sessionTimeout", 30)
 
         await self._load_tempaltes()

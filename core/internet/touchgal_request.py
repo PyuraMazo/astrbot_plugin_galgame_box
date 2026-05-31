@@ -34,7 +34,7 @@ class TouchGalRequest:
             }
 
         kunNsfwEnable = (
-            "all" if config.get("returnSetting", {}).get("enableNSFW", False) else "sfw"
+            "all" if config.get("safetySetting", {}).get("enableNSFW", False) else "sfw"
         )
         token = safety_setting.get("touchgalToken", "")
         cf = safety_setting.get("cfClearance", "")
