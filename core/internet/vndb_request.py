@@ -5,6 +5,7 @@ from astrbot.api import AstrBotConfig
 
 from ..api.const import id2command, vndb_command_fields
 from ..api.exception import (
+    InternetException,
     NoResultException,
     ResponseException,
 )
@@ -25,6 +26,7 @@ class VNDBRequest:
         self.http: Http | None = None
         self.producer_vns: int | None = None
         self.event_rating: int | None = None
+        self.schedule_content: str | None = None
 
     async def initialize(self, config: AstrBotConfig):
         self.http = get_http()
@@ -36,6 +38,9 @@ class VNDBRequest:
             else 0
         )
         self.event_rating = config.get("eventSetting", {}).get("eventRating", 75)
+        self.schedule_content = (
+            config.get("scheduleSetting", {}).get("scheduleContent", "c")
+        )[0]
 
     async def terminate(self):
         await self.http.terminate()
@@ -183,26 +188,37 @@ class VNDBRequest:
             for year in range(1990, int(date[0]))
         ]
         vn_payload = {
-            "filters": ["and", ["or", *released], ["rating", ">=", self.event_rating]],
+            "filters": ["or", *released]
+            if self.schedule_content != "c"
+            else ["and", ["or", *released], ["votecount", ">", 50]],
             "fields": vndb_command_fields["vn"],
             "results": 1,
-            "sort": "rating",
+            "sort": "votecount" if self.schedule_content == "b" else "rating",
             "reverse": True,
         }
+        print(vn_payload)
         res = await self.http.post(vn_url, vn_payload)
-        the_vn = VNDBVnResponse.model_validate(res["results"][0])
+        if not res:
+            raise NoResultException
 
-        cha_payload = {
-            "filters": [
-                "and",
-                ["vn", "=", ["id", "=", the_vn.id]],
-                ["or", ["role", "=", "main"], ["role", "=", "primary"]],
-            ],
-            "fields": vndb_command_fields["character_event"],
-        }
-        cha_res = await self.http.post(cha_url, cha_payload)
-        the_cha = [VNDBCharacterResponse.model_validate(j) for j in cha_res["results"]]
-        return the_vn, the_cha
+        try:
+            the_vn = VNDBVnResponse.model_validate(res["results"][0])
+
+            cha_payload = {
+                "filters": [
+                    "and",
+                    ["vn", "=", ["id", "=", the_vn.id]],
+                    ["or", ["role", "=", "main"], ["role", "=", "primary"]],
+                ],
+                "fields": vndb_command_fields["character_event"],
+            }
+            cha_res = await self.http.post(cha_url, cha_payload)
+            the_cha = [
+                VNDBCharacterResponse.model_validate(j) for j in cha_res["results"]
+            ]
+            return the_vn, the_cha
+        except InternetException:
+            raise NoResultException
 
     async def request_by_event_cha(
         self, date: list[str]
@@ -219,34 +235,44 @@ class VNDBRequest:
             "fields": vndb_command_fields["character"],
         }
         res = await self.http.post(cha_url, cha_payload)
-        cha = [VNDBCharacterResponse.model_validate(j) for j in res["results"]]
+        if not res:
+            raise NoResultException
 
-        vn_cha_map = {n.id: m.id for m in cha for n in m.vns}
-        filters = [["id", "=", i] for i in vn_cha_map]
-        search_best_vn_payload = {
-            "filters": ["or", *filters],
-            "fields": "id",
-            "results": 1,
-            "sort": "rating",
-            "reverse": True,
-        }
-        best: dict[str, list[dict]] = await self.http.post(
-            vn_url, search_best_vn_payload
-        )
-        the_cha_id = vn_cha_map[best["results"][0]["id"]]
-        for i in cha:
-            if i.id == the_cha_id:
-                best_vn_ids = [
-                    ["id", "=", k] for k, v in vn_cha_map.items() if v == the_cha_id
-                ]
+        try:
+            cha = [VNDBCharacterResponse.model_validate(j) for j in res["results"]]
 
-                vn_payload = {
-                    "filters": ["or", *best_vn_ids],
-                    "fields": vndb_command_fields["vn_short"],
-                }
-                vns = await self.http.post(vn_url, vn_payload)
-                vn = [VNDBVnResponse.model_validate(i) for i in vns["results"]]
-                return i, vn
+            vn_cha_map = {n.id: m.id for m in cha for n in m.vns}
+            filters = [["id", "=", i] for i in vn_cha_map]
+            search_best_vn_payload = {
+                "filters": ["or", *filters]
+                if self.schedule_content != "c"
+                else ["and", ["or", *filters], ["votecount", ">", 50]],
+                "fields": "id",
+                "results": 1,
+                "sort": "votecount" if self.schedule_content == "b" else "rating",
+                "reverse": True,
+            }
+
+            best: dict[str, list[dict]] = await self.http.post(
+                vn_url, search_best_vn_payload
+            )
+
+            the_cha_id = vn_cha_map[best["results"][0]["id"]]
+            for i in cha:
+                if i.id == the_cha_id:
+                    best_vn_ids = [
+                        ["id", "=", k] for k, v in vn_cha_map.items() if v == the_cha_id
+                    ]
+
+                    vn_payload = {
+                        "filters": ["or", *best_vn_ids],
+                        "fields": vndb_command_fields["vn_short"],
+                    }
+                    vns = await self.http.post(vn_url, vn_payload)
+                    vn = [VNDBVnResponse.model_validate(i) for i in vns["results"]]
+                    return i, vn
+        except InternetException:
+            raise NoResultException
         else:
             raise Exception("从已知cha列表中检索失败")
 
