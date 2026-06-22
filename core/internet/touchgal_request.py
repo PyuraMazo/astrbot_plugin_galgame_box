@@ -2,7 +2,7 @@ import json
 
 from astrbot.core import AstrBotConfig
 
-from ..api.exception import AuthorityException
+from ..api.exception import AuthorityException, NoResultException
 from ..api.model import ResourceResponse, TouchGalResponse
 from .http import Http, get_http
 
@@ -83,9 +83,12 @@ class TouchGalRequest:
             handle_cf=True,
         )
         if isinstance(res, dict):
-            return [TouchGalResponse.model_validate(i) for i in res["galgames"]], res[
-                "total"
-            ]
+            if res["galgames"]:
+                return [
+                    TouchGalResponse.model_validate(i) for i in res["galgames"]
+                ], res["total"]
+            else:
+                raise NoResultException
         else:
             raise AuthorityException(str(res))
 

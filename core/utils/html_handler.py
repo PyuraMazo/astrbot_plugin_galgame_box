@@ -16,7 +16,7 @@ class HTMLHandler:
     async def terminate(self):
         pass
 
-    async def handle_touchgal_details(self, text: str) -> TouchGalDetails | None:
+    async def handle_touchgal_details(self, text: str) -> TouchGalDetails:
         soup = await asyncio.to_thread(lambda: BeautifulSoup(text, "html.parser"))
 
         try:

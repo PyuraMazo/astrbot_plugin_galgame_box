@@ -218,14 +218,28 @@ class TaskLine:
     async def _id_task(self, cmd_body: CommandBody):
         actual_type_value = id2command[cmd_body.value[0]]
         res = await self.vndb_request.request_by_id(cmd_body.type, cmd_body.value)
-
+        desc = ""
+        if actual_type_value == CommandType.VN.value:
+            try:
+                search_info = await self.touchgal_request.request_vn_by_search(
+                    cmd_body.value
+                )
+                html_text = await self.touchgal_request.request_html(
+                    search_info[0][0].unique_id
+                )
+                desc = (
+                    await self.html_handler.handle_touchgal_details(html_text)
+                ).description
+            except NoResultException:
+                pass
         data = await (
             self.builder.build_options(cmd_body, res[0], vns=res[1])
             if actual_type_value == CommandType.PRODUCER.value
-            else self.builder.build_options(cmd_body, res)
+            else self.builder.build_options(cmd_body, res, desc=desc)
         )
-        tmpl = self.templates[html_list[actual_type_value]]
-
+        tmpl = self.templates[
+            html_list[actual_type_value if desc == "" else CommandType.RANDOM.value]
+        ]
         url = await html_renderer.render_custom_template(
             tmpl, data.model_dump(), True, self.render_options
         )

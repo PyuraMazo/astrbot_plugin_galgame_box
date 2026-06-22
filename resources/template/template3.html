@@ -130,7 +130,7 @@
             <h1>{{ item.sub_title }}</h1>
         </div>
         <div class="main">
-            <div class="main_image"><img src="{{ item.main_image }}" alt="图片失效"></div>
+            <div class="main_image"><img src="{{ item.main_image or item.image }}" alt="图片失效"></div>
             <div class="details">
                 <h2>基本信息</h2>
                 <div>{{ item.text }}</div>
@@ -138,13 +138,15 @@
         </div>
         <div class="last">
             <h2>简介</h2>
-            <div class="description">{{ item.description }}</div>
-            <h2>游戏截图</h2>
-            <div class="preview">
-                {% for img in item.images %}
-                <img src="{{ img }}" alt="图片失效">
-                {% endfor %}
+            <div class="description">{{ item.description or main_desc }}</div>
+            {% if item.images %}
+                <h2>游戏截图</h2>
+                <div class="preview">
+                    {% for img in item.images %}
+                    <img src="{{ img }}" alt="图片失效">
+                    {% endfor %}
             </div>
+            {% endif %}
         </div>
         {% endfor %}
     </div>

@@ -123,12 +123,22 @@ class Builder:
             )
             for img, info in zip(await self._build_images(resp), resp)
         ]
-        return UnrenderedData(
-            title="<br>".join(kwargs.get("title", "标题出错")),
-            items=items,
-            bg_image=self.bg,
-            font=self.font,
-        )
+        desc = kwargs.get("desc", None)
+        if desc is not None:
+            return UnrenderedData(
+                title="<br>".join(kwargs.get("title", "标题出错")),
+                items=items,
+                bg_image=self.bg,
+                font=self.font,
+                main_desc=desc,
+            )
+        else:
+            return UnrenderedData(
+                title="<br>".join(kwargs.get("title", "标题出错")),
+                items=items,
+                bg_image=self.bg,
+                font=self.font,
+            )
 
     async def _handle_character(self, response, **kwargs):
         resp: list[VNDBCharacterResponse] = response
