@@ -2,7 +2,6 @@ from astrbot.api import AstrBotConfig
 
 from ..api.exception import CodeException
 from ..api.model import AnimeTraceResponse
-from ..api.type import AnimeTraceModel
 from .http import Http, get_http
 
 
@@ -21,7 +20,7 @@ class AnimeTreceRequest:
         await self.http.terminate()
 
     async def request_find(
-        self, url: str, model: AnimeTraceModel
+        self, url: str, model: str = "animetrace-yuri-4.2"
     ) -> AnimeTraceResponse:
         resp = await self.http.post(self.api_url, self._build_payload(model, url))
         # 特定检测状态码
@@ -31,8 +30,13 @@ class AnimeTreceRequest:
 
         return AnimeTraceResponse.model_validate(resp)
 
-    def _build_payload(self, model: AnimeTraceModel, url: str):
-        return {"model": model.value, "ai_detect": 1, "url": url}
+    def _build_payload(self, model: str, url: str):
+        base = {"model": model, "ai_detect": 1}
+        if url.startswith("http"):
+            base["url"] = url
+        else:
+            base["base64"] = url
+        return base
 
 
 _animetrace_request: AnimeTreceRequest | None = None

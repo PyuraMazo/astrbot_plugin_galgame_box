@@ -21,7 +21,6 @@ from .api.model import (
     VNDBVnResponse,
 )
 from .api.type import (
-    AnimeTraceModel,
     ColumnStyle,
     CommandBody,
     CommandType,
@@ -236,24 +235,25 @@ class Builder:
         trace_resp: AnimeTraceResponse = response
         vndb_resp = kwargs["vndb_resp"]
 
-        _buffer = await self.downloader.download_once(kwargs["image"])
-        # 转换为合法jpg
-        buffer = await Image.image2jpg_async(_buffer)
+        image: str = kwargs["image"]
+        if image.startswith("http"):
+            buffer = await self.downloader.download_once(image)
+            v_buffer = await Image.image2jpg_async(buffer)
+        else:
+            v_buffer = await File.read_buffer(image)
+
         blocks = [
-            self._build_find(data, chas, buffer)
+            self._build_find(data, chas, v_buffer)
             for data, chas in zip(trace_resp.data, vndb_resp)
         ]
         title = kwargs.get("title", [])
-        title.append(
-            f"检测模型「{'GAL专用' if kwargs['model'] == AnimeTraceModel.Profession else 'GAL+动画'}」"
-        )
         title.append(f"是否AI图「{'是' if response.ai else '否'}」")
         return UnrenderedData(
             title="<br>".join(title) if len(title) > 1 else "标题出错",
             items=await asyncio.gather(*blocks),
             bg_image=self.bg,
             font=self.font,
-            main_image=await File.buffer2base64(buffer) if buffer else self.err,
+            main_image=await File.buffer2base64(v_buffer) if v_buffer else self.err,
         )
 
     async def _handle_puzzle(self, response, **kwargs):
@@ -285,7 +285,7 @@ class Builder:
         run_type = f"指令「{command_body.type.value}」"
         value = (
             (
-                f"参数「{command_body.value if not command_body.value.startswith('http') else '网络链接'}」"
+                f"参数「{command_body.value if not len(command_body.value) > 6 else '参数过长'}」"
                 if command_body.value and command_body.type != CommandType.PUZZLE
                 else ""
             )

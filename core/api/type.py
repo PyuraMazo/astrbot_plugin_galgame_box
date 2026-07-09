@@ -76,11 +76,6 @@ class TouchGalDetails(BaseModel):
     title: str
 
 
-class AnimeTraceModel(Enum):
-    Profession = "full_game_model_kira"
-    Common = "animetrace_high_beta"
-
-
 class SelectInfo(BaseModel):
     cmd_body: CommandBody
     cache: list[UnrenderedData]

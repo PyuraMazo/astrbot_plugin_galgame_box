@@ -18,16 +18,14 @@ from data.plugins.astrbot_plugin_galgame_box.core.utils.html_handler import (
 
 from ..api.const import html_list, id2command
 from ..api.exception import (
-    CodeException,
     HasBoundException,
     InternetException,
     InvalidArgsException,
     NoResultException,
-    SessionTimeoutException,
+    SessionTimeoutException, ArgsOrNullException,
 )
-from ..api.model import AnimeTraceResponse, TouchGalResponse
+from ..api.model import TouchGalResponse
 from ..api.type import (
-    AnimeTraceModel,
     CommandBody,
     CommandType,
     SelectInfo,
@@ -383,6 +381,7 @@ class TaskLine:
                 break
 
         if not cmd_body.value:
+            raise ArgsOrNullException(cmd_body)
             tips = f"-未检测到有效的指令参数\n-改为从下一条消息中获取\n-请在{self.session_timeout}s内发送一张图片"
             yield event.plain_result(tips)
 
@@ -410,17 +409,7 @@ class TaskLine:
             except TimeoutError:
                 raise SessionTimeoutException(cmd_body)
 
-        model = AnimeTraceModel.Profession
-        trace_resp: AnimeTraceResponse
-        try:
-            trace_resp = await self.animetrace_request.request_find(
-                cmd_body.value, model
-            )
-        except CodeException:
-            model = AnimeTraceModel.Common
-            trace_resp = await self.animetrace_request.request_find(
-                cmd_body.value, model
-            )
+        trace_resp = await self.animetrace_request.request_find(cmd_body.value if cmd_body.value.startswith("http") else await File.read_buffer2base64(cmd_body.value))
 
         if not trace_resp.data:
             raise NoResultException(cmd_body)
@@ -443,7 +432,6 @@ class TaskLine:
             vndb_resp=vndb_resp,
             image=cmd_body.value,
             count=len(trace_resp.data),
-            model=model,
         )
         tmpl = self.templates[html_list[cmd_body.type.value]]
 
