@@ -177,6 +177,8 @@ class GalgameBoxPlugin(Star):
         msg = "发生非预期异常！"
         if isinstance(e, Tips):
             msg = str(e).split("：")[0]
+        elif isinstance(e, RuntimeError) and str(e).startswith("All endpoints failed"):
+            msg = "图片渲染失败！"
 
         if event is not None:
             yield event.chain_result(
