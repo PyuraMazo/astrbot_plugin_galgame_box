@@ -3,7 +3,6 @@ import math
 
 from astrbot.api import AstrBotConfig
 
-from ..services import Services
 from ..type.exceptions import InternetException, NoResultException, ResponseException
 from ..type.inner_models import CommandType, vndb_command_fields
 from ..type.outer_models import (
@@ -12,7 +11,7 @@ from ..type.outer_models import (
     VNDBReleaseResponse,
     VNDBVnResponse,
 )
-from . import Http
+from .http import Http
 
 
 class Vndb:
@@ -20,6 +19,10 @@ class Vndb:
 
     @classmethod
     async def initialize(cls, config: AstrBotConfig):
+        from ..services import Services
+
+        cls.http = Services.get(Http)
+
         cls.producer_vns = (
             config.get("producerSetting", {}).get("producerVns", 9)
             if config.get("producerSetting", {}).get("producerVns", 9) != 0
@@ -30,7 +33,6 @@ class Vndb:
             config.get("scheduleSetting", {}).get("scheduleContent", "c")
         )[0]
 
-        cls.http = Services.get(Http)
         return cls()
 
     async def request_by_vn(self, keyword: str, payload=None) -> list[VNDBVnResponse]:

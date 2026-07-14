@@ -2,11 +2,10 @@ import json
 
 from astrbot.api import AstrBotConfig
 
-from ..services import Services
 from ..type.exceptions import AuthorityException, NoResultException
 from ..type.inner_models import CommandType
 from ..type.outer_models import ResourceResponse, TouchGalResponse
-from . import Http
+from .http import Http
 
 
 class TouchGal:
@@ -21,6 +20,8 @@ class TouchGal:
 
     @classmethod
     async def initialize(cls, config: AstrBotConfig):
+        from ..services import Services
+
         cls.http = Services.get(Http)
         safety_setting = config.get("safetySetting", {})
 

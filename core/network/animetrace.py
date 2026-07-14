@@ -1,9 +1,8 @@
 from astrbot.api import AstrBotConfig
 
-from ..services import Services
 from ..type.exceptions import Tips
 from ..type.outer_models import AnimeTraceResponse
-from . import Http
+from .http import Http
 
 
 class AnimeTrece:
@@ -14,6 +13,8 @@ class AnimeTrece:
 
     @classmethod
     async def initialize(cls, config: AstrBotConfig):
+        from ..services import Services
+
         cls.http = Services.get(Http)
         await cls.select_model()
 

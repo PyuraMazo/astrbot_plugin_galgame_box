@@ -8,8 +8,8 @@ from ..type.exceptions import NoResultException
 from ..type.inner_models import CommandType, template_list
 from ..type.outer_models import TouchGalResponse, VNDBCharacterResponse, VNDBVnResponse
 from ..utils import HTMLHandler
-from . import Random
 from .base_command import BaseCommand
+from .random import Random
 
 
 class EventTimed(BaseCommand):

@@ -12,8 +12,8 @@ from ..type.exceptions import EarlyReturn, SessionTimeoutException
 from ..type.inner_models import CommandType, RecommendCache, template_list
 from ..type.outer_models import TouchGalResponse
 from ..utils import OnlySenderFilter
-from . import Random
 from .base_command import BaseCommand
+from .random import Random
 
 
 class Recommend(BaseCommand):
