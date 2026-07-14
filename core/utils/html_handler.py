@@ -2,21 +2,13 @@ import asyncio
 
 from bs4 import BeautifulSoup
 
-from data.plugins.astrbot_plugin_galgame_box.core.api.exception import SettingException
-from data.plugins.astrbot_plugin_galgame_box.core.api.type import TouchGalDetails
+from ..type.exceptions import SettingException
+from ..type.inner_models import TouchGalDetails
 
 
 class HTMLHandler:
-    def __init__(self):
-        pass
-
-    async def initialize(self):
-        pass
-
-    async def terminate(self):
-        pass
-
-    async def handle_touchgal_details(self, text: str) -> TouchGalDetails:
+    @staticmethod
+    async def handle_touchgal_details(text: str) -> TouchGalDetails:
         soup = await asyncio.to_thread(lambda: BeautifulSoup(text, "html.parser"))
 
         try:
@@ -61,17 +53,7 @@ class HTMLHandler:
             )
 
             return TouchGalDetails(
-                third_info=third, images=images, description=entro_text, title=title
+                third_info=third, previews=images, description=entro_text, title=title
             )
         except AttributeError:
             raise SettingException("TouchGal登录账号Token")
-
-
-_handler: HTMLHandler | None = None
-
-
-def get_html_handler():
-    global _handler
-    if _handler is None:
-        _handler = HTMLHandler()
-    return _handler

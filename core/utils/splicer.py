@@ -1,14 +1,13 @@
 # type: ignore
 
-from data.plugins.astrbot_plugin_galgame_box.core.api.const import (
+from ..type.inner_models import (
     develop_type,
     gender,
     lang,
 )
-from data.plugins.astrbot_plugin_galgame_box.core.api.model import (
+from ..type.outer_models import (
     Developer,
     Link,
-    Tag,
     Title,
     Vn,
 )
@@ -96,8 +95,8 @@ class Splicer:
             )
         elif self.scheme == "producer":
             elements = (
-                self._vndb_id,
                 self._name,
+                self._vndb_id,
                 self._alias,
                 self._text_lang,
                 self._co_type,
@@ -126,25 +125,25 @@ class Splicer:
 
         return [i for i in elements if i]
 
-    @staticmethod
-    def from_vndb_vn():
-        return Splicer("vn")
+    @classmethod
+    def from_vndb_vn(cls):
+        return cls("vn")
 
-    @staticmethod
-    def from_vndb_character():
-        return Splicer("character")
+    @classmethod
+    def from_vndb_character(cls):
+        return cls("character")
 
-    @staticmethod
-    def from_vndb_producer():
-        return Splicer("producer")
+    @classmethod
+    def from_vndb_producer(cls):
+        return cls("producer")
 
-    @staticmethod
-    def from_touchgal_desc():
-        return Splicer("touchgal")
+    @classmethod
+    def from_touchgal_info(cls):
+        return cls("touchgal")
 
-    @staticmethod
-    def from_touchgal_resource():
-        return Splicer("resource")
+    @classmethod
+    def from_touchgal_resource(cls):
+        return cls("resource")
 
     @empty_handler()
     def vndb_id(self, id: str) -> "Splicer":
@@ -199,11 +198,8 @@ class Splicer:
 
     @empty_handler()
     def vns(self, vns: list[Vn]) -> "Splicer":
-        vn_list = [
-            f"出场作品（VNDB ID）：「{vn.alttitle or vn.title}」（{vn.id}）"
-            for vn in vns
-        ]
-        self._vns = "、".join(vn_list)
+        vn_list = [f"「{vn.alttitle or vn.title}」（{vn.id}）" for vn in vns]
+        self._vns = f"出场作品（VNDB ID）：{'、'.join(vn_list)}"
 
     @empty_handler()
     def blood(self, blood: str) -> "Splicer":
@@ -254,8 +250,8 @@ class Splicer:
         self._touchgal_platform = f"资源平台：{'、'.join(platforms)}"
 
     @empty_handler()
-    def touchgal_tags(self, tags: list[Tag]) -> "Splicer":
-        self._touchgal_tag = f"标签：{'、'.join([i.tag['name'] for i in tags])}"
+    def touchgal_tags(self, tags: list[str]) -> "Splicer":
+        self._touchgal_tag = f"标签：{'、'.join(tags)}"
 
     @empty_handler()
     def touchgal_lang(self, languages: list[str]) -> "Splicer":

@@ -1,6 +1,6 @@
 name: astrbot_plugin_galgame_box
 display_name: Galgame百宝盒
-desc: 结合了VNDB、TouchGal、AnimeTrace、Steam的API，不但能够提供全面、细节的Galgame帮助信息，还能提供随机作品、资源下载、角色识别、Gal拼图等功能。
-version: v1.13.1
+desc: 结合了VNDB、TouchGal、AnimeTrace的API，能够提供全面、细致的Galgame帮助信息，还配备了推荐作品、资源下载、角色识别、今日事件等功能。
+version: v2.0.0
 author: PyuraMazo
 repo: https://github.com/PyuraMazo/astrbot_plugin_galgame_box

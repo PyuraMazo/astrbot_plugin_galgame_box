@@ -5,8 +5,8 @@ from PIL import Image as PILImage
 
 
 class Image:
-    @staticmethod
-    def image2jpg(image_data: bytes) -> bytes:
+    @classmethod
+    def image2jpg(cls, image_data: bytes) -> bytes:
 
         if not image_data:
             raise ValueError("图片数据为空")
@@ -23,11 +23,11 @@ class Image:
 
             elif img.mode == "P" and "transparency" in img.info:
                 img = img.convert("RGBA")
-                return Image._image2jpg_simple(img)
+                return cls._image2jpg_simple(img)
 
             elif img.mode == "LA":
                 img = img.convert("RGBA")
-                return Image._image2jpg_simple(img)
+                return cls._image2jpg_simple(img)
 
             elif img.mode not in ["RGB", "L"]:
                 img = img.convert("RGB")
@@ -44,8 +44,8 @@ class Image:
             if "img" in locals():
                 img.close()
 
-    @staticmethod
-    def _image2jpg_simple(img: PILImage.Image) -> bytes:
+    @classmethod
+    def _image2jpg_simple(cls, img: PILImage.Image) -> bytes:
         if img.mode == "RGBA":
             if img.getchannel("A").getextrema() != (255, 255):
                 background = PILImage.new("RGB", img.size, (255, 255, 255))
@@ -60,6 +60,6 @@ class Image:
         img.save(buffer, "JPEG", quality=85)
         return buffer.getvalue()
 
-    @staticmethod
-    async def image2jpg_async(image_data: bytes) -> bytes:
-        return await asyncio.to_thread(Image.image2jpg, image_data)
+    @classmethod
+    async def image2jpg_async(cls, image_data: bytes) -> bytes:
+        return await asyncio.to_thread(cls.image2jpg, image_data)

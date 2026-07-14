@@ -16,7 +16,7 @@
         }
 
         body {
-            background-image: url("{{ bg_image }}");
+            background-image: url("{{ bg }}");
             background-repeat: no-repeat;
             background-size: cover;
             padding: 2em;
@@ -29,6 +29,28 @@
             margin: 0 auto;
             display: flex;
             flex-wrap: wrap;
+        }
+
+        .main_title {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            color: rgb(147, 187, 194);
+        }
+
+        .main_title img {
+            max-width: 50vw;
+            max-height: 35vw;
+            object-fit: contain;
+            scale: 80%;
+            flex: 1;
+        }
+
+        .main_title .title {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 1;
         }
 
         .info {
@@ -71,6 +93,32 @@
             flex-wrap: wrap;
         }
 
+        .column_info {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+        }
+
+        .column_image {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            scale: 100%;
+            margin-top: 1em;
+        }
+
+        .column_info img {
+            width: 10vw;
+            height: auto;
+            margin: 0 auto;
+        }
+
+        .column_info .info {
+            width: auto;
+            flex: 1;
+        }
+
         .subtitle {
             font-size: 25px;
             text-align: center;
@@ -80,23 +128,37 @@
 
 <body>
     <div class="content">
-        <div class="info">
-            <h1>{{ title }}</h1>
+        {% if title and title is mapping %}
+         <div class="main_title">
+            <img src="{{ title.image }}" alt="图片失效">
+            <div class="title"><h1>{{ title.text | join("<br>") }}</h1></div>
         </div>
+        {% else %}
+        <div class="info">
+            <h1>{{ title or "搜索到" ~ blocks | length ~ "条结果" }}</h1>
+        </div>
+        {% endif %}
         <div class="gap"></div>
-        {% for pro in items %}
+        {% for block in blocks %}
+        {% if block.column_info %}
         <div class="column">
-            <div class="info"><h2>{{ pro.column_info }}</h2></div>
-            {% for vn in pro.vns %}
+            {% if block.column_info is mapping %}
+            <div class="column_info">
+                <div class="column_image"><img src="{{ block.column_info.image }}" alt="图片失效"></div>
+                <div class="info"><h2>{{ block.column_info.text | join("<br>") }}</h2></div>
+            </div>
+            {% else %}
+            <div class="info"><h2>{{ block.column_info | join("<br>") }}</h2></div>
+            {% endif %}
+            {% for card in block.cards %}
             <div class="block">
-                <img src="{{ vn.image }}" alt="图片失效">
-                <div class="subtitle">{{ vn.sub_title }}</div>
-                <div class="text">
-                    {{ vn.text }}
-                </div>
+                <img src="{{ card.image }}" alt="图片失效">
+                <div class="subtitle">{{ card.subtitle }}</div>
+                <div class="text">{{ card.desc | join("<br>") }}</div>
             </div>
             {% endfor %}
         </div>
+        {% endif %}
         {% endfor %}
     </div>
 </body>

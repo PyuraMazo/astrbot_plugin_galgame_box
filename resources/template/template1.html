@@ -16,7 +16,7 @@
         }
 
         body {
-            background-image: url("{{ bg_image }}");
+            background-image: url("{{ bg }}");
             background-repeat: no-repeat;
             background-size: cover;
             padding: 2em;
@@ -70,15 +70,15 @@
 <body>
     <div class="content">
         <div class="info">
-            <h1>{{ title }}</h1>
+            <h1>{{ title or "搜索到" ~ cards | length ~ "条结果" }}</h1>
         </div>
         <div class="gap"></div>
-        {% for item in items %}
+        {% for card in cards %}
         <div class="block">
-            <img src="{{ item.image }}" alt="图片失效">
-            <div class="subtitle">{{ item.sub_title }}</div>
+            <img src="{{ card.image }}" alt="图片失效">
+            <div class="subtitle">{{ card.subtitle }}</div>
             <div class="text">
-                {{ item.text }}
+                {{ card.desc | join("<br>") }}
             </div>
         </div>
         {% endfor %}

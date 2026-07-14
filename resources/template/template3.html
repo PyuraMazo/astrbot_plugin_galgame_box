@@ -24,7 +24,7 @@
         }
 
         body {
-            background-image: url("{{ bg_image }}");
+            background-image: url("{{ bg }}");
             background-repeat: no-repeat;
             background-size: cover;
             padding: 2em;
@@ -101,10 +101,11 @@
         .description {
             text-align: center;
             font-size: 1.5em;
-            margin-bottom: 1em;
+            margin: 1em;
         }
 
         .preview {
+            padding: 1em;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
@@ -116,39 +117,74 @@
             height: auto;
             object-fit: cover;
         }
+
+        .block {
+            margin: 1em auto;
+            display: flex;
+            flex-direction: column;
+            width: 15vw;
+            color: #ffffff;
+            font-size: 15px;
+        }
+
+        .block img {
+            height: auto;
+            width: 100%;
+            margin: 0 auto;
+            object-fit: cover;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            text-align: center;
+        }
     </style>
 </head>
 
 <body>
     <div class="content">
-        {% for item in items %}
+        {% if title %}
         <div class="info">
             <h1>{{ title }}</h1>
         </div>
         <div class="gap"></div>
+        {% endif %}
         <div class="info">
-            <h1>{{ item.sub_title }}</h1>
+            <h1>{{ subtitle }}</h1>
         </div>
         <div class="main">
-            <div class="main_image"><img src="{{ item.main_image or item.image }}" alt="图片失效"></div>
+            <div class="main_image"><img src="{{ main_image }}" alt="图片失效"></div>
             <div class="details">
                 <h2>基本信息</h2>
-                <div>{{ item.text }}</div>
+                <div>{{ info | join("<br>") }}</div>
             </div>
         </div>
         <div class="last">
+            {% if desc %}
             <h2>简介</h2>
-            <div class="description">{{ item.description or main_desc }}</div>
-            {% if item.images %}
-                <h2>游戏截图</h2>
-                <div class="preview">
-                    {% for img in item.images %}
-                    <img src="{{ img }}" alt="图片失效">
-                    {% endfor %}
+            <div class="description">{{ desc }}</div>
+            {% endif %}
+            {% if previews %}
+            <h2>游戏截图</h2>
+            <div class="preview">
+                {% for img in previews %}
+                <img src="{{ img }}" alt="图片失效">
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% if cards %}
+            <h2>{{ cards_title }}</h2>
+            <div class="preview">
+                {% for card in cards %}
+                <div class="block">
+                    <img src="{{ card.image }}" alt="图片失效">
+                    <div class="subtitle">{{ card.subtitle }}</div>
+                    <div class="text">{{ card.desc | join("<br>") }}</div>
+                </div>
+                {% endfor %}
             </div>
             {% endif %}
         </div>
-        {% endfor %}
     </div>
 </body>
 

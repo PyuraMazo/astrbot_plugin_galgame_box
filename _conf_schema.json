@@ -34,6 +34,12 @@
         },
         "default": 60
       },
+      "cleanOnRestart": {
+        "description": "重载时清理缓存",
+        "hint": "每次更新或者重载插件时清理下载的图片缓存。",
+        "type": "bool",
+        "default": false
+      },
       "enableFont": {
         "description": "启用美化字体",
         "hint": "开启时，图片中的文字字体会得到美化，但会增加图片的渲染时间和网络负载。",
@@ -56,17 +62,6 @@
         "type": "bool",
         "default": false
       },
-      "cleanInterval": {
-        "description": "缓存清除间隔（天）",
-        "type": "int",
-        "slider": {
-          "min": 1,
-          "max": 30,
-          "step": 1
-        },
-        "default": 1,
-        "invisible": true
-      },
       "withdrawMiddle": {
         "description": "撤回中间消息",
         "hint": "撤回发送最终结果之前的这次指令导致发送的其它辅助消息。",
@@ -83,8 +78,7 @@
           "b-旮旯 简讯",
           "c-旮旯 随机",
           "d-旮旯 下载",
-          "e-旮旯 出处",
-          "f-旮旯 拼图"
+          "e-旮旯 出处"
         ],
         "default": [
           "d-旮旯 下载"
@@ -115,7 +109,7 @@
         "type": "string"
       },
       "cfClearance": {
-        "description": "CF Clearance（建议）",
+        "description": "CF Clearance（非必须，建议下载curl-cffi模块）",
         "hint": "Cloudflare Clearance Cookie，用于绕过反爬虫验证。需要手动访问https://www.touchgal.top/并获取Cookie的cf_clearance值。",
         "type": "string"
       },
@@ -252,7 +246,7 @@
     "description": "每日推送设置",
     "type": "object",
     "items": {
-      "galEvent": {
+      "pushTime": {
         "description": "今日Gal事件推送时间",
         "hint": "每日定时发布历史上今天发布的作品和角色生日，格式：「HH:MM」",
         "type": "string",
@@ -269,7 +263,7 @@
         ],
         "default": "c-投票数>50且评分最高（综合）"
       },
-      "eventList": {
+      "pushList": {
         "description": "群发白名单",
         "hint": "需要推送的群聊id。格式字符串：「平台id-群聊id」，平台id为适配器机器人名称，表示该机器人所在的平台。",
         "type": "list"
