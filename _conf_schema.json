@@ -214,34 +214,6 @@
       }
     }
   },
-  "puzzleSetting": {
-    "description": "发送设置",
-    "type": "object",
-    "items": {
-      "updateInterval": {
-        "description": "Steam信息更新时间间隔（小时）",
-        "hint": "Steam相关指令调用时，超过此间隔才更新，否则沿用之前的信息。",
-        "type": "float",
-        "slider": {
-          "min": 0.5,
-          "max": 48,
-          "step": 0.5
-        },
-        "default": 24
-      },
-      "finishConsuming": {
-        "description": "拼图最佳游玩时长（小时）",
-        "hint": "调用拼图指令时，把此时长视为最大展示板块的下限，其他板块大小按比例分配相应的时长下限。",
-        "type": "int",
-        "slider": {
-          "min": 10,
-          "max": 100,
-          "step": 1
-        },
-        "default": 20
-      }
-    }
-  },
   "scheduleSetting": {
     "description": "每日推送设置",
     "type": "object",
