@@ -54,11 +54,24 @@ class BaseCommand:
 
             BaseCommand.cache = Services.get(Cache)
 
+            basic = config.get("basicSetting", {})
+            enable_font = basic.get("enableFont", True)
+            BaseCommand.session_timeout = basic.get("sessionTimeout", 30)
+            BaseCommand.forward_limit = basic.get("forwardLimit", 10)
+            BaseCommand.results_limit = basic.get("resultsLimit", False)
+            BaseCommand.character_options = config.get("characterSetting", {}).get(
+                "characterOptions", []
+            )
+
             BaseCommand.bg = await File.read_buffer2base64(
                 BaseCommand.resources_dir / "image" / "pixiv139681518.jpg"
             )
-            BaseCommand.font = await File.read_buffer2base64(
-                BaseCommand.resources_dir / "font" / "hpsimplifiedhans-regular.ttf"
+            BaseCommand.font = (
+                await File.read_buffer2base64(
+                    BaseCommand.resources_dir / "font" / "hpsimplifiedhans-regular.ttf"
+                )
+                if enable_font
+                else ""
             )
             BaseCommand.err_image = BaseCommand.cache.err_image
 
@@ -66,14 +79,6 @@ class BaseCommand:
                 BaseCommand.templates[file] = await File.read_text(
                     BaseCommand.template_dir / file
                 )
-
-            basic = config.get("basicSetting", {})
-            BaseCommand.session_timeout = basic.get("sessionTimeout", 30)
-            BaseCommand.forward_limit = basic.get("forwardLimit", 10)
-            BaseCommand.results_limit = basic.get("resultsLimit", False)
-            BaseCommand.character_options = config.get("characterSetting", {}).get(
-                "characterOptions", []
-            )
 
             BaseCommand.is_init = True
 
