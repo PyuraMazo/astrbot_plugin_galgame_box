@@ -117,9 +117,12 @@ class GalgameBoxPlugin(Star):
             yield await anext(self._handle_command_exception(event, e))
 
     async def _push_today(self):
-        async for res in Services.get(EventTimed).goooooooooo():
-            for group in self.push_list:
-                await self.ctx.send_message(group, MessageChain().url_image(res))
+        try:
+            async for res in Services.get(EventTimed).goooooooooo():
+                for group in self.push_list:
+                    await self.ctx.send_message(group, MessageChain().url_image(res))
+        except Exception as e:
+            self._handle_command_exception(None, e)  # 无需等待
 
     async def _register_push_task(self):
         if not self.push_list:
@@ -176,7 +179,7 @@ class GalgameBoxPlugin(Star):
             if isinstance(e, EarlyReturn):
                 return
             msg = str(e).split("：")[0]
-        elif isinstance(e, RuntimeError) and "All endpoints failed" in str(e):
+        elif isinstance(e, RuntimeError) and "endpoints failed" in str(e):
             msg = "图片渲染失败！"
 
         if event is not None:
