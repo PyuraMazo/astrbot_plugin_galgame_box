@@ -122,7 +122,7 @@ class GalgameBoxPlugin(Star):
                 for group in self.push_list:
                     await self.ctx.send_message(group, MessageChain().url_image(res))
         except Exception as e:
-            self._handle_command_exception(None, e)  # 无需等待
+            await anext(self._handle_command_exception(None, e))  # 无需等待
 
     async def _register_push_task(self):
         if not self.push_list:

@@ -32,6 +32,9 @@ class Vndb:
         cls.schedule_content = (
             config.get("scheduleSetting", {}).get("scheduleContent", "c")
         )[0]
+        cls.gender_filter = config.get("scheduleSetting", {}).get("genderFilter", "c")[
+            0
+        ]
 
         return cls()
 
@@ -197,13 +200,17 @@ class Vndb:
     ) -> tuple[VNDBCharacterResponse, list[VNDBVnResponse]]:
         cha_url = self.kana_url + "character"
         vn_url = self.kana_url + "vn"
+        filters = [
+            "and",
+            ["birthday", "=", [int(date[1]), int(date[2])]],
+            ["vn", "=", ["rating", ">=", self.event_rating]],
+            ["or", ["role", "=", "main"], ["role", "=", "primary"]],
+        ]
+        if self.gender_filter != "c":
+            filters.append(["gender", "=", "f" if self.gender_filter == "a" else "m"])
+
         cha_payload = {
-            "filters": [
-                "and",
-                ["birthday", "=", [int(date[1]), int(date[2])]],
-                ["vn", "=", ["rating", ">=", self.event_rating]],
-                ["or", ["role", "=", "main"], ["role", "=", "primary"]],
-            ],
+            "filters": filters,
             "fields": vndb_command_fields["character"],
         }
         res = await self.http.post(cha_url, cha_payload)
