@@ -196,8 +196,8 @@ class BaseCommand:
             base.name(response.original, response.name)
         return base.do()
 
-    def build_search(self, response: TouchGalResponse):
-        return (
+    def build_search(self, response: TouchGalResponse, ignore_name=False):
+        base = (
             Splicer.from_touchgal_info()
             .touchgal_id(response.id)
             .touchgal_score(response.averageRating)
@@ -205,7 +205,10 @@ class BaseCommand:
             .touchgal_tags(response.tags)
             .touchgal_platforms(response.platform)
             .touchgal_lang(response.language)
-        ).do()
+        )
+        if not ignore_name:
+            base.touchgal_name(response.name)
+        return base.do()
 
     def build_download(self, response: ResourceResponse) -> list[str]:
         return (

@@ -53,6 +53,7 @@ class Splicer:
     _co_type = ""
 
     _touchgal_id = ""
+    _touchgal_name = ""
     _touchgal_score = ""
     _touchgal_tag = ""
     _touchgal_type = ""
@@ -104,6 +105,7 @@ class Splicer:
         elif self.scheme == "touchgal":
             elements = (
                 self._touchgal_id,
+                self._touchgal_name,
                 self._touchgal_tag,
                 self._touchgal_score,
                 self._touchgal_language,
@@ -236,6 +238,10 @@ class Splicer:
     @empty_handler()
     def touchgal_id(self, id: int) -> "Splicer":
         self._touchgal_id = f"TouchGal ID：{id}"
+
+    @empty_handler()
+    def touchgal_name(self, name: str) -> "Splicer":
+        self._touchgal_name = f"游戏名：{name}"
 
     @empty_handler()
     def touchgal_score(self, avg: float) -> "Splicer":

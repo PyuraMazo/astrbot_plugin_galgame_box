@@ -42,7 +42,7 @@ class Random(BaseCommand):
         return await self.build(resp, details)
 
     async def build(self, res: TouchGalResponse, html_details: TouchGalDetails):
-        info = self.build_search(res)
+        info = self.build_search(res, ignore_name=True)
 
         third = html_details.third_info or ""
         third_id = f"{third[0]}：{third[1]}" if third else ""
