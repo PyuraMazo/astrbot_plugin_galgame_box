@@ -3,7 +3,11 @@ import math
 
 from astrbot.api import AstrBotConfig
 
-from ..type.exceptions import InternetException, NoResultException, ResponseException
+from ..type.exceptions import (
+    InternetException,
+    NoResultException,
+    ResponseException,
+)
 from ..type.inner_models import CommandType, vndb_command_fields
 from ..type.outer_models import (
     VNDBCharacterResponse,
@@ -173,7 +177,7 @@ class Vndb:
             "reverse": True,
         }
         res = await self.http.post(vn_url, vn_payload)
-        if not res:
+        if not res or not res["results"]:
             raise NoResultException(CommandType.EVENT_TIMED, "/".join(date))
 
         try:
@@ -231,10 +235,11 @@ class Vndb:
                 "sort": "votecount" if self.schedule_content == "b" else "rating",
                 "reverse": True,
             }
-
             best: dict[str, list[dict]] = await self.http.post(
                 vn_url, search_best_vn_payload
             )
+            if not best["results"]:
+                raise NoResultException(CommandType.EVENT_TIMED, "/".join(date))
 
             the_cha_id = vn_cha_map[best["results"][0]["id"]]
             for i in cha:

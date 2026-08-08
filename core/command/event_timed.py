@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime
 
 from astrbot.api import AstrBotConfig, html_renderer
@@ -23,23 +22,28 @@ class EventTimed(BaseCommand):
     async def goooooooooo(self):
         now = datetime.now().strftime("%Y-%m-%d")
         date = now.split("-")
-
-        vn = await self.vndb.request_by_event_vn(date)
-        cha = await self.vndb.request_by_event_cha(date)
-
-        vn_data, cha_data = await asyncio.gather(
-            self.build(vn, for_vn=True), self.build(cha)
-        )
         tmpl = self.templates[template_list[CommandType.EVENT_TIMED.value]]
 
-        vn_url = await html_renderer.render_custom_template(
-            tmpl, vn_data, True, self.render_options
-        )
-        cha_url = await html_renderer.render_custom_template(
-            tmpl, cha_data, True, self.render_options
-        )
-        yield vn_url
-        yield cha_url
+        try:
+            vn = await self.vndb.request_by_event_vn(date)
+            vn_data = await self.build(vn, for_vn=True)
+            vn_url = await html_renderer.render_custom_template(
+                tmpl, vn_data, True, self.render_options
+            )
+            res1 = vn_url
+        except Exception as e:
+            res1 = e
+
+        try:
+            cha = await self.vndb.request_by_event_cha(date)
+            cha_data = await self.build(cha)
+            cha_url = await html_renderer.render_custom_template(
+                tmpl, cha_data, True, self.render_options
+            )
+            res2 = cha_url
+        except Exception as e:
+            res2 = e
+        yield res1, res2
 
     async def build(
         self,

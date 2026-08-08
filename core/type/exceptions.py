@@ -46,28 +46,12 @@ class ResponseException(Tips):
 
 class NoResultException(Tips):
     def __init__(self, _type: CommandType, _value: str):
-        super().__init__(f"未搜索到内容：{_type.value}-{_value}")
+        super().__init__(f"未搜索到合适内容：{_type.value}-{_value}")
 
 
 class NoCacheException(Tips):
     def __init__(self, path: str):
         super().__init__(f"缓存不存在：{path}")
-
-
-#
-# class CodeException(Tips):
-#     def __init__(self, code: int):
-#         super().__init__(trace_code.get(code, f"异常返回码：{code}"))
-
-
-class HasBoundException(Tips):
-    def __init__(self, channel_id: str):
-        super().__init__(f"你已经绑定了Steam账号：{channel_id}")
-
-
-class NoBoundException(Tips):
-    def __init__(self, channel_id: str):
-        super().__init__(f"你还未绑定Steam账号：{channel_id}")
 
 
 class SettingException(Tips):

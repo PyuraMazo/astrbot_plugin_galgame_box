@@ -118,11 +118,25 @@ class GalgameBoxPlugin(Star):
 
     async def _push_today(self):
         try:
-            async for res in Services.get(EventTimed).goooooooooo():
-                for group in self.push_list:
-                    await self.ctx.send_message(group, MessageChain().url_image(res))
+            async for vn, cha in Services.get(EventTimed).goooooooooo():
+                if isinstance(vn, Exception):
+                    await anext(
+                        self._handle_command_exception(None, vn, "作品推送失败：")
+                    )
+                else:
+                    for group in self.push_list:
+                        await self.ctx.send_message(group, MessageChain().url_image(vn))
+                if isinstance(cha, Exception):
+                    await anext(
+                        self._handle_command_exception(None, cha, "生日推送失败：")
+                    )
+                else:
+                    for group in self.push_list:
+                        await self.ctx.send_message(
+                            group, MessageChain().url_image(cha)
+                        )
         except Exception as e:
-            await anext(self._handle_command_exception(None, e))  # 无需等待
+            await anext(self._handle_command_exception(None, e))
 
     async def _register_push_task(self):
         if not self.push_list:
@@ -171,7 +185,7 @@ class GalgameBoxPlugin(Star):
         self.push_list = list(map(func, ids))
 
     async def _handle_command_exception(
-        self, event: AstrMessageEvent | None, e: Exception
+        self, event: AstrMessageEvent | None, e: Exception, prefix: str = ""
     ):
         logger.error(str(e), exc_info=True)
         msg = "发生非预期异常！"
@@ -188,4 +202,5 @@ class GalgameBoxPlugin(Star):
             )
         else:
             for group in self.push_list:
-                await self.ctx.send_message(group, MessageChain().message(msg))
+                await self.ctx.send_message(group, MessageChain().message(prefix + msg))
+            yield
