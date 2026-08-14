@@ -202,7 +202,7 @@ class BaseCommand:
             .touchgal_id(response.id)
             .touchgal_score(response.averageRating)
             .touchgal_type(response.type)
-            .touchgal_tags(response.tags)
+            # .touchgal_tags(response.tags)
             .touchgal_platforms(response.platform)
             .touchgal_lang(response.language)
         )

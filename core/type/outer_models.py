@@ -105,7 +105,7 @@ class TouchGalResponse(BaseModel):
     language: list[str]
     platform: list[str]
     averageRating: float
-    tags: list[str]
+    # tags: list[str]
 
 
 class ResourceResponse(BaseModel):
@@ -124,32 +124,6 @@ class AnimeTraceResponse(BaseModel):
     data: list[AnimeTraceData]
     ai: bool
     zh_message: str | None = None
-
-
-class SteamGameResponse(BaseModel):
-    appid: int
-    name: str
-    playtime_forever: int
-    rtime_last_played: int | None = 0
-
-
-class SteamOwnerResponse(BaseModel):
-    game_count: int
-    games: list[SteamGameResponse]
-
-
-class SteamProfileResponse(BaseModel):
-    steamid: str
-    personaname: str
-    avatarfull: str
-    lastlogoff: int
-    timecreated: int
-
-
-class SteamAchievementsResponse(BaseModel):
-    apiname: str
-    achieved: int
-    unlocktime: int
 
 
 class VNDBReleaseResponse(BaseModel):

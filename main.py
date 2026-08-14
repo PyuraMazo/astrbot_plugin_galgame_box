@@ -1,4 +1,5 @@
 from apscheduler.triggers.cron import CronTrigger
+from pydantic import ValidationError
 
 from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, filter
@@ -193,6 +194,8 @@ class GalgameBoxPlugin(Star):
             if isinstance(e, EarlyReturn):
                 return
             msg = str(e).split("：")[0]
+        elif isinstance(e, ValidationError):
+            msg = "网站模型发生变化引发异常！"
         elif isinstance(e, RuntimeError) and "endpoints failed" in str(e):
             msg = "图片渲染失败！"
 
