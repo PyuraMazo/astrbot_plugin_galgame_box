@@ -23,11 +23,13 @@ class Vn(BaseCommand):
         )
         yield event.image_result(url)
 
-    async def build(self, res: list[VNDBVnResponse], desc: str = ""):
+    async def build(self, res: list[VNDBVnResponse], **kwargs):
         cards = [
             {"image": img, "desc": self.build_vn(info)}
             for img, info in zip(await self.build_vndb_images(res), res)
         ]
+        desc = kwargs.get("desc", "")
+        previews = kwargs.get("previews", [])
         if desc:
             vndb = res[0]
             card = cards[0]
@@ -38,6 +40,7 @@ class Vn(BaseCommand):
                 "subtitle": vndb.alttitle or vndb.title,
                 "info": card["desc"],
                 "desc": desc,
+                "previews": previews,
             }
         else:
             return {"font": self.font, "bg": self.bg, "cards": cards}

@@ -31,19 +31,20 @@ class VndbId(BaseCommand):
         real_type = id2command[value[0]]
         res = await self.vndb.request_by_id(real_type, value)
         desc = ""
+        previews = []
         if real_type == CommandType.VN:
             try:
                 search_info, _ = await self.touchgal.request_vn_by_search(
                     CommandType.ID, value
                 )
                 html_text = await self.touchgal.request_html(search_info[0].uniqueId)
-                desc = (
-                    await HTMLHandler.handle_touchgal_details(html_text)
-                ).description
+                detail = await HTMLHandler.handle_touchgal_details(html_text)
+                desc = detail.description
+                previews = detail.previews
             except NoResultException:
                 pass
 
-        data = await self.build(real_type, res, desc)
+        data = await self.build(real_type, res, desc, previews)
         tmpl = self.templates[
             template_list[real_type.value if not desc else CommandType.RANDOM.value]
         ]
@@ -59,10 +60,11 @@ class VndbId(BaseCommand):
         res: list[VNDBVnResponse]
         | list[VNDBCharacterResponse]
         | tuple[list[VNDBProducerResponse], list[list[VNDBVnResponse]]],
-        desc="",
+        desc: str,
+        previews: list[str],
     ):
         if t == CommandType.VN:
-            return await self.vn.build(res, desc)
+            return await self.vn.build(res, desc=desc, previews=previews)
         elif t == CommandType.CHARACTER:
             return await self.character.build(res)
         else:
