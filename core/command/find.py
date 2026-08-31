@@ -98,9 +98,9 @@ class Find(BaseCommand):
     ):
         if url.startswith("http"):
             buffer = await self.downloader.download_image(url)
-            v_buffer = await Image.image2jpg_async(buffer)
         else:
-            v_buffer = File.base64_to_buffer(url)
+            buffer = File.base64_to_buffer(url)
+        v_buffer = await Image.image2jpg_async(buffer)
         blocks = [
             self._build_find(data, chas, v_buffer)
             for data, chas in zip(trace_resp.data, vndb_resp)
