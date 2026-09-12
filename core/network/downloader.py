@@ -7,15 +7,15 @@ from astrbot.api import AstrBotConfig
 
 class Downloader:
     headers = {"Content-Type": "application/json"}
-    connector = TCPConnector(
-        limit_per_host=5, limit=20, ttl_dns_cache=300, keepalive_timeout=10
-    )
 
     @classmethod
     async def initialize(cls, config: AstrBotConfig):
         cls.timeout_times = config.get("basicSetting", {}).get("requestTimeout", 3)
 
         request_time = config.get("basicSetting", {}).get("requestTime", 30)
+        cls.connector = TCPConnector(
+            limit_per_host=5, limit=20, ttl_dns_cache=300, keepalive_timeout=10
+        )
         cls.session = ClientSession(
             timeout=ClientTimeout(total=request_time),
             headers=cls.headers,

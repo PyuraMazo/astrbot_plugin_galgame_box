@@ -3,6 +3,10 @@ from typing import Any, TypeVar
 
 from astrbot.core import AstrBotConfig
 
+from .command import *
+from .function import *
+from .network import *
+
 T = TypeVar("T")
 
 
@@ -13,21 +17,6 @@ class Services:
     @classmethod
     async def initialize(cls, config: AstrBotConfig):
         async with cls._lock:
-            from .command import (
-                Character,
-                Download,
-                Event,
-                EventTimed,
-                Find,
-                Producer,
-                Random,
-                Recommend,
-                Vn,
-                VndbId,
-            )
-            from .function import Cache
-            from .network import AnimeTrece, Downloader, Http, TouchGal, Vndb
-
             cls._services[Http] = await Http.initialize(config)
             cls._services[Downloader] = await Downloader.initialize(config)
             cls._services[Vndb] = await Vndb.initialize(config)
@@ -46,6 +35,12 @@ class Services:
             cls._services[Download] = await Download.initialize(config)
             cls._services[Find] = await Find.initialize(config)
             cls._services[EventTimed] = await EventTimed.initialize(config)
+
+    @classmethod
+    async def terminate(cls):
+        await cls._services[Downloader].terminate()
+        await cls._services[Http].terminate()
+        await cls._services[Cache].terminate()
 
     @classmethod
     def get(cls, service_type: type[T]) -> T:

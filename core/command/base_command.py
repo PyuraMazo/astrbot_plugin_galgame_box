@@ -6,7 +6,6 @@ from astrbot.api import AstrBotConfig
 
 from ..function import Cache
 from ..network import AnimeTrece, Downloader, TouchGal, Vndb
-from ..services import Services
 from ..type.exceptions import ArgsOrNullException
 from ..type.inner_models import CommandType, bs64, template_list
 from ..type.outer_models import (
@@ -46,6 +45,8 @@ class BaseCommand:
 
     @classmethod
     async def initialize(cls, config: AstrBotConfig):
+        from ..services import Services
+
         if not BaseCommand.is_init:
             BaseCommand.downloader = Services.get(Downloader)
             BaseCommand.vndb = Services.get(Vndb)

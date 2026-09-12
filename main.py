@@ -10,8 +10,6 @@ from astrbot.core.platform.message_session import MessageSession
 from astrbot.core.star.filter.command import GreedyStr
 
 from .core.command import *
-from .core.function.cache import Cache
-from .core.network import Downloader, Http
 from .core.services import Services
 from .core.type.exceptions import EarlyReturn, Tips
 
@@ -33,9 +31,7 @@ class GalgameBoxPlugin(Star):
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
         await self._cancel_gal_event()
-        await Services.get(Downloader).terminate()
-        await Services.get(Http).terminate()
-        await Services.get(Cache).terminate()
+        await Services.terminate()
 
     @filter.command_group("旮旯", alias={"gal", "GAL"})
     async def gal_box(self, event: AstrMessageEvent):

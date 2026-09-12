@@ -2,7 +2,6 @@ from datetime import datetime
 
 from astrbot.api import AstrBotConfig, html_renderer
 
-from ..services import Services
 from ..type.exceptions import NoResultException
 from ..type.inner_models import CommandType, template_list
 from ..type.outer_models import TouchGalResponse, VNDBCharacterResponse, VNDBVnResponse
@@ -14,6 +13,8 @@ from .random import Random
 class EventTimed(BaseCommand):
     @classmethod
     async def initialize(cls, config: AstrBotConfig):
+        from ..services import Services
+
         await super().initialize(config)
         cls.random = Services.get(Random)
 

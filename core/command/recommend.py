@@ -7,7 +7,6 @@ from astrbot.core.utils.session_waiter import (
     session_waiter,
 )
 
-from ..services import Services
 from ..type.exceptions import EarlyReturn, SessionTimeoutException
 from ..type.inner_models import CommandType, RecommendCache, template_list
 from ..type.outer_models import TouchGalResponse
@@ -19,6 +18,8 @@ from .random import Random
 class Recommend(BaseCommand):
     @classmethod
     async def initialize(cls, config: AstrBotConfig):
+        from ..services import Services
+
         await super().initialize(config)
         cls.random = Services.get(Random)
 

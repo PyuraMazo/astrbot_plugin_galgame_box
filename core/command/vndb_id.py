@@ -1,7 +1,6 @@
 from astrbot.api import AstrBotConfig, html_renderer
 from astrbot.api.event import AstrMessageEvent
 
-from ..services import Services
 from ..type.exceptions import ArgsOrNullException, NoResultException
 from ..type.inner_models import CommandType, id2command, template_list
 from ..type.outer_models import (
@@ -17,6 +16,8 @@ from .base_command import BaseCommand
 class VndbId(BaseCommand):
     @classmethod
     async def initialize(cls, config: AstrBotConfig):
+        from ..services import Services
+
         await super().initialize(config)
         cls.vn = Services.get(Vn)
         cls.character = Services.get(Character)
