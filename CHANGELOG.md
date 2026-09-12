@@ -1,5 +1,16 @@
 # ChangeLog
 
+# 2026/09/12 v2.0.6
+
+## 新增
+- 新增cf绕过失败的错误提示。
+
+## 修复
+- 修复png图片转换失败的问题（[#19](https://github.com/PyuraMazo/astrbot_plugin_galgame_box/pull/19)）。
+- 修复包导入顺序的缺陷。
+
+---
+
 # 2026/08/14 v2.0.5
 
 ## 新增
