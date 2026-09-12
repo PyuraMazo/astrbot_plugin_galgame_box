@@ -5,7 +5,7 @@ from aiohttp import ClientSession, ClientTimeout
 
 from astrbot.api import AstrBotConfig, logger
 
-from ..type.exceptions import InternetException
+from ..type.exceptions import BlockedException, InternetException
 
 
 class Http:
@@ -94,6 +94,8 @@ class Http:
                 m = kwargs.pop("method")
                 if m == "get":
                     response = await session.get(impersonate=self.tls, **kwargs)
+                    assert "Just a moment" not in response.text
+
                     if t == "json":
                         return response.json()
                     elif t == "bytes":
@@ -104,9 +106,12 @@ class Http:
                     response = await session.post(impersonate=self.tls, **kwargs)
                     return response.json()
         except ImportError:
-            logger.warn(
-                "网络请求失败。目前未安装curl_cffi模块，可能解决问题通过：pip install curl_cffi"
+            logger.error(
+                "网络请求失败。目前未安装curl_cffi模块，可能解决问题通过：pip install curl_cffi。"
             )
             raise InternetException(kwargs["url"])
+        except AssertionError:
+            logger.error("绕过cf验证失败，可以尝试使用代理或者改善网络环境后再试。")
+            raise BlockedException(kwargs["url"])
         except Exception:
             raise InternetException(kwargs["url"])

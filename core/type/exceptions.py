@@ -32,6 +32,11 @@ class InternetException(Tips):
         super().__init__(f"请求网络失败：{url}，请检查【安全配置】是否错误")
 
 
+class BlockedException(Tips):
+    def __init__(self, url: str):
+        super().__init__(f"请求被cf拦截：{url}")
+
+
 class AuthorityException(Tips):
     def __init__(self, msg: str):
         super().__init__(
