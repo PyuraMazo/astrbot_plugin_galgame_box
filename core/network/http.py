@@ -2,6 +2,7 @@ import asyncio
 from typing import Literal
 
 from aiohttp import ClientSession, ClientTimeout
+from curl_cffi import Response
 
 from astrbot.api import AstrBotConfig, logger
 
@@ -43,18 +44,19 @@ class Http:
         count = 0
         while count < self.timeout_times:
             try:
-                if res_type == "json":
-                    async with self.session.get(url, **kwargs) as response:
-                        return await response.json()
-                elif res_type == "bytes":
-                    async with self.session.get(url, **kwargs) as response:
-                        return await response.read()
-                else:
-                    async with self.session.get(url, **kwargs) as response:
-                        return await response.text()
+                async with self.session.get(url, **kwargs) as response:
+                    if response.status == 200:
+                        if res_type == "json":
+                            return await response.json()
+                        elif res_type == "bytes":
+                            return await response.read()
+                        else:
+                            return await response.text()
+                    else:
+                        raise InternetException(url)
             except Exception:
                 count += 1
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(1)
         if res_type == "bytes" and err_handle:
             return err_handle
         if handle_cf:
@@ -74,10 +76,13 @@ class Http:
                 async with self.session.post(
                     url, headers=headers, json=data, **kwargs
                 ) as response:
-                    return await response.json()
+                    if response.status == 200:
+                        return await response.json()
+                    else:
+                        raise InternetException(url)
             except Exception:
                 count += 1
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(1)
         if handle_cf:
             return await self._cf_curl(
                 method="post", url=url, json=data, headers=headers, **kwargs
@@ -93,15 +98,19 @@ class Http:
                 t = kwargs.pop("res_type", None)
                 m = kwargs.pop("method")
                 if m == "get":
-                    response = await session.get(impersonate=self.tls, **kwargs)
-                    assert "Just a moment" not in response.text
-
-                    if t == "json":
-                        return response.json()
-                    elif t == "bytes":
-                        return response.read()
+                    response: Response = await session.get(
+                        impersonate=self.tls, **kwargs
+                    )
+                    if response.ok:
+                        if t == "json":
+                            return response.json()
+                        elif t == "bytes":
+                            return response.content
+                        else:
+                            return response.text
                     else:
-                        return response.text
+                        assert "Just a moment" not in response.text
+                        raise InternetException(response.url)
                 else:
                     response = await session.post(impersonate=self.tls, **kwargs)
                     return response.json()
