@@ -109,8 +109,8 @@ class Http:
                         else:
                             return response.text
                     else:
-                        assert "Just a moment" not in response.text
-                        raise InternetException(response.url)
+                        if response.headers.get("cf-mitigated") == "challenge":
+                            raise InternetException(response.url)
                 else:
                     response = await session.post(impersonate=self.tls, **kwargs)
                     return response.json()
