@@ -4,7 +4,7 @@ from astrbot.api import AstrBotConfig, html_renderer
 
 from ..type.exceptions import NoResultException
 from ..type.inner_models import CommandType, template_list
-from ..type.outer_models import TouchGalResponse, VNDBCharacterResponse, VNDBVnResponse
+from ..type.outer_models import TouchGalWorkResponse, VNDBCharacterResponse, VNDBVnResponse
 from ..utils import HTMLHandler
 from .base_command import BaseCommand
 from .random import Random
@@ -73,7 +73,7 @@ class EventTimed(BaseCommand):
         self,
         vn: VNDBVnResponse,
         chas: list[VNDBCharacterResponse],
-        touchgal_vn: TouchGalResponse | None,
+        touchgal_vn: TouchGalWorkResponse | None,
     ):
         if touchgal_vn:
             text = await self.touchgal.request_html(touchgal_vn.uniqueId)

@@ -2,7 +2,7 @@ from astrbot.api import AstrBotConfig, html_renderer
 from astrbot.api.event import AstrMessageEvent
 
 from ..type.inner_models import CommandType, TouchGalDetails, template_list
-from ..type.outer_models import TouchGalResponse
+from ..type.outer_models import TouchGalWorkResponse
 from ..utils import HTMLHandler
 from .base_command import BaseCommand
 
@@ -29,7 +29,7 @@ class Random(BaseCommand):
         self,
         unique_id: str,
         cmd_type: CommandType = CommandType.RANDOM,
-        resp: TouchGalResponse = None,
+        resp: TouchGalWorkResponse = None,
     ):
         text = await self.touchgal.request_html(unique_id)
         details = await HTMLHandler.handle_touchgal_details(text)
@@ -41,7 +41,7 @@ class Random(BaseCommand):
             resp = res[0]
         return await self.build(resp, details)
 
-    async def build(self, res: TouchGalResponse, html_details: TouchGalDetails):
+    async def build(self, res: TouchGalWorkResponse, html_details: TouchGalDetails):
         info = self.build_search(res, ignore_name=True)
 
         third = html_details.third_info or ""

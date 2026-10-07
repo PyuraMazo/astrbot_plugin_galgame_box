@@ -9,8 +9,8 @@ from ..network import AnimeTrece, Downloader, TouchGal, Vndb
 from ..type.exceptions import ArgsOrNullException
 from ..type.inner_models import CommandType, bs64, template_list
 from ..type.outer_models import (
-    ResourceResponse,
-    TouchGalResponse,
+    TouchGalResourceResponse,
+    TouchGalWorkResponse,
     VNDBCharacterResponse,
     VNDBProducerResponse,
     VNDBVnResponse,
@@ -197,7 +197,7 @@ class BaseCommand:
             base.name(response.original, response.name)
         return base.do()
 
-    def build_search(self, response: TouchGalResponse, ignore_name=False):
+    def build_search(self, response: TouchGalWorkResponse, ignore_name=False):
         base = (
             Splicer.from_touchgal_info()
             .touchgal_id(response.id)
@@ -211,7 +211,7 @@ class BaseCommand:
             base.touchgal_name(response.name)
         return base.do()
 
-    def build_download(self, response: ResourceResponse) -> list[str]:
+    def build_download(self, response: TouchGalResourceResponse) -> list[str]:
         return (
             Splicer.from_touchgal_resource()
             .resource_title(response.name)

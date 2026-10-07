@@ -4,7 +4,7 @@ from astrbot.api import AstrBotConfig
 
 from ..type.exceptions import AuthorityException, NoResultException
 from ..type.inner_models import CommandType
-from ..type.outer_models import ResourceResponse, TouchGalResponse
+from ..type.outer_models import TouchGalResourceResponse, TouchGalWorkResponse
 from .http import Http
 
 
@@ -49,7 +49,7 @@ class TouchGal:
 
     async def request_vn_by_search(
         self, cmd: CommandType, keyword: str, **kwargs
-    ) -> tuple[list[TouchGalResponse], int]:
+    ) -> tuple[list[TouchGalWorkResponse], int]:
         query_string = json.dumps(
             [{"type": "keyword", "name": i} for i in keyword.strip().split(" ")]
         )
@@ -81,7 +81,7 @@ class TouchGal:
         if isinstance(res, dict):
             if res["galgames"] and res["total"] > 0:
                 return [
-                    TouchGalResponse.model_validate(i) for i in res["galgames"]
+                    TouchGalWorkResponse.model_validate(i) for i in res["galgames"]
                 ], res["total"]
             else:
                 raise NoResultException(cmd, keyword)
@@ -109,7 +109,7 @@ class TouchGal:
             handle_cf=True,
         )
 
-    async def request_download(self, touchgal_id: int) -> list[ResourceResponse]:
+    async def request_download(self, touchgal_id: int) -> list[TouchGalResourceResponse]:
         resource_url = f"{self.base_url}api/patch/resource?patchId={touchgal_id}"
         res = await self.http.get(
             resource_url,
@@ -118,4 +118,4 @@ class TouchGal:
             proxies=self.proxies,
             handle_cf=True,
         )
-        return [ResourceResponse.model_validate(i) for i in res]
+        return [TouchGalResourceResponse.model_validate(i) for i in res]

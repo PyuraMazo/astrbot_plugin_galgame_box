@@ -8,7 +8,7 @@ from astrbot.core.utils.session_waiter import (
 
 from ..type.exceptions import SessionTimeoutException
 from ..type.inner_models import CommandType, bs64
-from ..type.outer_models import ResourceResponse, TouchGalResponse
+from ..type.outer_models import TouchGalResourceResponse, TouchGalWorkResponse
 from ..utils import OnlySenderFilter
 from .base_command import BaseCommand
 
@@ -117,11 +117,11 @@ class Download(BaseCommand):
                 if plain:
                     yield event.plain_result(cut_sign.join(plain))
 
-    def _build_resources(self, res: list[ResourceResponse]):
+    def _build_resources(self, res: list[TouchGalResourceResponse]):
         return ["\n".join(self.build_download(i)) for i in res]
 
     async def _build_search_select(
-        self, res: list[TouchGalResponse]
+        self, res: list[TouchGalWorkResponse]
     ) -> tuple[list[bs64], list[str]]:
         urls = []
         texts = []

@@ -4,7 +4,7 @@ from typing import TypeAlias
 
 from pydantic import BaseModel, ConfigDict
 
-from .outer_models import TouchGalResponse
+from .outer_models import TouchGalWorkResponse
 
 bs64: TypeAlias = str
 
@@ -35,7 +35,7 @@ class TouchGalDetails(BaseModel):
 class RecommendCache(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    tasks_remaining_queue: list[TouchGalResponse]
+    tasks_remaining_queue: list[TouchGalWorkResponse]
     ready_queue: list[str]
     total: int
     handling: int  # 1开始

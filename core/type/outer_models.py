@@ -91,7 +91,13 @@ class VNDBProducerResponse(BaseModel):
     type: str | None = None
 
 
-class TouchGalResponse(BaseModel):
+class VNDBReleaseResponse(BaseModel):
+    id: str
+    extlinks: list[Extlink]
+    vns: list[Vn]
+
+
+class TouchGalWorkResponse(BaseModel):
     """
     id为TouchGal的全局ID
     uniqueId为作品ID，可以访问对应页面
@@ -108,7 +114,7 @@ class TouchGalResponse(BaseModel):
     # tags: list[str]
 
 
-class ResourceResponse(BaseModel):
+class TouchGalResourceResponse(BaseModel):
     id: int
     name: str
     section: str
@@ -125,8 +131,3 @@ class AnimeTraceResponse(BaseModel):
     ai: bool
     zh_message: str | None = None
 
-
-class VNDBReleaseResponse(BaseModel):
-    id: str
-    extlinks: list[Extlink]
-    vns: list[Vn]

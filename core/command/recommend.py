@@ -9,7 +9,7 @@ from astrbot.core.utils.session_waiter import (
 
 from ..type.exceptions import EarlyReturn, SessionTimeoutException
 from ..type.inner_models import CommandType, RecommendCache, template_list
-from ..type.outer_models import TouchGalResponse
+from ..type.outer_models import TouchGalWorkResponse
 from ..utils import OnlySenderFilter
 from .base_command import BaseCommand
 from .random import Random
@@ -173,7 +173,7 @@ class Recommend(BaseCommand):
         else:
             self.session_cache_dict.pop(session_id, None)
 
-    async def _core_handler(self, res: TouchGalResponse):
+    async def _core_handler(self, res: TouchGalWorkResponse):
         data = await self.random.build_html(
             res.uniqueId, cmd_type=CommandType.RECOMMEND, resp=res
         )
