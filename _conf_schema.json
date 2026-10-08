@@ -104,7 +104,7 @@
         "type": "string"
       },
       "bangumiToken": {
-        "description": "Bangumi Access Token",
+        "description": "Bangumi Access Token（需要代理）",
         "hint": "[Bangumi]这是开启NSFW的前置条件，需要访问https://next.bgm.tv/demo/access-token获取。",
         "type": "string"
       },
@@ -209,7 +209,6 @@
         "description": "今日简讯作品质量",
         "hint": "今日简讯过滤低于此rating的作品及其登场角色。",
         "type": "int",
-
         "slider": {
           "min": 0,
           "max": 100,
