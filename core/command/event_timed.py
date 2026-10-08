@@ -4,7 +4,8 @@ from astrbot.api import AstrBotConfig, html_renderer
 
 from ..type.exceptions import NoResultException
 from ..type.inner_models import CommandType, template_list
-from ..type.outer_models import TouchGalWorkResponse, VNDBCharacterResponse, VNDBVnResponse
+from ..type.touchgal_models import TouchGalWorkResponse
+from ..type.vndb_models import VNDBCharacterResponse, VNDBVnResponse
 from ..utils import HTMLHandler
 from .base_command import BaseCommand
 from .random import Random

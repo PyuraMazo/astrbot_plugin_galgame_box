@@ -9,7 +9,7 @@ from ..type.exceptions import (
     ResponseException,
 )
 from ..type.inner_models import CommandType, vndb_command_fields
-from ..type.outer_models import (
+from ..type.vndb_models import (
     VNDBCharacterResponse,
     VNDBProducerResponse,
     VNDBReleaseResponse,

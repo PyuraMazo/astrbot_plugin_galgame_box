@@ -1,7 +1,7 @@
 from astrbot.api import AstrBotConfig
 
+from ..type.animetrace_models import AnimeTraceResponse
 from ..type.exceptions import Tips
-from ..type.outer_models import AnimeTraceResponse
 from .http import Http
 
 

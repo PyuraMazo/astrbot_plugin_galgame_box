@@ -5,9 +5,9 @@ from ..type.inner_models import (
     gender,
     lang,
 )
-from ..type.outer_models import (
+from ..type.touchgal_models import Link
+from ..type.vndb_models import (
     Developer,
-    Link,
     Title,
     Vn,
 )

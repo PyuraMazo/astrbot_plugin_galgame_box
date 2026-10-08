@@ -2,7 +2,7 @@ from astrbot.api import AstrBotConfig, html_renderer
 from astrbot.api.event import AstrMessageEvent
 
 from ..type.inner_models import CommandType, TouchGalDetails, template_list
-from ..type.outer_models import TouchGalWorkResponse
+from ..type.touchgal_models import TouchGalWorkResponse
 from ..utils import HTMLHandler
 from .base_command import BaseCommand
 

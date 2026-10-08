@@ -4,7 +4,7 @@ from typing import TypeAlias
 
 from pydantic import BaseModel, ConfigDict
 
-from .outer_models import TouchGalWorkResponse
+from .touchgal_models import TouchGalWorkResponse
 
 bs64: TypeAlias = str
 

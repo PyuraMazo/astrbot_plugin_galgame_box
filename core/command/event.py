@@ -5,7 +5,7 @@ from astrbot.api import AstrBotConfig, html_renderer
 from astrbot.api.event import AstrMessageEvent
 
 from ..type.inner_models import CommandType, ja_weeks, template_list
-from ..type.outer_models import VNDBCharacterResponse, VNDBVnResponse
+from ..type.vndb_models import VNDBCharacterResponse, VNDBVnResponse
 from .base_command import BaseCommand
 
 

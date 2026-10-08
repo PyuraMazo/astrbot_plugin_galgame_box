@@ -3,7 +3,7 @@ from astrbot.api.event import AstrMessageEvent
 
 from ..type.exceptions import ArgsOrNullException, NoResultException
 from ..type.inner_models import CommandType, id2command, template_list
-from ..type.outer_models import (
+from ..type.vndb_models import (
     VNDBCharacterResponse,
     VNDBProducerResponse,
     VNDBVnResponse,

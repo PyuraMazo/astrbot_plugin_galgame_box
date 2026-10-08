@@ -25,28 +25,9 @@ class Vn(BaseModel):
     rating: float | None = None
 
 
-class DetectedInfo(BaseModel):
-    work: str
-    character: str
-
-
-class AnimeTraceData(BaseModel):
-    box: tuple[float, float, float, float]
-    not_confident: bool
-    character: list[DetectedInfo]
-
-
 class Extlink(BaseModel):
     id: str
     label: str
-
-
-class Link(BaseModel):
-    storage: str
-    size: str
-    content: str
-    code: str
-    password: str
 
 
 class VNDBVnResponse(BaseModel):
@@ -95,39 +76,3 @@ class VNDBReleaseResponse(BaseModel):
     id: str
     extlinks: list[Extlink]
     vns: list[Vn]
-
-
-class TouchGalWorkResponse(BaseModel):
-    """
-    id为TouchGal的全局ID
-    uniqueId为作品ID，可以访问对应页面
-    """
-
-    id: int
-    uniqueId: str
-    banner: str
-    name: str
-    type: list[str]
-    language: list[str]
-    platform: list[str]
-    averageRating: float
-    # tags: list[str]
-
-
-class TouchGalResourceResponse(BaseModel):
-    id: int
-    name: str
-    section: str
-    type: list[str]
-    language: list[str]
-    note: str
-    platform: list[str]
-    links: list[Link]
-
-
-class AnimeTraceResponse(BaseModel):
-    code: int
-    data: list[AnimeTraceData]
-    ai: bool
-    zh_message: str | None = None
-

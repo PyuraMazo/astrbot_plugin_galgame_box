@@ -4,7 +4,7 @@ from astrbot.api import AstrBotConfig
 
 from ..type.exceptions import AuthorityException, NoResultException
 from ..type.inner_models import CommandType
-from ..type.outer_models import TouchGalResourceResponse, TouchGalWorkResponse
+from ..type.touchgal_models import TouchGalResourceResponse, TouchGalWorkResponse
 from .http import Http
 
 
@@ -109,7 +109,9 @@ class TouchGal:
             handle_cf=True,
         )
 
-    async def request_download(self, touchgal_id: int) -> list[TouchGalResourceResponse]:
+    async def request_download(
+        self, touchgal_id: int
+    ) -> list[TouchGalResourceResponse]:
         resource_url = f"{self.base_url}api/patch/resource?patchId={touchgal_id}"
         res = await self.http.get(
             resource_url,

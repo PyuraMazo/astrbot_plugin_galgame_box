@@ -11,13 +11,13 @@ from astrbot.core.utils.session_waiter import (
     session_waiter,
 )
 
-from ..type.exceptions import NoResultException, SessionTimeoutException
-from ..type.inner_models import CommandType, bs64, template_list
-from ..type.outer_models import (
+from ..type.animetrace_models import (
     AnimeTraceData,
     AnimeTraceResponse,
-    VNDBCharacterResponse,
 )
+from ..type.exceptions import NoResultException, SessionTimeoutException
+from ..type.inner_models import CommandType, bs64, template_list
+from ..type.vndb_models import VNDBCharacterResponse
 from ..utils import File, Image, OnlySenderFilter
 from .base_command import BaseCommand
 

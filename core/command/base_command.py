@@ -8,9 +8,11 @@ from ..function import Cache
 from ..network import AnimeTrece, Downloader, TouchGal, Vndb
 from ..type.exceptions import ArgsOrNullException
 from ..type.inner_models import CommandType, bs64, template_list
-from ..type.outer_models import (
+from ..type.touchgal_models import (
     TouchGalResourceResponse,
     TouchGalWorkResponse,
+)
+from ..type.vndb_models import (
     VNDBCharacterResponse,
     VNDBProducerResponse,
     VNDBVnResponse,

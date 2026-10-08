@@ -8,7 +8,7 @@ from astrbot.core.utils.session_waiter import (
 
 from ..type.exceptions import SessionTimeoutException
 from ..type.inner_models import CommandType, bs64
-from ..type.outer_models import TouchGalResourceResponse, TouchGalWorkResponse
+from ..type.touchgal_models import TouchGalResourceResponse, TouchGalWorkResponse
 from ..utils import OnlySenderFilter
 from .base_command import BaseCommand
 

@@ -2,7 +2,7 @@ from astrbot.api import AstrBotConfig, html_renderer
 from astrbot.api.event import AstrMessageEvent
 
 from ..type.inner_models import CommandType, template_list
-from ..type.outer_models import VNDBCharacterResponse
+from ..type.vndb_models import VNDBCharacterResponse
 from .base_command import BaseCommand
 
 

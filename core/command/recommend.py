@@ -9,7 +9,7 @@ from astrbot.core.utils.session_waiter import (
 
 from ..type.exceptions import EarlyReturn, SessionTimeoutException
 from ..type.inner_models import CommandType, RecommendCache, template_list
-from ..type.outer_models import TouchGalWorkResponse
+from ..type.touchgal_models import TouchGalWorkResponse
 from ..utils import OnlySenderFilter
 from .base_command import BaseCommand
 from .random import Random
