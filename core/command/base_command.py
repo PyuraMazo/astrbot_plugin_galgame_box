@@ -6,6 +6,7 @@ from astrbot.api import AstrBotConfig
 
 from ..function import Cache
 from ..network import AnimeTrece, Bangumi, Downloader, TouchGal, Vndb
+from ..type.bangumi_models import BangumiSubjectResponse
 from ..type.exceptions import ArgsOrNullException
 from ..type.inner_models import CommandType, bs64, template_list
 from ..type.touchgal_models import (
@@ -226,3 +227,12 @@ class BaseCommand:
             .touchgal_platforms(response.platform)
             .touchgal_lang(response.language)
         ).do()
+
+    def build_bangumi_info(self, response: BangumiSubjectResponse):
+        base = (
+            Splicer.from_bangumi_info()
+            .bangumi_id(response.id)
+            .bangumi_score(response.rating)
+            .bangumi_tags(response.tags)
+        )
+        return base.do()

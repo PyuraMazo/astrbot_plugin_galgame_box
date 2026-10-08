@@ -1,5 +1,5 @@
 # type: ignore
-
+from ..type.bangumi_models import Rating, Tag
 from ..type.inner_models import (
     develop_type,
     gender,
@@ -7,9 +7,9 @@ from ..type.inner_models import (
 )
 from ..type.touchgal_models import Link
 from ..type.vndb_models import (
+    VN,
     Developer,
     Title,
-    Vn,
 )
 
 
@@ -65,6 +65,10 @@ class Splicer:
     _resource_tag = ""
     _resource_note = ""
     _resource_links = ""
+
+    _bangumi_id = ""
+    _bangumi_score = ""
+    _bangumi_tag = ""
 
     def __init__(self, scheme: str):
         self.scheme = scheme
@@ -122,6 +126,12 @@ class Splicer:
                 self._resource_note,
                 self._resource_links,
             )
+        elif self.scheme == "bangumi":
+            elements = (
+                self._bangumi_id,
+                self._bangumi_score,
+                self._bangumi_tag,
+            )
         else:
             raise ValueError(f"错误的Splider类型：{self.scheme}")
 
@@ -146,6 +156,10 @@ class Splicer:
     @classmethod
     def from_touchgal_resource(cls):
         return cls("resource")
+
+    @classmethod
+    def from_bangumi_info(cls):
+        return cls("bangumi")
 
     @empty_handler()
     def vndb_id(self, id: str) -> "Splicer":
@@ -199,7 +213,7 @@ class Splicer:
         self._birthday = f"生日：{birthday[0]}月{birthday[1]}日"
 
     @empty_handler()
-    def vns(self, vns: list[Vn]) -> "Splicer":
+    def vns(self, vns: list[VN]) -> "Splicer":
         vn_list = [f"「{vn.alttitle or vn.title}」（{vn.id}）" for vn in vns]
         self._vns = f"出场作品（VNDB ID）：{'、'.join(vn_list)}"
 
@@ -299,3 +313,16 @@ class Splicer:
                 )
             )
         self._resource_links = "\n".join(links_list)
+
+    @empty_handler()
+    def bangumi_id(self, id: int) -> "Splicer":
+        self._bangumi_id = f"Bangumi ID：{id}"
+
+    @empty_handler()
+    def bangumi_score(self, rating: Rating) -> "Splicer":
+        self._bangumi_score = f"站内均分：{rating.score}"
+
+    @empty_handler()
+    def bangumi_tags(self, tags: list[Tag]) -> "Splicer":
+        tag_lis = [tag.name for tag in tags[:10]]
+        self._bangumi_tag = f"标签：{'、'.join(tag_lis)}"

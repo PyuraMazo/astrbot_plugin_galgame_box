@@ -8,7 +8,6 @@ from ..type.vndb_models import (
     VNDBProducerResponse,
     VNDBVnResponse,
 )
-from ..utils import HTMLHandler
 from . import Character, Producer, Vn
 from .base_command import BaseCommand
 
@@ -23,6 +22,8 @@ class VndbId(BaseCommand):
         cls.character = Services.get(Character)
         cls.producer = Services.get(Producer)
 
+        cls.nsfw_enable = config.get("safetySetting", {}).get("enableNSFW", False)
+
         return cls()
 
     async def goooooooooo(self, event: AstrMessageEvent, value: str):
@@ -35,13 +36,31 @@ class VndbId(BaseCommand):
         previews = []
         if real_type == CommandType.VN:
             try:
-                search_info, _ = await self.touchgal.request_vn_by_search(
-                    CommandType.ID, value
-                )
-                html_text = await self.touchgal.request_html(search_info[0].uniqueId)
-                detail = await HTMLHandler.handle_touchgal_details(html_text)
-                desc = detail.description
-                previews = detail.previews
+                vn: VNDBVnResponse = res[0]
+                bangumi_res = (
+                    await self.bangumi.request_by_vndb_id(
+                        CommandType.ID, vn.alttitle or vn.title, value
+                    )
+                )[0]
+
+                if bangumi_res.summary:
+                    desc = bangumi_res.summary.replace("\r\n", "<br>")
+                elif vn.description:
+                    desc = vn.description.replace("\n", "<br>")
+
+                if vn.screenshots:
+                    count = 0
+                    for ss in vn.screenshots:
+                        if ss.violence > 0.2 or ss.sexual > 0.2:
+                            if self.nsfw_enable:
+                                count += 1
+                                previews.append(ss.url)
+                        else:
+                            count += 1
+                            previews.append(ss.url)
+                        if count > 3:
+                            break
+
             except NoResultException:
                 pass
 

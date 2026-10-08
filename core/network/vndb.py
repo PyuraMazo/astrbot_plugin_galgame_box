@@ -1,5 +1,6 @@
 import asyncio
 import math
+import random
 
 from astrbot.api import AstrBotConfig
 
@@ -280,9 +281,8 @@ class Vndb:
     async def request_by_release(
         self, id_list: list[int], length: int
     ) -> list[VNDBReleaseResponse]:
-        query = "release"
-        url = self.kana_url + query
-        fields = vndb_command_fields[query]
+        url = self.kana_url + "release"
+        fields = vndb_command_fields["release"]
 
         count = math.ceil(length / 100)
         res = []
@@ -294,3 +294,28 @@ class Vndb:
 
             res.extend((await self.http.post(url, payload))["results"])
         return [VNDBReleaseResponse.model_validate(i) for i in res]
+
+    async def request_random(self) -> VNDBVnResponse:
+        url = self.kana_url + "vn"
+        max_res: dict = await self.http.post(
+            url, {"sort": "id", "reverse": True, "results": 1}
+        )
+
+        if max_res["results"]:
+            max_id: str = max_res["results"][0]["id"]
+            random_num = random.randint(1, int(max_id[1:]))
+
+            payload = {
+                "filters": ["id", ">=", f"v{random_num}"],
+                "fields": vndb_command_fields["vn"],
+                "results": 1,
+            }
+            res = await self.http.post(url, payload)
+            if not res:
+                raise ResponseException(url)
+            if not res["results"]:
+                raise NoResultException(CommandType.RANDOM, "")
+
+            return VNDBVnResponse.model_validate(res["results"][0])
+        else:
+            raise NoResultException(CommandType.RANDOM, "")

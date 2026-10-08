@@ -2,11 +2,10 @@ from datetime import datetime
 
 from astrbot.api import AstrBotConfig, html_renderer
 
+from ..type.bangumi_models import BangumiSubjectResponse
 from ..type.exceptions import NoResultException
 from ..type.inner_models import CommandType, template_list
-from ..type.touchgal_models import TouchGalWorkResponse
 from ..type.vndb_models import VNDBCharacterResponse, VNDBVnResponse
-from ..utils import HTMLHandler
 from .base_command import BaseCommand
 from .random import Random
 
@@ -57,8 +56,8 @@ class EventTimed(BaseCommand):
             response: tuple[VNDBVnResponse, list[VNDBCharacterResponse]]
             vn, cha_list = response
             try:
-                searched_vn, _ = await self.touchgal.request_vn_by_search(
-                    CommandType.EVENT_TIMED, vn.id
+                searched_vn, _ = await self.bangumi.request_by_vndb_id(
+                    CommandType.EVENT_TIMED, vn.alttitle or vn.title, vn.id
                 )
                 first_vn = searched_vn[0]
             except NoResultException:
@@ -74,13 +73,14 @@ class EventTimed(BaseCommand):
         self,
         vn: VNDBVnResponse,
         chas: list[VNDBCharacterResponse],
-        touchgal_vn: TouchGalWorkResponse | None,
+        bangumi_vn: BangumiSubjectResponse | None,
     ):
-        if touchgal_vn:
-            text = await self.touchgal.request_html(touchgal_vn.uniqueId)
-            desc = (await HTMLHandler.handle_touchgal_details(text)).description
+        if bangumi_vn and bangumi_vn.summary:
+            desc = bangumi_vn.summary.replace("\r\n", "<br>")
+        elif vn.description:
+            desc = vn.description.replace("\n", "<br>")
         else:
-            desc = "TouchGal暂无该作品简介。"
+            desc = "暂无该作品简介  =。="
 
         characters = [
             {

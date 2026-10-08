@@ -57,7 +57,7 @@ template_list = {
 }
 
 vndb_command_fields = {
-    "vn": "id,average,rating,released,length_minutes,platforms,aliases,developers{id,original,name},titles{lang,title,official},image{url},alttitle,title",
+    "vn": "id,average,rating,released,length_minutes,platforms,aliases,developers{id,original,name},titles{lang,title,official},image{url},alttitle,title,screenshots{id,url,sexual,dims,violence,votecount}",
     "character": "id,name,aliases,sex,birthday,waist,hips,bust,blood_type,weight,height,cup,original,image{url},vns{id,alttitle,title}",
     "producer": "id,name,original,aliases,lang,type",
     "vn_short": "id,alttitle,title,released,rating,image{url}",

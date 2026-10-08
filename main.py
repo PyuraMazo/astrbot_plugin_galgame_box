@@ -66,7 +66,7 @@ class GalgameBoxPlugin(Star):
     async def vndb_id(self, event: AstrMessageEvent, keyword: str):
         """通过VNDB ID查询特定内容"""
         try:
-            yield await anext(Services.get(VndbId).goooooooooo(event, keyword))
+            yield await anext(Services.get(VndbId).goooooooooo(event, keyword.lower()))
         except Exception as e:
             yield await anext(self._handle_command_exception(event, e))
 
