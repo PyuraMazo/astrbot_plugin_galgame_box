@@ -16,7 +16,6 @@ class TouchGal:
         "referer": base_url,
         "x-requested-with": "kun-fetch",
     }
-    proxies = {}
 
     @classmethod
     async def initialize(cls, config: AstrBotConfig):
@@ -25,21 +24,14 @@ class TouchGal:
         cls.http = Services.get(Http)
         safety_setting = config.get("safetySetting", {})
 
-        proxy = safety_setting.get("proxy", "")
-        if proxy:
-            cls.proxies = {
-                "http": proxy,
-                "https": proxy,
-            }
+        cls.proxy = safety_setting.get("proxy", None)
 
-        kunNsfwEnable = (
+        nsfw_enable = (
             "all" if config.get("safetySetting", {}).get("enableNSFW", False) else "sfw"
         )
         token = safety_setting.get("touchgalToken", "")
         cf = safety_setting.get("cfClearance", "")
-        cls.cookies = {
-            "kun-patch-setting-store|state|data|kunNsfwEnable": kunNsfwEnable
-        }
+        cls.cookies = {"kun-patch-setting-store|state|data|kunNsfwEnable": nsfw_enable}
         if token:
             cls.cookies["kun-galgame-patch-moe-token"] = token
         if cf:
@@ -75,7 +67,7 @@ class TouchGal:
             payload,
             cookies=self.cookies,
             headers=self.headers,
-            proxies=self.proxies,
+            proxy=self.proxy,
             handle_cf=True,
         )
         if isinstance(res, dict):
@@ -93,7 +85,7 @@ class TouchGal:
             self.base_url + "api/home/random",
             "json",
             cookies=self.cookies,
-            proxies=self.proxies,
+            proxy=self.proxy,
             handle_cf=True,
         )
         if isinstance(resp, dict):
@@ -105,7 +97,7 @@ class TouchGal:
         return await self.http.get(
             self.base_url + unique_id,
             cookies=self.cookies,
-            proxies=self.proxies,
+            proxy=self.proxy,
             handle_cf=True,
         )
 
@@ -117,7 +109,7 @@ class TouchGal:
             resource_url,
             "json",
             cookies=self.cookies,
-            proxies=self.proxies,
+            proxy=self.proxy,
             handle_cf=True,
         )
         return [TouchGalResourceResponse.model_validate(i) for i in res]
