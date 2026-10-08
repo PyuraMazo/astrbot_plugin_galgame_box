@@ -103,9 +103,14 @@
         "hint": "只作用于本插件，格式如 http://127.0.0.1:7897。",
         "type": "string"
       },
+      "bangumiToken": {
+        "description": "Bangumi Access Token",
+        "hint": "[Bangumi]这是开启NSFW的前置条件，需要访问https://next.bgm.tv/demo/access-token获取。",
+        "type": "string"
+      },
       "touchgalToken": {
         "description": "TouchGal登录账号Token",
-        "hint": "这是开启NSFW的前置条件，需要手动访问https://www.touchgal.top/并获取Cookie的kun-galgame-patch-moe-token值。",
+        "hint": "[TouchGal]这是开启NSFW的前置条件，需要手动访问https://www.touchgal.top/并获取Cookie的kun-galgame-patch-moe-token值。",
         "type": "string"
       },
       "cfClearance": {

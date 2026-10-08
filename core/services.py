@@ -22,6 +22,7 @@ class Services:
             cls._services[Vndb] = await Vndb.initialize(config)
             cls._services[TouchGal] = await TouchGal.initialize(config)
             cls._services[AnimeTrece] = await AnimeTrece.initialize(config)
+            cls._services[Bangumi] = await Bangumi.initialize(config)
 
             cls._services[Cache] = await Cache.initialize(config)
 

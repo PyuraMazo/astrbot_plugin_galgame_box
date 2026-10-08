@@ -5,7 +5,7 @@ from typing import Literal
 from astrbot.api import AstrBotConfig
 
 from ..function import Cache
-from ..network import AnimeTrece, Downloader, TouchGal, Vndb
+from ..network import AnimeTrece, Bangumi, Downloader, TouchGal, Vndb
 from ..type.exceptions import ArgsOrNullException
 from ..type.inner_models import CommandType, bs64, template_list
 from ..type.touchgal_models import (
@@ -35,7 +35,9 @@ class BaseCommand:
     vndb: Vndb | None = None
     touchgal: TouchGal | None = None
     animetrace: AnimeTrece | None = None
+    bangumi: Bangumi | None = None
     cache: Cache | None = None
+
     bg: str | None = None
     font: str | None = None
     err_image: str | None = None
@@ -54,6 +56,7 @@ class BaseCommand:
             BaseCommand.vndb = Services.get(Vndb)
             BaseCommand.touchgal = Services.get(TouchGal)
             BaseCommand.animetrace = Services.get(AnimeTrece)
+            BaseCommand.bangumi = Services.get(Bangumi)
 
             BaseCommand.cache = Services.get(Cache)
 
