@@ -1,7 +1,9 @@
+import asyncio
+
 from astrbot.api import AstrBotConfig
 
 from ..type.animetrace_models import AnimeTraceResponse
-from ..type.exceptions import Tips
+from ..type.exceptions import SettingException, Tips
 from .http import Http
 
 
@@ -16,26 +18,29 @@ class AnimeTrece:
         from ..services import Services
 
         cls.http = Services.get(Http)
-        await cls.select_model()
+        asyncio.create_task(cls.select_model())
 
         return cls()
 
     async def request_find(
         self, url: str, try_again: bool = False
     ) -> AnimeTraceResponse:
-        resp = await self.http.post(
-            self.search_url, self._build_payload(url, self.current_model)
-        )
-        # 特定检测状态码
-        code = resp.get("code", 400)
-        if code == 17703 and not try_again:
-            await self.select_model()
-            return await self.request_find(url, True)
+        if self.current_model:
+            resp = await self.http.post(
+                self.search_url, self._build_payload(url, self.current_model)
+            )
+            # 特定检测状态码
+            code = resp.get("code", 400)
+            if code == 17703 and not try_again:
+                await self.select_model()
+                return await self.request_find(url, True)
 
-        if code != 200 and code != 0:
-            raise Tips(resp.get("zh_message", "识别失败。"))
+            if code != 200 and code != 0:
+                raise Tips(resp.get("zh_message", "识别失败。"))
 
-        return AnimeTraceResponse.model_validate(resp)
+            return AnimeTraceResponse.model_validate(resp)
+        else:
+            raise SettingException("AnimeTrace识图模型")
 
     def _build_payload(self, url: str, model: str):
         base = {"model": model, "ai_detect": 1}
