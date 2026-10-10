@@ -7,44 +7,35 @@ from astrbot.core.utils.session_waiter import (
     session_waiter,
 )
 
-from ..type.exceptions import EarlyReturn, SessionTimeoutException
+from ..type.bangumi_models import BangumiSubjectResponse
+from ..type.exceptions import EarlyReturn, SessionTimeoutException, Tips
 from ..type.inner_models import CommandType, RecommendCache, template_list
-from ..type.touchgal_models import TouchGalWorkResponse
+from ..type.vndb_models import VNDBVnResponse
 from ..utils import OnlySenderFilter
 from .base_command import BaseCommand
-from .random import Random
 
 
 class Recommend(BaseCommand):
     @classmethod
     async def initialize(cls, config: AstrBotConfig):
-        from ..services import Services
-
         await super().initialize(config)
-        cls.random = Services.get(Random)
 
         cls.recommend_cache = config.get("recommendSetting", {}).get(
             "recommendCache", 5
         )
+        cls.nsfw_enable = config.get("safetySetting", {}).get("enableNSFW", False)
 
         cls.session_cache_dict: dict[str, RecommendCache] = {}
-        cls.count_per_search = cls.recommend_cache * 3
+        cls.count_per_search = cls.recommend_cache * 2
 
         return cls()
 
-    async def goooooooooo(self, event: AstrMessageEvent, value: str):
+    async def goooooooooo(self, event: AstrMessageEvent, tags: list[str]):
         session_id = event.get_group_id() + event.get_sender_id()
-        resp, total = await self.touchgal.request_vn_by_search(
-            CommandType.RECOMMEND,
-            value,
-            searchInAlias=False,
-            searchInTag=True,
-            limit=self.count_per_search,
-            page=1,
-        )
 
+        vns, total = await self._request_once(tags, 0)
         task = RecommendCache(
-            tasks_remaining_queue=resp,
+            tasks_remaining_queue=vns,
             ready_queue=[],
             total=total,
             handling=0,
@@ -54,7 +45,7 @@ class Recommend(BaseCommand):
         )
         self.session_cache_dict[session_id] = task
 
-        asyncio.create_task(self._make_machine(session_id, value))
+        asyncio.create_task(self._make_machine(session_id, tags))
 
         await asyncio.wait(
             [
@@ -121,11 +112,57 @@ class Recommend(BaseCommand):
         try:
             await select_waiter(event, session_filter=OnlySenderFilter())
         except TimeoutError:
-            raise SessionTimeoutException(CommandType.RECOMMEND, value)
+            raise SessionTimeoutException(CommandType.RECOMMEND, str(tags))
         finally:
             task.stop_signal.set()
 
-    async def _make_machine(self, session_id: str, value: str):
+    async def build(
+        self, bangumi_vn: BangumiSubjectResponse, vndb_vn: VNDBVnResponse | None
+    ):
+        previews = []
+        if vndb_vn:
+            main_image = await self.read_or_download_image("vndb", vndb_vn.image.url)
+            info = self.build_vn(vndb_vn)
+            bangumi_info = self.build_bangumi_info(bangumi_vn, True)
+            info += bangumi_info
+            subtitle = vndb_vn.alttitle or vndb_vn.title
+
+            if vndb_vn.screenshots:
+                count = 0
+                for ss in vndb_vn.screenshots:
+                    if ss.violence > 0.2 or ss.sexual > 0.2:
+                        if self.nsfw_enable:
+                            count += 1
+                            previews.append(ss.url)
+                    else:
+                        count += 1
+                        previews.append(ss.url)
+                    if count > 3:
+                        break
+        else:
+            main_image = (
+                await self.read_or_download_image(
+                    "bangumi", bangumi_vn.image, use_proxy=True
+                )
+                if bangumi_vn.image
+                else self.err_image
+            )
+            info = self.build_bangumi_info(bangumi_vn)
+            subtitle = bangumi_vn.name
+
+        desc = bangumi_vn.summary.replace("\r\n", "<br>") if bangumi_vn.summary else ""
+
+        return {
+            "font": self.font,
+            "bg": self.bg,
+            "subtitle": subtitle,
+            "main_image": main_image,
+            "info": info,
+            "desc": desc,
+            "previews": previews,
+        }
+
+    async def _make_machine(self, session_id: str, tags: list[str]):
         task = self.session_cache_dict[session_id]
 
         while not task.stop_signal.is_set():
@@ -146,23 +183,18 @@ class Recommend(BaseCommand):
                 task.use_signal.clear()
 
             if not task.tasks_remaining_queue:
-                resp, _ = await self.touchgal.request_vn_by_search(
-                    CommandType.RECOMMEND,
-                    value,
-                    searchInAlias=False,
-                    searchInTag=True,
-                    limit=self.count_per_search,
-                    page=task.handling // self.count_per_search + 1,
+                vns, _ = self._request_once(
+                    tags, task.handling // self.count_per_search + 1
                 )
-                task.tasks_remaining_queue = resp
+                task.tasks_remaining_queue = vns
 
             # 重置准备信号
             task.ready_signal.clear()
 
-            current = task.tasks_remaining_queue.pop(0)
+            bangumi_vn, vndb_vn = task.tasks_remaining_queue.pop(0)
             task.handling += 1
             try:
-                url = await self._core_handler(current)
+                url = await self._core_handler(bangumi_vn, vndb_vn)
                 task.ready_queue.append(url)
 
                 task.ready_signal.set()
@@ -173,12 +205,49 @@ class Recommend(BaseCommand):
         else:
             self.session_cache_dict.pop(session_id, None)
 
-    async def _core_handler(self, res: TouchGalWorkResponse):
-        data = await self.random.build_html(
-            res.uniqueId, cmd_type=CommandType.RECOMMEND, resp=res
-        )
+    async def _core_handler(
+        self, bangumi_vn: BangumiSubjectResponse, vndb_vn: VNDBVnResponse
+    ):
+        data = await self.build(bangumi_vn, vndb_vn)
         tmpl = self.templates[template_list[CommandType.RANDOM.value]]
 
         return await html_renderer.render_custom_template(
             tmpl, data, True, self.render_options
         )
+
+    async def _request_once(
+        self, tags: list[str], offset: int
+    ) -> tuple[list[tuple[BangumiSubjectResponse, VNDBVnResponse | None]], int]:
+        bangumi_vns, total = await self.bangumi.request_by_tags(
+            CommandType.RECOMMEND, tags, limit=self.count_per_search, offset=offset
+        )
+        vndb_vns: list[VNDBVnResponse | None] = []
+        for idx, vn in enumerate(bangumi_vns):
+            for info in vn.infobox:
+                if (
+                    info is not None
+                    and info.key == "链接"
+                    and isinstance(info.value, list)
+                ):
+                    for kv in info.value:
+                        vn_id = kv.get("v", "./.").split("/")[-1]
+                        if vn_id and kv.get("k", "").upper() == "VNDB":
+                            try:
+                                vndb_vn: list[
+                                    VNDBVnResponse
+                                ] = await self.vndb.request_by_id(CommandType.VN, vn_id)
+                                vndb_vns.append(vndb_vn[0])
+                            except Tips:
+                                vndb_vns.append(None)
+                            finally:
+                                break
+                    else:
+                        vndb_vns.append(None)
+                    break
+            else:
+                vndb_vns.append(None)
+
+        vns: list[tuple[BangumiSubjectResponse, VNDBVnResponse | None]] = [
+            (b, v) for b, v in zip(bangumi_vns, vndb_vns)
+        ]
+        return vns, total

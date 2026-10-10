@@ -69,6 +69,9 @@ class Splicer:
     _bangumi_id = ""
     _bangumi_score = ""
     _bangumi_tag = ""
+    _bangumi_name = ""
+    _bangumi_cn_name = ""
+    _bangumi_date = ""
 
     def __init__(self, scheme: str):
         self.scheme = scheme
@@ -76,6 +79,7 @@ class Splicer:
     def do(self) -> list[str]:
         if self.scheme == "vn":
             elements = (
+                "--- VNDB ---",
                 self._vndb_id,
                 self._titles,
                 self._alias,
@@ -88,6 +92,7 @@ class Splicer:
             )
         elif self.scheme == "character":
             elements = (
+                "--- VNDB ---",
                 self._vndb_id,
                 self._birthday,
                 self._vns,
@@ -100,6 +105,7 @@ class Splicer:
             )
         elif self.scheme == "producer":
             elements = (
+                "--- VNDB ---",
                 self._name,
                 self._vndb_id,
                 self._alias,
@@ -108,6 +114,7 @@ class Splicer:
             )
         elif self.scheme == "touchgal":
             elements = (
+                "--- TouchGal ---",
                 self._touchgal_id,
                 self._touchgal_name,
                 self._touchgal_tag,
@@ -118,6 +125,7 @@ class Splicer:
             )
         elif self.scheme == "resource":
             elements = (
+                "--- TouchGal ---",
                 self._resource_title,
                 self._resource_category,
                 self._touchgal_platform,
@@ -128,7 +136,11 @@ class Splicer:
             )
         elif self.scheme == "bangumi":
             elements = (
+                "--- Bangumi ---",
                 self._bangumi_id,
+                self._bangumi_name,
+                self._bangumi_cn_name,
+                self._bangumi_date,
                 self._bangumi_score,
                 self._bangumi_tag,
             )
@@ -326,3 +338,15 @@ class Splicer:
     def bangumi_tags(self, tags: list[Tag]) -> "Splicer":
         tag_lis = [tag.name for tag in tags[:10]]
         self._bangumi_tag = f"标签：{'、'.join(tag_lis)}"
+
+    @empty_handler()
+    def bangumi_name(self, name: str) -> "Splicer":
+        self._bangumi_name = f"原文标题：{name}"
+
+    @empty_handler()
+    def bangumi_cn_name(self, name: str) -> "Splicer":
+        self._bangumi_cn_name = f"中文标题：{name}"
+
+    @empty_handler()
+    def bangumi_date(self, date: str) -> "Splicer":
+        self._bangumi_date = f"发布日期：{date}"

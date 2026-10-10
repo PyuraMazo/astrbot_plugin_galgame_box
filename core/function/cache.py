@@ -32,7 +32,10 @@ class Cache:
             await self.clean_cache()
 
     async def read_cache(
-        self, group: Literal["vndb", "touchgal"], url: str, prefix: bool = True
+        self,
+        group: Literal["vndb", "touchgal", "bangumi"],
+        url: str,
+        prefix: bool = True,
     ) -> bs64 | None:
         filename, source_suffix = self._convert(group, url)
         file_path = self.cache_path / filename
@@ -45,7 +48,7 @@ class Cache:
 
     async def write_cache(
         self,
-        group: Literal["vndb", "touchgal"],
+        group: Literal["vndb", "touchgal", "bangumi"],
         url: str,
         buffer: bytes,
         prefix: bool = True,
@@ -65,19 +68,19 @@ class Cache:
         await self._create_dir()
 
     def _convert(
-        self, group: Literal["vndb", "touchgal"], link: str
+        self, group: Literal["vndb", "touchgal", "bangumi"], link: str
     ) -> tuple[Path, str]:
         left, _ = link.rsplit(".", maxsplit=1)
-        if group == "vndb":
-            return (
-                self.cache_path / f"{group}_{left.rsplit('/', maxsplit=1)[1]}",
-                left.lower(),
-            )
-        else:
+        if group == "touchgal":
             split_count = 3 if "banner" in link else 1
             return (
                 self.cache_path
                 / f"{group}_{left.rsplit('/', maxsplit=split_count)[1]}",
+                left.lower(),
+            )
+        else:
+            return (
+                self.cache_path / f"{group}_{left.rsplit('/', maxsplit=1)[1]}",
                 left.lower(),
             )
 

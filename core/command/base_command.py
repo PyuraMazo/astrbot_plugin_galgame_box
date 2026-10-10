@@ -32,21 +32,21 @@ class BaseCommand:
     support_forward = ["aiocqhttp", "qq_official", "onebot"]
 
     # 解决静态类型检查器警告
-    downloader: Downloader | None = None
-    vndb: Vndb | None = None
-    touchgal: TouchGal | None = None
-    animetrace: AnimeTrece | None = None
-    bangumi: Bangumi | None = None
-    cache: Cache | None = None
+    downloader: Downloader
+    vndb: Vndb
+    touchgal: TouchGal
+    animetrace: AnimeTrece
+    bangumi: Bangumi
+    cache: Cache
 
-    bg: str | None = None
-    font: str | None = None
-    err_image: str | None = None
+    bg: str
+    font: str
+    err_image: str
 
-    session_timeout: int | None = None
-    forward_limit: int | None = None
-    results_limit: bool | None = None
-    character_options: list | None = None
+    session_timeout: int
+    forward_limit: int
+    results_limit: bool
+    character_options: list
 
     @classmethod
     async def initialize(cls, config: AstrBotConfig):
@@ -89,12 +89,27 @@ class BaseCommand:
 
             BaseCommand.is_init = True
 
-    async def read_or_download_images(
-        self, group: Literal["vndb", "touchgal"], url: str, prefix: bool = True
+    async def read_or_download_image(
+        self,
+        group: Literal["vndb", "touchgal", "bangumi"],
+        url: str,
+        prefix: bool = True,
+        use_proxy=False,
     ) -> bs64:
+        """
+
+        Args:
+            group: The source of image url
+            url: Image url
+            prefix: The **data:...;base64,** prefix is required for web rendering but should be stripped when sending to platforms.
+            use_proxy: Using config proxy address if set when downloading
+
+        Returns: Image base64 string
+
+        """
         cache_data = await self.cache.read_cache(group, url, prefix=prefix)
         if cache_data is None:
-            buffer = await self.downloader.download_image(url)
+            buffer = await self.downloader.download_image(url, use_proxy=use_proxy)
             return (
                 await self.cache.write_cache(group, url, buffer, prefix=prefix)
                 if buffer
@@ -103,26 +118,25 @@ class BaseCommand:
         else:
             return cache_data
 
-    async def build_vndb_images(
-        self, response: list[VNDBVnResponse | VNDBCharacterResponse]
+    async def get_vndb_images(
+        self,
+        response: list[VNDBVnResponse | VNDBCharacterResponse],
     ) -> list[bs64]:
         co_str = [
-            self.read_or_download_images("vndb", i.image.url)
+            self.read_or_download_image("vndb", i.image.url)
             if i.image
             else asyncio.sleep(0, result=self.err_image)
             for i in response
         ]
         return await asyncio.gather(*co_str)
 
-    async def build_images(
+    async def get_images(
         self,
         urls: list[str],
-        cache_group: Literal["vndb", "touchgal"],
-        prefix: bool = True,
+        cache_group: Literal["vndb", "touchgal", "bangumi"],
+        **kwargs,
     ) -> list[bs64]:
-        co_str = [
-            self.read_or_download_images(cache_group, i, prefix=prefix) for i in urls
-        ]
+        co_str = [self.read_or_download_image(cache_group, i, **kwargs) for i in urls]
         return await asyncio.gather(*co_str)
 
     def split_date(self, value: str, cmd_type: CommandType):
@@ -228,11 +242,17 @@ class BaseCommand:
             .touchgal_lang(response.language)
         ).do()
 
-    def build_bangumi_info(self, response: BangumiSubjectResponse):
+    def build_bangumi_info(
+        self, response: BangumiSubjectResponse, ignore_basic=False
+    ) -> list[str]:
         base = (
             Splicer.from_bangumi_info()
             .bangumi_id(response.id)
             .bangumi_score(response.rating)
             .bangumi_tags(response.tags)
         )
+        if not ignore_basic:
+            base.bangumi_name(response.name).bangumi_cn_name(
+                response.name_cn
+            ).bangumi_date(response.date)
         return base.do()

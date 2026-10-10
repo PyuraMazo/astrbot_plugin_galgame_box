@@ -34,7 +34,7 @@ class Producer(BaseCommand):
                     "desc": self.build_vn(vn),
                     "subtitle": vn.alttitle or vn.title,
                 }
-                for vn, vn_image in zip(per_vns, await self.build_vndb_images(per_vns))
+                for vn, vn_image in zip(per_vns, await self.get_vndb_images(per_vns))
             ]
 
             blocks.append(

@@ -6,20 +6,18 @@ from astrbot.api import AstrBotConfig
 
 
 class Downloader:
-    headers = {"Content-Type": "application/json"}
-
     @classmethod
     async def initialize(cls, config: AstrBotConfig):
         cls.timeout_times = config.get("basicSetting", {}).get("requestTimeout", 3)
+        cls.proxy = config.get("safetySetting", {}).get("proxy", None)
 
         request_time = config.get("basicSetting", {}).get("requestTime", 30)
-        cls.connector = TCPConnector(
+        connector = TCPConnector(
             limit_per_host=5, limit=20, ttl_dns_cache=300, keepalive_timeout=10
         )
         cls.session = ClientSession(
             timeout=ClientTimeout(total=request_time),
-            headers=cls.headers,
-            connector=cls.connector,
+            connector=connector,
         )
         return cls()
 
@@ -27,7 +25,11 @@ class Downloader:
         if not self.session.closed:
             await self.session.close()
 
-    async def download_image(self, url: str, **kwargs) -> bytes | None:
+    async def download_image(self, url: str, use_proxy=False) -> bytes | None:
+        kwargs = {}
+        if use_proxy:
+            kwargs["proxy"] = self.proxy
+
         return await self._get(url, **kwargs)
 
     async def _get(self, url: str, **kwargs) -> bytes | None:

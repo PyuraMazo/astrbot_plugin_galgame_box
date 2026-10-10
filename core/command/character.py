@@ -30,6 +30,6 @@ class Character(BaseCommand):
                 "desc": self.build_character(info),
                 "subtitle": info.original or info.name,
             }
-            for img, info in zip(await self.build_vndb_images(res), res)
+            for img, info in zip(await self.get_vndb_images(res), res)
         ]
         return {"font": self.font, "bg": self.bg, "cards": cards}

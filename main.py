@@ -90,7 +90,9 @@ class GalgameBoxPlugin(Star):
     async def recommend(self, event: AstrMessageEvent, tags: GreedyStr):
         """提供一个或多个标签，从TouchGal网站中获取推荐内容"""
         try:
-            async for res in Services.get(Recommend).goooooooooo(event, tags):
+            async for res in Services.get(Recommend).goooooooooo(
+                event, tags.split(" ")
+            ):
                 yield res
         except Exception as e:
             yield await anext(self._handle_command_exception(event, e))

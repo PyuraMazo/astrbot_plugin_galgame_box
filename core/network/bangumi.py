@@ -31,10 +31,10 @@ class Bangumi:
 
         return cls()
 
-    async def request_game_title(
+    async def request_by_search(
         self, keyword: str, extra_filter: dict = None
     ) -> list[BangumiSubjectResponse]:
-        url = f"{self.bangumi_url}v0/search/subjects"
+        url = self.bangumi_url + "v0/search/subjects"
 
         filter_body = {
             "type": [4],
@@ -54,7 +54,7 @@ class Bangumi:
     async def request_by_vndb_id(
         self, cmd: CommandType, keyword: str, vndb_id: str
     ) -> list[BangumiSubjectResponse]:
-        unfiltered = await self.request_game_title(keyword)
+        unfiltered = await self.request_by_search(keyword)
 
         res = []
         for game in unfiltered:
@@ -73,3 +73,33 @@ class Bangumi:
         if not res:
             raise NoResultException(cmd, keyword)
         return res
+
+    async def request_by_tags(
+        self, cmd: CommandType, tags: list[str], limit: int, offset: int
+    ) -> tuple[list[BangumiSubjectResponse], int]:
+        url = self.bangumi_url + "v0/search/subjects"
+
+        filter_body = {
+            "type": [4],
+            "tag": tags,
+            "nsfw": self.nsfw_enable,
+        }
+        query = {
+            "limit": limit,
+            "offset": offset,
+        }
+
+        body = {
+            "keyword": "+",
+            "sort": "rank",
+            "filter": filter_body,
+        }
+
+        res = await self.http.post(
+            url, body, params=query, headers=self.headers, proxy=self.proxy
+        )
+        if not res:
+            raise NoResultException(cmd, str(tags))
+        return [
+            BangumiSubjectResponse.model_validate(i) for i in res.get("data", [])
+        ], res.get("total", 0)

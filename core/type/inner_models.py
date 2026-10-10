@@ -4,7 +4,8 @@ from typing import TypeAlias
 
 from pydantic import BaseModel, ConfigDict
 
-from .touchgal_models import TouchGalWorkResponse
+from .bangumi_models import BangumiSubjectResponse
+from .vndb_models import VNDBVnResponse
 
 bs64: TypeAlias = str
 
@@ -35,10 +36,10 @@ class TouchGalDetails(BaseModel):
 class RecommendCache(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    tasks_remaining_queue: list[TouchGalWorkResponse]
+    tasks_remaining_queue: list[tuple[BangumiSubjectResponse, VNDBVnResponse | None]]
     ready_queue: list[str]
     total: int
-    handling: int  # 1开始
+    handling: int
     ready_signal: Event
     use_signal: Event
     stop_signal: Event

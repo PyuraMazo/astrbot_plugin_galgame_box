@@ -128,5 +128,5 @@ class Download(BaseCommand):
         for r in res:
             urls.append(r.banner)
             texts.append("\n".join(self.build_search(r)))
-        images = await self.build_images(urls, "touchgal", prefix=False)
+        images = await self.get_images(urls, "touchgal", prefix=False)
         return images, texts

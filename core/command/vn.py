@@ -26,7 +26,7 @@ class Vn(BaseCommand):
     async def build(self, res: list[VNDBVnResponse], **kwargs):
         cards = [
             {"image": img, "desc": self.build_vn(info)}
-            for img, info in zip(await self.build_vndb_images(res), res)
+            for img, info in zip(await self.get_vndb_images(res), res)
         ]
         desc = kwargs.get("desc", "")
         previews = kwargs.get("previews", [])

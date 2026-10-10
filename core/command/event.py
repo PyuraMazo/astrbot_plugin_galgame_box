@@ -39,8 +39,8 @@ class Event(BaseCommand):
         cha_response: list[VNDBCharacterResponse],
     ):
 
-        co_vn_images = self.build_vndb_images(vn_response)
-        co_cha_images = self.build_vndb_images(cha_response)
+        co_vn_images = self.get_vndb_images(vn_response)
+        co_cha_images = self.get_vndb_images(cha_response)
         vn_images, cha_images = await asyncio.gather(co_vn_images, co_cha_images)
         vns = [
             {

@@ -147,7 +147,7 @@ class Find(BaseCommand):
                     character, ignore_name=True, ignore_extra=True
                 )
                 img = (
-                    (await self.build_images([character.image.url], "vndb"))[0]
+                    await self.read_or_download_image("vndb", character.image.url)
                     if character.image
                     else self.err_image
                 )

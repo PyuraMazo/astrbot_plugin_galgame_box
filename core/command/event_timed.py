@@ -88,11 +88,11 @@ class EventTimed(BaseCommand):
                 "subtitle": cha.original or cha.name,
                 "desc": self.build_character(cha),
             }
-            for cha, img in zip(chas, await self.build_vndb_images(chas))
+            for cha, img in zip(chas, await self.get_vndb_images(chas))
         ]
 
         main_image = (
-            (await self.build_images([vn.image.url], "vndb"))[0]
+            await self.read_or_download_image("vndb", vn.image.url)
             if vn.image
             else self.err_image
         )
@@ -117,11 +117,11 @@ class EventTimed(BaseCommand):
                 "subtitle": vn.alttitle or vn.title,
                 "desc": self.build_vn(vn),
             }
-            for vn, img in zip(vns, await self.build_vndb_images(vns))
+            for vn, img in zip(vns, await self.get_vndb_images(vns))
         ]
 
         main_image = (
-            (await self.build_images([cha.image.url], "vndb"))[0]
+            await self.read_or_download_image("vndb", cha.image.url)
             if cha.image
             else self.err_image
         )
