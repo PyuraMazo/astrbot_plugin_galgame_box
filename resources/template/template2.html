@@ -9,23 +9,36 @@
             font-family: 'default';
             src: url('{{ font }}');
         }
+
+        html {
+            font-size: calc(100vw / 1600 * 16);
+        }
+
         * {
             padding: 0;
             margin: 0;
             font-family: 'default';
         }
 
+        h1 {
+            font-size: 3rem;
+        }
+
+        h2 {
+            font-size: 2rem;
+        }
+
         body {
             background-image: url("{{ bg }}");
             background-repeat: no-repeat;
             background-size: cover;
-            padding: 2em;
+            padding: 2rem;
         }
 
         .content {
             width: 80vw;
             background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 2em;
+            border-radius: 2rem;
             margin: 0 auto;
             display: flex;
             flex-wrap: wrap;
@@ -57,23 +70,23 @@
             width: 100%;
             text-align: center;
             color: rgb(147, 187, 194);
-            padding: 1em;
+            padding: 1rem;
         }
 
         .gap {
             background-color: #ffffff;
-            height: 0.2em;
+            height: 0.2rem;
             width: 80%;
             margin: 0 auto;
         }
 
         .block {
-            margin: 1em auto;
+            margin: 1rem auto;
             display: flex;
             flex-direction: column;
             width: 25vw;
             color: #ffffff;
-            font-size: 20px;
+            font-size: 1.5rem;
         }
 
         img {
@@ -84,10 +97,10 @@
 
         .column {
             width: 75vw;
-            margin: 1em auto;
-            border-radius: 1.5em;
+            margin: 1rem auto;
+            border-radius: 1.5rem;
             border-color: aqua;
-            border-width: 0.3em;
+            border-width: 0.3rem;
             background-color: rgba(0, 0, 0, 0.1);
             display: flex;
             flex-wrap: wrap;
@@ -105,7 +118,7 @@
             justify-content: center;
             align-items: center;
             scale: 100%;
-            margin-top: 1em;
+            margin-top: 1rem;
         }
 
         .column_info img {
@@ -120,7 +133,7 @@
         }
 
         .subtitle {
-            font-size: 25px;
+            font-size: 2rem;
             text-align: center;
         }
     </style>
