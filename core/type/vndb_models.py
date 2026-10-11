@@ -112,7 +112,7 @@ class VN(BaseModel):
 class VNDBVnResponse(BaseModel):
     id: str
     title: str
-    image: Image
+    image: Image | None = None
     alttitle: str | None = None
     titles: list[Title] | None = None
     aliases: list[str] | None = None
