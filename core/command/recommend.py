@@ -8,7 +8,12 @@ from astrbot.core.utils.session_waiter import (
 )
 
 from ..type.bangumi_models import BangumiSubjectResponse
-from ..type.exceptions import EarlyReturn, SessionTimeoutException, Tips
+from ..type.exceptions import (
+    EarlyReturn,
+    InvalidArgsException,
+    SessionTimeoutException,
+    Tips,
+)
 from ..type.inner_models import CommandType, RecommendCache, template_list
 from ..type.vndb_models import VNDBVnResponse
 from ..utils import OnlySenderFilter
@@ -31,6 +36,9 @@ class Recommend(BaseCommand):
         return cls()
 
     async def goooooooooo(self, event: AstrMessageEvent, tags: list[str]):
+        if all(not x for x in tags):
+            raise InvalidArgsException(CommandType.RECOMMEND, str(tags))
+
         session_id = event.get_group_id() + event.get_sender_id()
 
         vns, total = await self._request_once(tags, 0)
