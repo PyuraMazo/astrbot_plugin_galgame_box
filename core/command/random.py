@@ -42,11 +42,8 @@ class Random(BaseCommand):
         main_image = await self.read_or_download_image("vndb", vndb_vn.image.url)
 
         info = self.build_vn(vndb_vn)
-        info.insert(0, "--- VNDB ---")
-        third_info = self.build_bangumi_info(bangumi_vn, True)
-        if third_info:
-            third_info.insert(0, "--- Bangumi ---")
-        info += third_info
+        bangumi_info = self.build_bangumi_info(bangumi_vn, True)
+        info += bangumi_info
 
         desc = bangumi_vn.summary.replace("\r\n", "<br>") if bangumi_vn.summary else ""
 
