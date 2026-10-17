@@ -55,7 +55,7 @@ class BaseCommand:
         if not BaseCommand.is_init:
             BaseCommand.downloader = Services.get(Downloader)
             BaseCommand.vndb = Services.get(Vndb)
-            BaseCommand.touchgal = Services.get(TouchGal)
+            # BaseCommand.touchgal = Services.get(TouchGal)
             BaseCommand.animetrace = Services.get(AnimeTrece)
             BaseCommand.bangumi = Services.get(Bangumi)
 

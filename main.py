@@ -97,14 +97,15 @@ class GalgameBoxPlugin(Star):
         except Exception as e:
             yield await anext(self._handle_command_exception(event, e))
 
-    @gal_box.command("下载", alias={"资源", "download"})
-    async def download(self, event: AstrMessageEvent, the_id: str):
-        """优先通过VNDB ID、TouchGal ID，最后通过关键词搜索获取指定资源的下载链接"""
-        try:
-            async for res in Services.get(Download).goooooooooo(event, the_id):
-                yield res
-        except Exception as e:
-            yield await anext(self._handle_command_exception(event, e))
+    # 自v2.2.0起移除
+    # @gal_box.command("下载", alias={"资源", "download"})
+    # async def download(self, event: AstrMessageEvent, the_id: str):
+    #     """优先通过VNDB ID、TouchGal ID，最后通过关键词搜索获取指定资源的下载链接"""
+    #     try:
+    #         async for res in Services.get(Download).goooooooooo(event, the_id):
+    #             yield res
+    #     except Exception as e:
+    #         yield await anext(self._handle_command_exception(event, e))
 
     @gal_box.command("出处", alias={"识别", "find"})
     async def find(self, event: AstrMessageEvent, url: str = ""):

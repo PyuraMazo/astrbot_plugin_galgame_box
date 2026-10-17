@@ -20,7 +20,7 @@ class Services:
             cls._services[Http] = await Http.initialize(config)
             cls._services[Downloader] = await Downloader.initialize(config)
             cls._services[Vndb] = await Vndb.initialize(config)
-            cls._services[TouchGal] = await TouchGal.initialize(config)
+            # cls._services[TouchGal] = await TouchGal.initialize(config)
             cls._services[AnimeTrece] = await AnimeTrece.initialize(config)
             cls._services[Bangumi] = await Bangumi.initialize(config)
 
@@ -33,7 +33,7 @@ class Services:
             cls._services[Event] = await Event.initialize(config)
             cls._services[Random] = await Random.initialize(config)
             cls._services[Recommend] = await Recommend.initialize(config)
-            cls._services[Download] = await Download.initialize(config)
+            # cls._services[Download] = await Download.initialize(config)
             cls._services[Find] = await Find.initialize(config)
             cls._services[EventTimed] = await EventTimed.initialize(config)
 

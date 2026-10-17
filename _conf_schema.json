@@ -111,18 +111,21 @@
       "touchgalToken": {
         "description": "TouchGal登录账号Token",
         "hint": "[TouchGal]这是开启NSFW的前置条件，需要手动访问https://www.touchgal.top/并获取Cookie的kun-galgame-patch-moe-token值。",
-        "type": "string"
+        "type": "string",
+        "invisible": true
       },
       "cfClearance": {
         "description": "CF Clearance（非必须，建议下载curl-cffi模块）",
         "hint": "Cloudflare Clearance Cookie，用于绕过反爬虫验证。需要手动访问https://www.touchgal.top/并获取Cookie的cf_clearance值。",
-        "type": "string"
+        "type": "string",
+        "invisible": true
       },
       "tls": {
         "description": "TLS浏览器指纹",
         "hint": "伪造目标浏览器的指纹。",
         "type": "string",
-        "default": "chrome136"
+        "default": "chrome136",
+        "invisible": true
       }
     }
   },
