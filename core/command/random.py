@@ -2,7 +2,7 @@ from astrbot.api import AstrBotConfig, html_renderer
 from astrbot.api.event import AstrMessageEvent
 
 from ..type.bangumi_models import BangumiSubjectResponse
-from ..type.exceptions import NoResultException
+from ..type.exceptions import InternetException, NoResultException
 from ..type.inner_models import CommandType, template_list
 from ..type.vndb_models import VNDBVnResponse
 from .base_command import BaseCommand
@@ -18,19 +18,17 @@ class Random(BaseCommand):
         return cls()
 
     async def goooooooooo(self, event: AstrMessageEvent):
-        target = None
+        target = await self.vndb.request_random()
         bangumi_info: list[BangumiSubjectResponse] = []
 
-        while not bangumi_info:
-            try:
-                target = await self.vndb.request_random()
-                bangumi_info = await self.bangumi.request_by_vndb_id(
-                    CommandType.RANDOM, target.alttitle or target.title, target.id
-                )
-            except NoResultException:
-                pass
+        try:
+            bangumi_info = await self.bangumi.request_by_vndb_id(
+                CommandType.RANDOM, target.alttitle or target.title, target.id
+            )
+        except (NoResultException, InternetException):
+            pass
 
-        data = await self.build(target, bangumi_info[0])
+        data = await self.build(target, bangumi_info[0] if bangumi_info else None)
         tmpl = self.templates[template_list[CommandType.RANDOM.value]]
 
         url = await html_renderer.render_custom_template(
@@ -38,14 +36,26 @@ class Random(BaseCommand):
         )
         yield event.image_result(url)
 
-    async def build(self, vndb_vn: VNDBVnResponse, bangumi_vn: BangumiSubjectResponse):
+    async def build(
+        self, vndb_vn: VNDBVnResponse, bangumi_vn: BangumiSubjectResponse = None
+    ):
         main_image = await self.read_or_download_image("vndb", vndb_vn.image.url)
 
         info = self.build_vn(vndb_vn)
-        bangumi_info = self.build_bangumi_info(bangumi_vn, True)
-        info += bangumi_info
+        desc = ""
+        if bangumi_vn is not None:
+            bangumi_info = self.build_bangumi_info(bangumi_vn, True)
+            info += bangumi_info
 
-        desc = bangumi_vn.summary.replace("\r\n", "<br>") if bangumi_vn.summary else ""
+            desc = (
+                bangumi_vn.summary.replace("\r\n", "<br>") if bangumi_vn.summary else ""
+            )
+        if not desc:
+            desc = (
+                vndb_vn.description.replace("\n", "<br>")
+                if vndb_vn.description
+                else "暂无简介"
+            )
 
         previews = []
         if vndb_vn.screenshots:
