@@ -295,18 +295,19 @@ class Vndb:
             res.extend((await self.http.post(url, payload))["results"])
         return [VNDBReleaseResponse.model_validate(i) for i in res]
 
-    async def request_random(self) -> VNDBVnResponse:
+    async def request_random(self, least_rating: int = None) -> VNDBVnResponse:
         url = self.kana_url + "vn"
-        max_res: dict = await self.http.post(
-            url, {"sort": "id", "reverse": True, "results": 1}
-        )
+        search_payload: dict = {"sort": "id", "reverse": True, "results": 1}
+        max_res: dict = await self.http.post(url, search_payload)
 
         if max_res["results"]:
             max_id: str = max_res["results"][0]["id"]
             random_num = random.randint(1, int(max_id[1:]))
-
+            filters = ["and", ["id", ">=", f"v{random_num}"]]
+            if least_rating:
+                filters.append(["rating", ">=", least_rating])
             payload = {
-                "filters": ["id", ">=", f"v{random_num}"],
+                "filters": filters,
                 "fields": vndb_command_fields["vn"],
                 "results": 1,
             }

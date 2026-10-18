@@ -204,6 +204,32 @@
       }
     }
   },
+  "guessSetting": {
+    "description": "旮旯-猜作品设置",
+    "type": "object",
+    "items": {
+      "queryRound": {
+        "description": "最大查询轮数",
+        "type": "int",
+        "slider": {
+          "min": 5,
+          "max": 50,
+          "step": 1
+        },
+        "default": 8
+      },
+      "answerLimit": {
+        "description": "总回答时长（分钟）",
+        "type": "int",
+        "slider": {
+          "min": 3,
+          "max": 20,
+          "step": 1
+        },
+        "default": 5
+      }
+    }
+  },
   "eventSetting": {
     "description": "旮旯-简讯设置",
     "type": "object",

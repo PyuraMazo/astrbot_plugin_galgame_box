@@ -1,4 +1,5 @@
 from asyncio import Event
+from datetime import datetime
 from enum import Enum
 from typing import TypeAlias
 
@@ -17,13 +18,14 @@ class CommandType(Enum):
     ID = "id"
     EVENT = "event"
     RANDOM = "random"
-    DOWNLOAD = "download"
+    DOWNLOAD = "download"  # cancelled
     SELECT = "select"
     FIND = "find"
     RECOMMEND = "recommend"
     BIND = "bind"
-    PUZZLE = "puzzle"
+    PUZZLE = "puzzle"  # cancelled
     EVENT_TIMED = "event_timed"
+    GUESS = "guess"
 
 
 class TouchGalDetails(BaseModel):
@@ -46,6 +48,15 @@ class RecommendCache(BaseModel):
     stop_info: str | None = None
 
 
+class GuessRecord(BaseModel):
+    date: datetime | None = None
+    rating: float | None = None
+    length: float | None = None
+    developers: set[str] | None = None
+    tags: set[str] | None = None
+    platforms: set[str] | None = None
+
+
 template_list = {
     "vn": "template1.html",
     "character": "template1.html",
@@ -55,6 +66,7 @@ template_list = {
     "recommend": "template3.html",
     "find": "template2.html",
     "event_timed": "template3.html",
+    "guess": "template3.html",
 }
 
 vndb_command_fields = {
@@ -71,6 +83,13 @@ id2command = {
     "v": CommandType.VN,
     "c": CommandType.CHARACTER,
     "p": CommandType.PRODUCER,
+}
+
+guess_degree = {
+    1: 80,  # 300
+    2: 76,  # 1000
+    3: 74,  # 1800
+    4: 70,  # 4000
 }
 
 lang = {"ja": "日文", "en": "英文", "zh-Hans": "简中", "zh-Hant": "繁中", "zh": "中文"}

@@ -116,6 +116,15 @@ class GalgameBoxPlugin(Star):
         except Exception as e:
             yield await anext(self._handle_command_exception(event, e))
 
+    @gal_box.command("猜作品", alias={"旮一把", "guess"})
+    async def guess(self, event: AstrMessageEvent, degree: int = 1):
+        """通过多轮查询猜作品。默认难度简单，参数1-4为难度升序"""
+        try:
+            async for res in Services.get(Guess).goooooooooo(event, degree):
+                yield res
+        except Exception as e:
+            yield await anext(self._handle_command_exception(event, e))
+
     async def _push_today(self):
         try:
             async for vn, cha in Services.get(EventTimed).goooooooooo():

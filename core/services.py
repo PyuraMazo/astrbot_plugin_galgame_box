@@ -35,6 +35,7 @@ class Services:
             cls._services[Recommend] = await Recommend.initialize(config)
             # cls._services[Download] = await Download.initialize(config)
             cls._services[Find] = await Find.initialize(config)
+            cls._services[Guess] = await Guess.initialize(config)
             cls._services[EventTimed] = await EventTimed.initialize(config)
 
     @classmethod

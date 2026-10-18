@@ -1,3 +1,5 @@
+# ruff: noqa: I001
+
 from .character import Character
 from .download import Download
 from .event import Event
@@ -8,6 +10,7 @@ from .random import Random
 from .recommend import Recommend
 from .vn import Vn
 from .vndb_id import VndbId
+from .guess import Guess
 
 __all__ = [
     "Vn",
@@ -20,4 +23,5 @@ __all__ = [
     "Download",
     "Find",
     "EventTimed",
+    "Guess",
 ]
