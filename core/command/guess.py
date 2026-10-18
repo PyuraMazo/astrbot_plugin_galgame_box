@@ -29,6 +29,7 @@ class Guess(BaseCommand):
         guess_setting = config.get("guessSetting")
         cls.guess_timeout = guess_setting.get("answerLimit", 5)
         cls.guess_round = guess_setting.get("queryRound", 8)
+        cls.wake_sign = guess_setting.get("answerWake", "：")
         return cls()
 
     async def goooooooooo(self, event: AstrMessageEvent, degree: int):
@@ -60,8 +61,8 @@ class Guess(BaseCommand):
             controller: SessionController, sess_event: AstrMessageEvent
         ):
             message = sess_event.message_str.strip()
-            if message.startswith("//"):
-                message = sess_event.message_str.lstrip("//")
+            if message.startswith(self.wake_sign):
+                message = sess_event.message_str.lstrip(self.wake_sign)
                 try:
                     if message == "放弃":
                         await sess_event.send(sess_event.plain_result("答案揭晓..."))
@@ -98,10 +99,12 @@ class Guess(BaseCommand):
             answer_info = self._build_record(target)
             records: list[GuessRecord] = []
             yield event.plain_result(
-                f"开始你的首轮查询，限时{self.guess_timeout}分钟。\n请以「//」开头输入一个作品名。\n可以使用「//放弃」指令放弃。"
+                f"开始你的首轮查询，限时{self.guess_timeout}分钟。\n请以「{self.wake_sign}」开头输入一个作品名。\n可以使用「{self.wake_sign}放弃」指令放弃。"
             )
             await guess_waiter(event, session_filter=OnlySenderFilter())
         except TimeoutError:
+            yield event.plain_result("答案揭晓...")
+            yield event.image_result(await async_url)
             raise SessionTimeoutException(CommandType.GUESS, str(degree))
 
     def _build_record(self, vn: VNDBVnResponse) -> GuessRecord:
