@@ -208,6 +208,12 @@
     "description": "旮旯-猜作品设置",
     "type": "object",
     "items": {
+      "sharedGuess": {
+        "description": "全群聊共享游戏",
+        "hint": "仅需一人开启，全群聊可以共享并回答问题，共同消耗回答次数。",
+        "type": "bool",
+        "default": true
+      },
       "answerWake": {
         "description": "查询作品标志",
         "hint": "进行一轮查询时必须携带的前缀。不应当使用全局唤醒词作为开头字符。",

@@ -9,7 +9,6 @@ from ..type.bangumi_models import BangumiSubjectResponse
 from ..type.exceptions import (
     InvalidArgsException,
     NoResultException,
-    SessionTimeoutException,
 )
 from ..type.inner_models import CommandType, GuessRecord, guess_degree, template_list
 from ..type.vndb_models import VNDBVnResponse
@@ -30,6 +29,7 @@ class Guess(BaseCommand):
         cls.guess_timeout = guess_setting.get("answerLimit", 5)
         cls.guess_round = guess_setting.get("queryRound", 8)
         cls.wake_sign = guess_setting.get("answerWake", "：")
+        cls.is_shared = guess_setting.get("sharedGuess", True)
         return cls()
 
     async def goooooooooo(self, event: AstrMessageEvent, degree: int):
@@ -101,11 +101,12 @@ class Guess(BaseCommand):
             yield event.plain_result(
                 f"开始你的首轮查询，限时{self.guess_timeout}分钟。\n请以「{self.wake_sign}」开头输入一个作品名。\n可以使用「{self.wake_sign}放弃」指令放弃。"
             )
-            await guess_waiter(event, session_filter=OnlySenderFilter())
+            await guess_waiter(
+                event, session_filter=OnlySenderFilter() if not self.is_shared else None
+            )
         except TimeoutError:
-            yield event.plain_result("答案揭晓...")
+            yield event.plain_result("超时！答案自动揭晓...")
             yield event.image_result(await async_url)
-            raise SessionTimeoutException(CommandType.GUESS, str(degree))
 
     def _build_record(self, vn: VNDBVnResponse) -> GuessRecord:
         record = GuessRecord()
