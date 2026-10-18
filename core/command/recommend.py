@@ -30,7 +30,6 @@ class Recommend(BaseCommand):
         )
         cls.nsfw_enable = config.get("safetySetting", {}).get("enableNSFW", False)
 
-        cls.session_cache_dict: dict[str, RecommendCache] = {}
         cls.count_per_search = cls.recommend_cache * 2
 
         return cls()
@@ -38,8 +37,6 @@ class Recommend(BaseCommand):
     async def goooooooooo(self, event: AstrMessageEvent, tags: list[str]):
         if all(not x for x in tags):
             raise InvalidArgsException(CommandType.RECOMMEND, str(tags))
-
-        session_id = event.get_group_id() + event.get_sender_id()
 
         vns, total = await self._request_once(tags, 0)
         task = RecommendCache(
@@ -51,9 +48,8 @@ class Recommend(BaseCommand):
             use_signal=asyncio.Event(),
             stop_signal=asyncio.Event(),
         )
-        self.session_cache_dict[session_id] = task
 
-        asyncio.create_task(self._make_machine(session_id, tags))
+        asyncio.create_task(self._make_machine(task, tags))
 
         await asyncio.wait(
             [
@@ -65,16 +61,7 @@ class Recommend(BaseCommand):
         if task.stop_signal.is_set():
             msg = task.stop_info
             yield event.image_result(msg)
-            self.session_cache_dict.pop(session_id, None)
             raise EarlyReturn(msg)
-
-        url = task.ready_queue.pop(0)
-        yield event.image_result(url)
-        tips = f"-如果需要以同样要求继续获取作品，请输入文本【换一个】\n-如果不再需要，请输入文本【结束】以结束此次会话\n-后续同理\n-默认等待时间：{self.session_timeout}s"
-        yield event.plain_result(tips)
-
-        alter = "换一个"
-        end = "结束"
 
         @session_waiter(timeout=self.session_timeout)
         async def select_waiter(
@@ -113,11 +100,17 @@ class Recommend(BaseCommand):
                     task.stop_signal.set()
 
             if task.stop_signal.is_set():
-                self.session_cache_dict.pop(session_id, None)
                 await sess_event.send(sess_event.plain_result(task.stop_info))
                 controller.stop()
 
         try:
+            url = task.ready_queue.pop(0)
+            yield event.image_result(url)
+            tips = f"-如果需要以同样要求继续获取作品，请输入文本【换一个】\n-如果不再需要，请输入文本【结束】以结束此次会话\n-后续同理\n-默认等待时间：{self.session_timeout}s"
+            yield event.plain_result(tips)
+
+            alter = "换一个"
+            end = "结束"
             await select_waiter(event, session_filter=OnlySenderFilter())
         except TimeoutError:
             raise SessionTimeoutException(CommandType.RECOMMEND, str(tags))
@@ -170,9 +163,7 @@ class Recommend(BaseCommand):
             "previews": previews,
         }
 
-    async def _make_machine(self, session_id: str, tags: list[str]):
-        task = self.session_cache_dict[session_id]
-
+    async def _make_machine(self, task: RecommendCache, tags: list[str]):
         while not task.stop_signal.is_set():
             if task.handling == task.total:
                 return
@@ -210,8 +201,6 @@ class Recommend(BaseCommand):
                 task.stop_info = str(e).split("：")[0]
                 task.stop_signal.set()
                 return
-        else:
-            self.session_cache_dict.pop(session_id, None)
 
     async def _core_handler(
         self, bangumi_vn: BangumiSubjectResponse, vndb_vn: VNDBVnResponse

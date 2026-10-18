@@ -28,8 +28,6 @@ class Find(BaseCommand):
         await super().initialize(config)
         cls.find_results = config.get("findSetting", {}).get("findResults", 3)
 
-        cls.session_dict: dict[str, bs64] = {}
-
         return cls()
 
     async def goooooooooo(self, event: AstrMessageEvent, url: str):
@@ -41,30 +39,27 @@ class Find(BaseCommand):
                     break
 
         if not url:
-            tips = f"-未检测到有效的指令参数\n-改为从下一条消息中获取\n-请在{self.session_timeout}s内发送一张图片"
-            yield event.plain_result(tips)
 
             @session_waiter(timeout=self.session_timeout)
             async def image_waiter(
                 controller: SessionController, sess_event: AstrMessageEvent
             ):
                 message = sess_event.message_obj.message
-                bs = await self._get_chain_image(message)
+                url_bs.append(await self._get_chain_image(message))
 
-                if not bs:
+                if not url_bs:
                     invalid = "未解析到图片，请重新发送"
                     await sess_event.send(sess_event.plain_result(invalid))
                 else:
-                    self.session_dict[
-                        sess_event.get_group_id() + sess_event.get_sender_id()
-                    ] = bs
                     controller.stop()
 
             try:
+                tips = f"-未检测到有效的指令参数\n-改为从下一条消息中获取\n-请在{self.session_timeout}s内发送一张图片"
+                yield event.plain_result(tips)
+
+                url_bs = []
                 await image_waiter(event, session_filter=OnlySenderFilter())
-                url = self.session_dict.pop(
-                    event.get_group_id() + event.get_sender_id()
-                )
+                url = url_bs[0]
             except TimeoutError:
                 raise SessionTimeoutException(CommandType.FIND, "")
 
