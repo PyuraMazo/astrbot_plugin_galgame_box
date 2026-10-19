@@ -49,6 +49,7 @@ class RecommendCache(BaseModel):
 
 
 class GuessRecord(BaseModel):
+    title: str
     date: datetime | None = None
     rating: float | None = None
     length: float | None = None
@@ -70,7 +71,7 @@ template_list = {
 }
 
 vndb_command_fields = {
-    "vn": "id,average,rating,released,length_minutes,platforms,aliases,developers{id,original,name},titles{lang,title,official},image{url},alttitle,title,screenshots{id,url,sexual,dims,violence,votecount}",
+    "vn": "id,average,rating,released,length_minutes,platforms,aliases,developers{id,original,name},titles{lang,title,official},image{url},alttitle,title,screenshots{id,url,sexual,dims,violence,votecount},tags{name}",
     "character": "id,name,aliases,sex,birthday,waist,hips,bust,blood_type,weight,height,cup,original,image{url},vns{id,alttitle,title}",
     "producer": "id,name,original,aliases,lang,type",
     "vn_short": "id,alttitle,title,released,rating,image{url}",

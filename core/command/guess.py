@@ -45,7 +45,7 @@ class Guess(BaseCommand):
                     least_rating=guess_degree[degree]
                 )
                 bangumi_info = await self.bangumi.request_by_vndb_id(
-                    CommandType.RANDOM, target.alttitle or target.title, target.id
+                    CommandType.GUESS, target.alttitle or target.title, target.id
                 )
             except NoResultException:
                 pass
@@ -80,11 +80,11 @@ class Guess(BaseCommand):
                         record = self._build_record(res[0])
                         records.append(record)
                         resp = self._build_plus_info(answer_info, record)
-                        resp.insert(0, f"[{len(records)}/{self.guess_round}]{message}")
+                        resp.insert(0, f"【第{len(records)}/{self.guess_round}轮尝试】")
                         await sess_event.send(sess_event.plain_result("\n".join(resp)))
                         if len(records) == 8:
                             await sess_event.send(
-                                sess_event.plain_result("次数耗尽！正确答案是...")
+                                sess_event.plain_result("次数耗尽！答案揭晓...")
                             )
                             await sess_event.send(
                                 sess_event.image_result(await async_url)
@@ -96,20 +96,29 @@ class Guess(BaseCommand):
                     await sess_event.send(sess_event.plain_result("未搜索到有效结果。"))
 
         try:
-            answer_info = self._build_record(target)
-            records: list[GuessRecord] = []
-            yield event.plain_result(
-                f"开始你的首轮查询，限时{self.guess_timeout}分钟。\n请以「{self.wake_sign}」开头输入一个作品名。\n可以使用「{self.wake_sign}放弃」指令放弃。"
-            )
-            await guess_waiter(
-                event, session_filter=OnlySenderFilter() if not self.is_shared else None
-            )
-        except TimeoutError:
-            yield event.plain_result("超时！答案自动揭晓...")
-            yield event.image_result(await async_url)
+            try:
+                answer_info = self._build_record(target)
+                records: list[GuessRecord] = []
+                yield event.plain_result(
+                    f"开始你的首轮查询，总限时{self.guess_timeout}分钟。\n请以「{self.wake_sign}」开头输入一个作品名以查询。\n可以使用「{self.wake_sign}放弃」指令放弃。"
+                )
+                await guess_waiter(
+                    event,
+                    session_filter=OnlySenderFilter() if not self.is_shared else None,
+                )
+            except TimeoutError:
+                yield event.plain_result("时间到！答案自动揭晓...")
+                yield event.image_result(await async_url)
+        except RuntimeError as e:
+            if "endpoints failed" in str(e):
+                yield event.plain_result(
+                    f"图片渲染失败...\n答案是（{target.id}）「{target.title}」。"
+                )
+            else:
+                raise
 
     def _build_record(self, vn: VNDBVnResponse) -> GuessRecord:
-        record = GuessRecord()
+        record = GuessRecord(title=vn.title)
         if vn.released:
             record.date = datetime.fromisoformat(vn.released)
         if vn.rating:
@@ -127,17 +136,17 @@ class Guess(BaseCommand):
     def _build_plus_info(
         self, target: GuessRecord, unchecked_record: GuessRecord
     ) -> list[str]:
-        res = []
+        res = [f"游戏标题: {unchecked_record.title}"]
         if target.date:
-            res.append(self._compare("发售日期", target.date, unchecked_record.date))
+            res.append(self._compare("发售日期: ", target.date, unchecked_record.date))
         if target.rating:
             res.append(
-                self._compare("游戏评分", target.rating, unchecked_record.rating)
+                self._compare("游戏评分: ", target.rating, unchecked_record.rating)
             )
         if target.length:
             res.append(
                 self._compare(
-                    "文本长度",
+                    "文本长度: ",
                     target.length,
                     unchecked_record.length,
                     lambda length: f"{length}h",
@@ -146,14 +155,16 @@ class Guess(BaseCommand):
         if target.developers:
             res.append(
                 self._compare(
-                    "制作厂商", target.developers, unchecked_record.developers
+                    "制作厂商: ", target.developers, unchecked_record.developers
                 )
             )
         if target.tags:
-            res.append(self._compare("游戏标签", target.tags, unchecked_record.tags))
+            res.append(self._compare("游戏标签: ", target.tags, unchecked_record.tags))
         if target.platforms:
             res.append(
-                self._compare("支持平台", target.platforms, unchecked_record.platforms)
+                self._compare(
+                    "支持平台: ", target.platforms, unchecked_record.platforms
+                )
             )
         return res
 
@@ -173,12 +184,12 @@ class Guess(BaseCommand):
                 else:
                     sign = "√"
                 return (
-                    f"{tip_str}: {current}({sign})"
+                    f"{tip_str}{current}({sign})"
                     if str_factory is None
-                    else f"{tip_str}: {str_factory(current)}({sign})"
+                    else f"{tip_str}{str_factory(current)}({sign})"
                 )
             else:
-                return f"{tip_str}: 未知"
+                return f"{tip_str}未知"
         elif isinstance(target, set):
             if current is not None:
                 leaving = len(current - target)
@@ -189,9 +200,9 @@ class Guess(BaseCommand):
                     sign = "≈"
                 else:
                     sign = "×"
-                return f"{tip_str}: {'、'.join(current)}({sign})"
+                return f"{tip_str}{'、'.join(current)}({sign})"
             else:
-                return f"{tip_str}: 未知"
+                return f"{tip_str}未知"
         elif isinstance(target, datetime):
             if current is not None:
                 return self._compare(
@@ -201,6 +212,6 @@ class Guess(BaseCommand):
                     lambda stamp: datetime.fromtimestamp(stamp).strftime("%Y-%m-%d"),
                 )
             else:
-                return f"{tip_str}: 未知"
+                return f"{tip_str}未知"
         else:
             raise NotImplementedError

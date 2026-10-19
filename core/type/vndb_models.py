@@ -61,9 +61,9 @@ class Relation(BaseModel):
 
 
 class Tag(BaseModel):
-    rating: float
-    spoiler: int
-    lie: bool
+    rating: float | None = None
+    spoiler: int | None = None
+    lie: bool | None = None
     id: str | None = None
     name: str | None = None
     description: str | None = None
