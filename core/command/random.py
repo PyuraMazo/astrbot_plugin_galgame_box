@@ -2,7 +2,6 @@ from astrbot.api import AstrBotConfig, html_renderer
 from astrbot.api.event import AstrMessageEvent
 
 from ..type.bangumi_models import BangumiSubjectResponse
-from ..type.exceptions import InternetException, NoResultException
 from ..type.inner_models import CommandType, template_list
 from ..type.vndb_models import VNDBVnResponse
 from .base_command import BaseCommand
@@ -25,7 +24,7 @@ class Random(BaseCommand):
             bangumi_info = await self.bangumi.request_by_vndb_id(
                 CommandType.RANDOM, target.alttitle or target.title, target.id
             )
-        except (NoResultException, InternetException):
+        except Exception:
             pass
 
         data = await self.build(target, bangumi_info[0] if bangumi_info else None)
@@ -43,19 +42,15 @@ class Random(BaseCommand):
 
         info = self.build_vn(vndb_vn)
         desc = ""
+        if vndb_vn.description:
+            desc = vndb_vn.description.replace("\n", "<br>")
         if bangumi_vn is not None:
             bangumi_info = self.build_bangumi_info(bangumi_vn, True)
             info += bangumi_info
 
-            desc = (
-                bangumi_vn.summary.replace("\r\n", "<br>") if bangumi_vn.summary else ""
-            )
-        if not desc:
-            desc = (
-                vndb_vn.description.replace("\n", "<br>")
-                if vndb_vn.description
-                else "暂无简介"
-            )
+            if bangumi_vn.summary:
+                desc = bangumi_vn.summary.replace("\r\n", "<br>")
+        desc = await self.llm.translate(desc) if desc else "暂无该作品简介  =。="
 
         previews = []
         if vndb_vn.screenshots:

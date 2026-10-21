@@ -1,7 +1,7 @@
 from astrbot.api import AstrBotConfig, html_renderer
 from astrbot.api.event import AstrMessageEvent
 
-from ..type.exceptions import ArgsOrNullException, NoResultException
+from ..type.exceptions import ArgsOrNullException
 from ..type.inner_models import CommandType, id2command, template_list
 from ..type.vndb_models import (
     VNDBCharacterResponse,
@@ -35,34 +35,37 @@ class VndbId(BaseCommand):
         desc = ""
         previews = []
         if real_type == CommandType.VN:
-            try:
-                vn: VNDBVnResponse = res[0]
-                bangumi_res = (
-                    await self.bangumi.request_by_vndb_id(
-                        CommandType.ID, vn.alttitle or vn.title, value
-                    )
-                )[0]
+            vn: VNDBVnResponse = res[0]
+            if vn.description:
+                desc = vn.description.replace("\n", "<br>")
+            if not desc:
+                try:
+                    bangumi_res = (
+                        await self.bangumi.request_by_vndb_id(
+                            CommandType.ID, vn.alttitle or vn.title, value
+                        )
+                    )[0]
 
-                if bangumi_res.summary:
-                    desc = bangumi_res.summary.replace("\r\n", "<br>")
-                elif vn.description:
-                    desc = vn.description.replace("\n", "<br>")
+                    if bangumi_res.summary:
+                        desc = bangumi_res.summary.replace("\r\n", "<br>")
 
-                if vn.screenshots:
-                    count = 0
-                    for ss in vn.screenshots:
-                        if ss.violence > 0.2 or ss.sexual > 0.2:
-                            if self.nsfw_enable:
-                                count += 1
-                                previews.append(ss.url)
-                        else:
+                except Exception:
+                    pass
+
+            desc = await self.llm.translate(desc) if desc else "暂无该作品简介  =。="
+
+            if vn.screenshots:
+                count = 0
+                for ss in vn.screenshots:
+                    if ss.violence > 0.2 or ss.sexual > 0.2:
+                        if self.nsfw_enable:
                             count += 1
                             previews.append(ss.url)
-                        if count > 3:
-                            break
-
-            except NoResultException:
-                pass
+                    else:
+                        count += 1
+                        previews.append(ss.url)
+                    if count > 3:
+                        break
 
         data = await self.build(real_type, res, desc, previews)
         tmpl = self.templates[

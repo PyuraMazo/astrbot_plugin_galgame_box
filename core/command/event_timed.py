@@ -71,12 +71,12 @@ class EventTimed(BaseCommand):
         chas: list[VNDBCharacterResponse],
         bangumi_vn: BangumiSubjectResponse | None,
     ):
-        if bangumi_vn and bangumi_vn.summary:
-            desc = bangumi_vn.summary.replace("\r\n", "<br>")
-        elif vn.description:
+        desc = ""
+        if vn.description:
             desc = vn.description.replace("\n", "<br>")
-        else:
-            desc = "暂无该作品简介  =。="
+        elif bangumi_vn and bangumi_vn.summary:
+            desc = bangumi_vn.summary.replace("\r\n", "<br>")
+        desc = await self.llm.translate(desc) if desc else "暂无该作品简介  =。="
 
         characters = [
             {

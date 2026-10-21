@@ -62,6 +62,12 @@
         "type": "bool",
         "default": false
       },
+      "translationProvider": {
+        "description": "AI翻译供应商",
+        "hint": "选择后，将启用AI对部分内容进行翻译。",
+        "type": "string",
+        "_special": "select_provider"
+      },
       "withdrawMiddle": {
         "description": "撤回中间消息",
         "hint": "撤回发送最终结果之前的这次指令导致发送的其它辅助消息。",

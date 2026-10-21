@@ -2,10 +2,12 @@ import asyncio
 from typing import Any, TypeVar
 
 from astrbot.core import AstrBotConfig
+from astrbot.core.star import Context
 
 from .command import *
 from .function import *
 from .network import *
+from .service import *
 
 T = TypeVar("T")
 
@@ -15,8 +17,10 @@ class Services:
     _lock = asyncio.Lock()
 
     @classmethod
-    async def initialize(cls, config: AstrBotConfig):
+    async def initialize(cls, context: Context, config: AstrBotConfig):
         async with cls._lock:
+            cls._services[LLM] = await LLM.initialize(context, config)
+
             cls._services[Http] = await Http.initialize(config)
             cls._services[Downloader] = await Downloader.initialize(config)
             cls._services[Vndb] = await Vndb.initialize(config)

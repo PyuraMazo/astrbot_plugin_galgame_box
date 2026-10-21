@@ -23,7 +23,7 @@ class GalgameBoxPlugin(Star):
 
     async def initialize(self):
         """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
-        await Services.initialize(self.config)
+        await Services.initialize(self.ctx, self.config)
 
         self._get_push_list()
         await self._register_push_task()

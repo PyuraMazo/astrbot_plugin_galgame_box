@@ -121,12 +121,16 @@ class Recommend(BaseCommand):
         self, bangumi_vn: BangumiSubjectResponse, vndb_vn: VNDBVnResponse | None
     ):
         previews = []
+        desc = ""
         if vndb_vn:
             main_image = await self.read_or_download_image("vndb", vndb_vn.image.url)
             info = self.build_vn(vndb_vn)
             bangumi_info = self.build_bangumi_info(bangumi_vn, True)
             info += bangumi_info
             subtitle = vndb_vn.alttitle or vndb_vn.title
+
+            if vndb_vn.description:
+                desc = vndb_vn.description.replace("\n", "<br>")
 
             if vndb_vn.screenshots:
                 count = 0
@@ -151,7 +155,9 @@ class Recommend(BaseCommand):
             info = self.build_bangumi_info(bangumi_vn)
             subtitle = bangumi_vn.name
 
-        desc = bangumi_vn.summary.replace("\r\n", "<br>") if bangumi_vn.summary else ""
+            if bangumi_vn.summary:
+                desc = bangumi_vn.summary.replace("\r\n", "<br>")
+        desc = await self.llm.translate(desc) if desc else "暂无该作品简介  =。="
 
         return {
             "font": self.font,

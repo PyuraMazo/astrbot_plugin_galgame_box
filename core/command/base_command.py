@@ -6,6 +6,7 @@ from astrbot.api import AstrBotConfig
 
 from ..function import Cache
 from ..network import AnimeTrece, Bangumi, Downloader, TouchGal, Vndb
+from ..service import LLM
 from ..type.bangumi_models import BangumiSubjectResponse
 from ..type.exceptions import ArgsOrNullException
 from ..type.inner_models import CommandType, bs64, template_list
@@ -38,6 +39,7 @@ class BaseCommand:
     animetrace: AnimeTrece
     bangumi: Bangumi
     cache: Cache
+    llm: LLM
 
     bg: str
     font: str
@@ -60,6 +62,8 @@ class BaseCommand:
             BaseCommand.bangumi = Services.get(Bangumi)
 
             BaseCommand.cache = Services.get(Cache)
+
+            BaseCommand.llm = Services.get(LLM)
 
             basic = config.get("basicSetting", {})
             enable_font = basic.get("enableFont", True)
