@@ -3,7 +3,6 @@ from datetime import datetime
 from astrbot.api import AstrBotConfig, html_renderer
 
 from ..type.bangumi_models import BangumiSubjectResponse
-from ..type.exceptions import NoResultException
 from ..type.inner_models import CommandType, template_list
 from ..type.vndb_models import VNDBCharacterResponse, VNDBVnResponse
 from .base_command import BaseCommand
@@ -51,13 +50,14 @@ class EventTimed(BaseCommand):
         if for_vn:
             response: tuple[VNDBVnResponse, list[VNDBCharacterResponse]]
             vn, cha_list = response
+            first_vn = None
             try:
                 searched_vn, _ = await self.bangumi.request_by_vndb_id(
                     CommandType.EVENT_TIMED, vn.alttitle or vn.title, vn.id
                 )
                 first_vn = searched_vn[0]
-            except NoResultException:
-                first_vn = None
+            except Exception:
+                pass
 
             return await self._build_event_vn(vn, cha_list, first_vn)
         else:
