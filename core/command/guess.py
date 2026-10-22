@@ -77,7 +77,7 @@ class Guess(BaseCommand):
                         await sess_event.send(sess_event.image_result(await async_url))
                         controller.stop()
                     else:
-                        record = self._build_record(res[0])
+                        record = await self._build_record(res[0])
                         records.append(record)
                         resp = self._build_plus_info(answer_info, record)
                         resp.insert(0, f"【第{len(records)}/{self.guess_round}轮尝试】")
@@ -97,7 +97,7 @@ class Guess(BaseCommand):
 
         try:
             try:
-                answer_info = self._build_record(target)
+                answer_info = await self._build_record(target)
                 records: list[GuessRecord] = []
                 yield event.plain_result(
                     f"开始你的首轮查询，总限时{self.guess_timeout}分钟。\n请以「{self.wake_sign}」开头输入一个作品名以查询。\n可以使用「{self.wake_sign}放弃」指令放弃。"
@@ -117,7 +117,7 @@ class Guess(BaseCommand):
             else:
                 raise
 
-    def _build_record(self, vn: VNDBVnResponse) -> GuessRecord:
+    async def _build_record(self, vn: VNDBVnResponse) -> GuessRecord:
         record = GuessRecord(title=vn.title)
         if vn.released:
             record.date = datetime.fromisoformat(vn.released)
@@ -128,7 +128,11 @@ class Guess(BaseCommand):
         if vn.developers:
             record.developers = {i.name or i.original for i in vn.developers}
         if vn.tags:
-            record.tags = {i.name for i in vn.tags[:3] if i}
+            selected = {i.name for i in vn.tags[:3] if i}
+            translated = await self.llm.translate("、".join(selected))
+            if translated and "、" in translated:
+                selected = set(translated.split("、"))
+            record.tags = selected
         if vn.platforms:
             record.platforms = set(vn.platforms)
         return record
