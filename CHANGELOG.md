@@ -1,5 +1,13 @@
 # ChangeLog
 
+# 2026/10/27 v2.3.1
+
+## 修复
+- 修复导入模块缺失问题（[#21](https://github.com/PyuraMazo/astrbot_plugin_galgame_box/pull/21)）。
+- 修复在未配置AI翻译时简介异常缺失的问题。
+
+---
+
 # 2026/10/22 v2.3.0
 
 ## 新增
