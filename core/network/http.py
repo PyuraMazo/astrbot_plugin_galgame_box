@@ -2,7 +2,6 @@ import asyncio
 from typing import Literal
 
 from aiohttp import ClientSession, ClientTimeout
-from curl_cffi import Response
 
 from astrbot.api import AstrBotConfig, logger
 
@@ -92,6 +91,7 @@ class Http:
 
     async def _cf_curl(self, **kwargs) -> str | dict | bytes:
         try:
+            from curl_cffi import Response
             from curl_cffi.requests import AsyncSession
 
             async with AsyncSession() as session:
