@@ -25,6 +25,6 @@ class LLM:
         llm_resp = await self.provider.text_chat(prompt=prompt, **kwargs)
         return llm_resp.completion_text
 
-    async def translate(self, source: str) -> str | None:
+    async def translate(self, source: str) -> str:
         prompt = TRANSLATION_PROMPTS.replace("{{text}}", source)
-        return await self.generate(prompt)
+        return await self.generate(prompt) or source
