@@ -188,10 +188,13 @@ class GalgameBoxPlugin(Star):
         ids = self.config.get("scheduleSetting", {}).get("pushList", [])
 
         def func(source: str):
-            platform, group = source.split("-", 1)
-            return MessageSession.from_str(f"{platform}:GroupMessage:{group}")
+            if "-" in source:
+                platform, group = source.split("-", 1)
+                return MessageSession.from_str(f"{platform}:GroupMessage:{group}")
+            else:
+                return ""
 
-        self.push_list = list(map(func, ids))
+        self.push_list = [i for i in list(map(func, ids)) if i]
 
     async def _handle_command_exception(
         self, event: AstrMessageEvent | None, e: Exception, prefix: str = ""
