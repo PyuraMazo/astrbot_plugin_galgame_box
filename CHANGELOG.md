@@ -1,5 +1,13 @@
 # ChangeLog
 
+# 2026/11/02 v2.3.2
+
+## 修复
+- 修复定时任务简介异常缺失的问题。
+- 修复配置错误造成的初始化失败的问题（[#22](https://github.com/PyuraMazo/astrbot_plugin_galgame_box/pull/22)）。
+
+---
+
 # 2026/10/27 v2.3.1
 
 ## 修复
