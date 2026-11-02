@@ -52,10 +52,11 @@ class EventTimed(BaseCommand):
             vn, cha_list = response
             first_vn = None
             try:
-                searched_vn, _ = await self.bangumi.request_by_vndb_id(
-                    CommandType.EVENT_TIMED, vn.alttitle or vn.title, vn.id
-                )
-                first_vn = searched_vn[0]
+                first_vn = (
+                    await self.bangumi.request_by_vndb_id(
+                        CommandType.EVENT_TIMED, vn.alttitle or vn.title, vn.id
+                    )
+                )[0]
             except Exception:
                 pass
 
@@ -74,7 +75,7 @@ class EventTimed(BaseCommand):
         desc = ""
         if vn.description:
             desc = vn.description.replace("\n", "<br>")
-        elif bangumi_vn and bangumi_vn.summary:
+        elif bangumi_vn is not None and bangumi_vn.summary:
             desc = bangumi_vn.summary.replace("\r\n", "<br>")
         desc = await self.llm.translate(desc) if desc else "暂无该作品简介  =。="
 

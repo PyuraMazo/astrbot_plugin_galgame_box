@@ -18,16 +18,18 @@ class Random(BaseCommand):
 
     async def goooooooooo(self, event: AstrMessageEvent):
         target = await self.vndb.request_random()
-        bangumi_info: list[BangumiSubjectResponse] = []
+        bangumi_info = None
 
         try:
-            bangumi_info = await self.bangumi.request_by_vndb_id(
-                CommandType.RANDOM, target.alttitle or target.title, target.id
-            )
+            bangumi_info = (
+                await self.bangumi.request_by_vndb_id(
+                    CommandType.RANDOM, target.alttitle or target.title, target.id
+                )
+            )[0]
         except Exception:
             pass
 
-        data = await self.build(target, bangumi_info[0] if bangumi_info else None)
+        data = await self.build(target, bangumi_info)
         tmpl = self.templates[template_list[CommandType.RANDOM.value]]
 
         url = await html_renderer.render_custom_template(
